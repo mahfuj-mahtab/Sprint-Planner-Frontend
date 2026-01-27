@@ -1,7 +1,11 @@
 import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
+import { login } from "../store/slices/authSlice.js";
+import { useSelector, useDispatch } from "react-redux";
+
 export default function Login() {
+  const dispatch = useDispatch()
   const {
     register,
     handleSubmit,
@@ -11,6 +15,7 @@ export default function Login() {
   const onSubmit = (data) => {
     axios.post(`${import.meta.env.VITE_API_URL}/api/v1/users/login`, data).then((response) => {
       console.log(response)
+      // login(response.data)
       toast.success(response.data.message, {
         position: "top-right",
         autoClose: 5000,
@@ -22,6 +27,11 @@ export default function Login() {
         theme: "light",
 
       });
+      dispatch(login({
+        user: response.data.user,
+        accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken
+      }))
     }).catch((error) => {
       console.log(error.response.data);
       toast.error(error.response.data.message, {
