@@ -1,4 +1,7 @@
 import { useForm } from "react-hook-form"
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+
 export default function Register() {
     const {
         register,
@@ -7,7 +10,34 @@ export default function Register() {
         formState: { errors },
     } = useForm()
     const onSubmit = (data) => {
-        console.log(data)
+        axios.post(`${import.meta.env.VITE_API_URL}/api/v1/users/register`, data).then((response) => {
+            console.log(response)
+            toast.success(response.data.message, {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                
+            });
+        }).catch((error) => {
+            console.log(error.response.data);
+            toast.error(error.response.data.message, {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+              
+            });
+            console.error("There was an error!", error);
+        });
     }
     return (
         <>
@@ -32,7 +62,7 @@ export default function Register() {
                 </div>
 
                 <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                    <form action="#" method="POST" className="space-y-6">
+                    <form onSubmit={handleSubmit(onSubmit)} method="POST" className="space-y-6">
                         <div>
                             <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
                                 Full Name
@@ -49,7 +79,7 @@ export default function Register() {
                                 />
                             </div>
                         </div>
-                         <div>
+                        <div>
                             <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
                                 User Name
                             </label>
@@ -123,6 +153,20 @@ export default function Register() {
                         </a>
                     </p>
                 </div>
+                <ToastContainer
+                    position="top-right"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick={false}
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="light"
+                    
+                />
+
             </div>
         </>
     )
