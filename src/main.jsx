@@ -7,6 +7,8 @@ import { RouterProvider } from "react-router/dom";
 import App from './App.jsx'
 import Register from './pages/register.jsx';
 import Login from './pages/login.jsx';
+// import profile from './pages/profile.jsx';
+import Profile from './pages/profile.jsx';
 
 const router = createBrowserRouter([
   {
@@ -22,7 +24,8 @@ const router = createBrowserRouter([
     element: <Register/>
   },
   {
-
+    path: "/user/profile",
+    element: <Profile />
   }
 ]);
 
