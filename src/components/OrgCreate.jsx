@@ -14,7 +14,8 @@ function OrgCreate({ onClose }) {
   } = useForm()
   const onSubmit = (data) => {
     api.post(`/api/v1/users/org/create`, data).then((response) => {
-      console.log(response)
+      console.log(response.data.message)
+      onClose();
       toast.success(response.data.message, {
         position: "top-right",
         autoClose: 5000,
@@ -26,7 +27,6 @@ function OrgCreate({ onClose }) {
         theme: "light",
 
       });
-      onClose()
     }).catch((error) => {
       console.log(error.response.data);
       toast.error(error.response.data.message, {

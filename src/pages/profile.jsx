@@ -1,10 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import Profileheader from '../components/profileheader'
 import OrgCreate from '../components/OrgCreate'
+import api from '../ApiInception'
 
 function Profile() {
     const [showCreateOrg, setShowCreateOrg] = useState(false)
-
+    const [profileDetaile, setProfileDetaile] = useState()
+    useEffect(() => {
+      api.get('/api/v1/users/profile').then((response) => {
+        console.log(response.data)
+        setProfileDetaile(response.data);
+      }).catch((error) => {
+        console.error("There was an error!", error);
+      });
+    }, [])
+    if(!profileDetaile){
+      return <div>Loading...</div>
+    }
     return (
         <div className="flex h-screen">
             {/* Left Sidebar for Task Management */}
@@ -19,18 +31,13 @@ function Profile() {
                     </button>
                 </div>
                 <ul className="list-none p-0">
-                    <li className="mb-2">
-                        <a href="#" className="text-gray-800 no-underline hover:text-blue-600">All Tasks</a>
-                    </li>
-                    <li className="mb-2">
-                        <a href="#" className="text-gray-800 no-underline hover:text-blue-600">Pending Tasks</a>
-                    </li>
-                    <li className="mb-2">
-                        <a href="#" className="text-gray-800 no-underline hover:text-blue-600">Completed Tasks</a>
-                    </li>
-                    <li className="mb-2">
-                        <a href="#" className="text-gray-800 no-underline hover:text-blue-600">Assigned to Me</a>
-                    </li>
+                    {profileDetaile.organizations.map((org) => (
+                        <li key={org._id} className="mb-2">
+                            <a href="#" className="text-gray-800 no-underline hover:text-blue-600">{org.name}</a>
+                        </li>
+                    ))}
+                  
+                  
                 </ul>
             </div>
             {/* Right Side - Empty for Tasks */}
