@@ -1,0 +1,145 @@
+import React, { useState,useEffect } from 'react'
+import Profileheader from '../components/profileheader'
+import SprintCreate from '../components/SprintCreate'
+import api from '../ApiInception'
+import { useParams } from 'react-router'
+import SprintBlock from '../components/SprintBlock'
+function ShowOrgDetails() {
+    const [activeTab, setActiveTab] = useState('sprint')
+    const [showCreateSprint, setShowCreateSprint] = useState(false)
+    const [orgDetails, setorgDetails] = useState()
+    const { orgId } = useParams();
+    const tabs = [
+        { id: 'sprint', label: 'Sprint' },
+        { id: 'analytics', label: 'Analytics' },
+        { id: 'team', label: 'Team' },
+        { id: 'tasks', label: 'Tasks' }
+    ]
+    useEffect(() => {
+      api.get(`/api/v1/org/fetch/${orgId}`).then((response) => {
+        console.log(response.data)
+        setorgDetails(response.data);
+        // setProfileDetaile(response.data);
+      }).catch((error) => {
+        console.error("There was an error!", error);
+      });
+    }, [])
+    if(!orgDetails){
+      return <div>Loading...</div>
+    }
+    return (
+        <div>
+            <div className="flex h-screen">
+                {/* Left Sidebar for Task Management */}
+                <div className="w-64 bg-gray-100 p-5 border-r border-gray-300">
+                    <div className="flex justify-between items-center w-full h-10 mb-4">
+                        <h3 className="text-lg font-semibold">Organizations</h3>
+                        <button
+                            className="text-2xl text-blue-600 hover:text-blue-800 font-bold"
+                        // onClick={() => setShowCreateOrg(true)}
+                        >
+                            +
+                        </button>
+                    </div>
+                    <ul className="list-none p-0">
+                        {/* {profileDetaile.organizations.map((org) => (
+                        <li key={org._id} className="mb-2">
+                            <a href="#" className="text-gray-800 no-underline hover:text-blue-600">{org.name}</a>
+                        </li>
+                    ))} */}
+
+
+                    </ul>
+                </div>
+                {/* Right Side - Tab Content */}
+                <div className="flex-1 bg-white">
+                    <Profileheader />
+
+                    {/* Tab Navigation */}
+                    <div className="border-b border-gray-300 bg-gray-50">
+                        <div className="flex items-center justify-between px-6">
+                            <div className="flex gap-8">
+                                {tabs.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`py-4 px-2 font-medium text-sm transition-colors border-b-2 ${activeTab === tab.id
+                                                ? 'text-blue-600 border-blue-600'
+                                                : 'text-gray-600 border-transparent hover:text-gray-800'
+                                            }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setShowCreateSprint(true)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                            >
+                                + Create Sprint
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="p-6">
+                        {activeTab === 'sprint' && (
+                            <div>
+                                <h2 className="text-2xl font-bold mb-4">Sprints</h2>
+                                {orgDetails && orgDetails.sprints && orgDetails.sprints.map((sprint) => (
+                                    <SprintBlock
+                                        key={sprint._id}
+                                        sprint={sprint}
+                                        onEdit={() => {}}
+                                        onView={() => {}}
+                                        onDelete={() => {}}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'analytics' && (
+                            <div>
+                                <h2 className="text-2xl font-bold mb-4">Analytics</h2>
+                                <p className="text-gray-600">Analytics and reports will be displayed here.</p>
+                            </div>
+                        )}
+
+                        {activeTab === 'team' && (
+                            <div>
+                                <h2 className="text-2xl font-bold mb-4">Team</h2>
+                                <p className="text-gray-600">Team members and details will be displayed here.</p>
+                            </div>
+                        )}
+
+                        {activeTab === 'tasks' && (
+                            <div>
+                                <h2 className="text-2xl font-bold mb-4">Tasks</h2>
+                                <p className="text-gray-600">Tasks and activities will be displayed here.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Create Sprint Modal */}
+                    {showCreateSprint && (
+                        <div className="fixed inset-0 flex items-center justify-center z-50">
+                            <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                                <button
+                                    onClick={() => setShowCreateSprint(false)}
+                                    className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                                >
+                                    &times;
+                                </button>
+                                {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
+                                <SprintCreate onClose={() => setShowCreateSprint(false)} orgId={orgId} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+                {/* Modal for Create Organization */}
+            </div>
+        </div>
+    )
+}
+
+export default ShowOrgDetails

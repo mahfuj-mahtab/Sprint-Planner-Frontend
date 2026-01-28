@@ -2,6 +2,7 @@ import React, { useState,useEffect } from 'react'
 import Profileheader from '../components/profileheader'
 import OrgCreate from '../components/OrgCreate'
 import api from '../ApiInception'
+import { Link } from 'react-router'
 
 function Profile() {
     const [showCreateOrg, setShowCreateOrg] = useState(false)
@@ -33,7 +34,7 @@ function Profile() {
                 <ul className="list-none p-0">
                     {profileDetaile.organizations.map((org) => (
                         <li key={org._id} className="mb-2">
-                            <a href="#" className="text-gray-800 no-underline hover:text-blue-600">{org.name}</a>
+                            <Link to={`/user/profile/org/${org._id}`} className="text-gray-800 no-underline hover:text-blue-600">{org.name}</Link>
                         </li>
                     ))}
                   
