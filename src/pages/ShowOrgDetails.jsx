@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Profileheader from '../components/profileheader'
 import SprintCreate from '../components/SprintCreate'
 import api from '../ApiInception'
@@ -16,17 +16,31 @@ function ShowOrgDetails() {
         { id: 'tasks', label: 'Tasks' }
     ]
     useEffect(() => {
-      api.get(`/api/v1/org/fetch/${orgId}`).then((response) => {
-        console.log(response.data)
-        setorgDetails(response.data);
-        // setProfileDetaile(response.data);
-      }).catch((error) => {
-        console.error("There was an error!", error);
-      });
+        api.get(`/api/v1/org/fetch/${orgId}`).then((response) => {
+            console.log(response.data)
+            setorgDetails(response.data);
+            // setProfileDetaile(response.data);
+        }).catch((error) => {
+            console.error("There was an error!", error);
+        });
     }, [])
-    if(!orgDetails){
-      return <div>Loading...</div>
+
+    const handleDeleteSprint = (sprintId) => {
+        api.delete(`/api/v1/org/delete/sprint/${orgId}/${sprintId}`).then((response) => {
+            console.log(response.data)
+            // Refresh organization details after deletion
+            return api.get(`/api/v1/org/fetch/${orgId}`);
+        }).then((response) => {
+            setorgDetails(response.data);
+        }).catch((error) => {
+            console.error("There was an error!", error);
+        });
     }
+
+    if (!orgDetails) {
+        return <div>Loading...</div>
+    }
+
     return (
         <div>
             <div className="flex h-screen">
@@ -64,8 +78,8 @@ function ShowOrgDetails() {
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
                                         className={`py-4 px-2 font-medium text-sm transition-colors border-b-2 ${activeTab === tab.id
-                                                ? 'text-blue-600 border-blue-600'
-                                                : 'text-gray-600 border-transparent hover:text-gray-800'
+                                            ? 'text-blue-600 border-blue-600'
+                                            : 'text-gray-600 border-transparent hover:text-gray-800'
                                             }`}
                                     >
                                         {tab.label}
@@ -90,9 +104,9 @@ function ShowOrgDetails() {
                                     <SprintBlock
                                         key={sprint._id}
                                         sprint={sprint}
-                                        onEdit={() => {}}
-                                        onView={() => {}}
-                                        onDelete={() => {}}
+                                        onEdit={() => { }}
+                                        onView={() => { }}
+                                        onDelete={() => { handleDeleteSprint(sprint._id) }}
                                     />
                                 ))}
                             </div>
