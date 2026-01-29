@@ -11,6 +11,7 @@ import Login from './pages/login.jsx';
 // import profile from './pages/profile.jsx';
 import Profile from './pages/profile.jsx';
 import ShowOrgDetails from './pages/ShowOrgDetails.jsx';
+import SprintDetails from './pages/sprintDetails.jsx';
 
 const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
   {
     path: "/user/profile/org/:orgId",
     element : <ShowOrgDetails/>
+  },
+    {
+    path: "/user/profile/org/:orgId/sprint/:sprintId",
+    element : <SprintDetails/>
   }
 ]);
 

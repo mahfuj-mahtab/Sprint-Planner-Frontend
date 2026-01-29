@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react'
 import Profileheader from '../components/profileheader'
 import SprintCreate from '../components/SprintCreate'
 import api from '../ApiInception'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import SprintBlock from '../components/SprintBlock'
+import LeftSidebar from '../components/LeftSidebar'
 function ShowOrgDetails() {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showCreateSprint, setShowCreateSprint] = useState(false)
     const [orgDetails, setorgDetails] = useState()
     const { orgId } = useParams();
+    const navigate = useNavigate()
     const tabs = [
         { id: 'sprint', label: 'Sprint' },
         { id: 'analytics', label: 'Analytics' },
@@ -36,7 +38,10 @@ function ShowOrgDetails() {
             console.error("There was an error!", error);
         });
     }
-
+    const handleViewSprint = (sprintId) => {
+        // Logic to view sprint details can be implemented here
+        navigate(`/user/profile/org/${orgId}/sprint/${sprintId}`);
+    }
     if (!orgDetails) {
         return <div>Loading...</div>
     }
@@ -46,24 +51,7 @@ function ShowOrgDetails() {
             <div className="flex h-screen">
                 {/* Left Sidebar for Task Management */}
                 <div className="w-64 bg-gray-100 p-5 border-r border-gray-300">
-                    <div className="flex justify-between items-center w-full h-10 mb-4">
-                        <h3 className="text-lg font-semibold">Organizations</h3>
-                        <button
-                            className="text-2xl text-blue-600 hover:text-blue-800 font-bold"
-                        // onClick={() => setShowCreateOrg(true)}
-                        >
-                            +
-                        </button>
-                    </div>
-                    <ul className="list-none p-0">
-                        {/* {profileDetaile.organizations.map((org) => (
-                        <li key={org._id} className="mb-2">
-                            <a href="#" className="text-gray-800 no-underline hover:text-blue-600">{org.name}</a>
-                        </li>
-                    ))} */}
-
-
-                    </ul>
+                   <LeftSidebar/>
                 </div>
                 {/* Right Side - Tab Content */}
                 <div className="flex-1 bg-white">
@@ -105,7 +93,7 @@ function ShowOrgDetails() {
                                         key={sprint._id}
                                         sprint={sprint}
                                         onEdit={() => { }}
-                                        onView={() => { }}
+                                        onView={() => handleViewSprint(sprint._id)}
                                         onDelete={() => { handleDeleteSprint(sprint._id) }}
                                     />
                                 ))}
