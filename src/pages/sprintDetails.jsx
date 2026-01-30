@@ -9,9 +9,10 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
+import TaskCreate from '../components/TaskCreate'
 function SprintDetails() {
     const [activeTab, setActiveTab] = useState('sprint')
-    const [showCreateSprint, setShowCreateSprint] = useState(false)
+    const [showTaskCreate, setShowCreateTask] = useState(false)
     const { orgId, sprintId } = useParams();
     const [orgDetails, setorgDetails] = useState()
     const [sprintDetails, setSprintDetails] = useState()
@@ -61,10 +62,10 @@ function SprintDetails() {
                                 ))}
                             </div>
                             <button
-                                onClick={() => setShowCreateSprint(true)}
+                                onClick={() => setShowCreateTask(true)}
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
                             >
-                                + Create Sprint
+                                + Create Task
                             </button>
                         </div>
                     </div>
@@ -82,68 +83,68 @@ function SprintDetails() {
                                                 <AccordionTrigger className="text-lg font-semibold pl-2">{team.name} Team</AccordionTrigger>
                                                 <AccordionContent>
 
-                                                    {team.tasks.length === 0 ? <div className="p-4 text-gray-600">No tasks available for this team.</div> : 
-                                                    
-                                                    <div className="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-                                                        <table className="w-full text-sm text-left rtl:text-right text-body">
-                                                            <thead className="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-default">
-                                                                <tr>
-                                                                    <th scope="col" class="px-6 py-3 font-medium">
-                                                                        Task Title
-                                                                    </th>
-                                                                    <th scope="col" class="px-6 py-3 font-medium">
-                                                                        Assignee
-                                                                    </th>
-                                                                    <th scope="col" class="px-6 py-3 font-medium">
-                                                                        Start Date
-                                                                    </th>
-                                                                    <th scope="col" class="px-6 py-3 font-medium">
-                                                                        End Date
-                                                                    </th>
-                                                                    <th scope="col" class="px-6 py-3 font-medium">
-                                                                        Status
-                                                                    </th>
-                                                                    <th scope="col" class="px-6 py-3 font-medium">
-                                                                        Priority
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <tr class="bg-neutral-primary border-b border-default">
-                                                                    <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
-                                                                        Apple MacBook Pro 17"
-                                                                    </th>
-                                                                    <td class="px-6 py-4">
-                                                                        Silver
-                                                                    </td>
-                                                                    <td class="px-6 py-4">
-                                                                        Laptop
-                                                                    </td>
-                                                                    <td class="px-6 py-4">
-                                                                        $2999
-                                                                    </td>
-                                                                    <td class="px-6 py-4">
-                                                                        Pending
-                                                                    </td>
-                                                                    <td class="px-6 py-4">
-                                                                        <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">High</span>
-                                                                        {/* <span class="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Low</span>
-                                                                   <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Medium</span> */}
-                                                                    </td>
-                                                                </tr>
+                                                    {team.tasks.length === 0 ? <div className="p-4 text-gray-600">No tasks available for this team.</div> :
 
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
+                                                        <div className="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                                                            <table className="w-full text-sm text-left rtl:text-right text-body">
+                                                                <thead className="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-default">
+                                                                    <tr>
+                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                            Task Title
+                                                                        </th>
+                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                            Assignee
+                                                                        </th>
+                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                            Start Date
+                                                                        </th>
+                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                            End Date
+                                                                        </th>
+                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                            Status
+                                                                        </th>
+                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                            Priority
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr class="bg-neutral-primary border-b border-default">
+                                                                        <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
+                                                                            Apple MacBook Pro 17"
+                                                                        </th>
+                                                                        <td class="px-6 py-4">
+                                                                            Silver
+                                                                        </td>
+                                                                        <td class="px-6 py-4">
+                                                                            Laptop
+                                                                        </td>
+                                                                        <td class="px-6 py-4">
+                                                                            $2999
+                                                                        </td>
+                                                                        <td class="px-6 py-4">
+                                                                            Pending
+                                                                        </td>
+                                                                        <td class="px-6 py-4">
+                                                                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">High</span>
+                                                                            {/* <span class="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Low</span>
+                                                                   <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Medium</span> */}
+                                                                        </td>
+                                                                    </tr>
+
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
                                                     }
 
                                                 </AccordionContent>
                                             </AccordionItem>
                                         </Accordion>
-                                        <Link to="#" class="inline-block mt-4 ml-5 text-gray-900 font-semibold hover:underline"> + Add Task</Link>
+                                        <button onClick={() => setShowCreateTask(true)} className="inline-block mt-4 ml-5 text-gray-900 font-semibold hover:underline"> + Add Task</button>
                                     </div>
                                 )}
-                                
+
 
 
                             </div>
@@ -173,6 +174,20 @@ function SprintDetails() {
                 </div>
 
             </div>
+            {showTaskCreate && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 ">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                        <button
+                            onClick={() => setShowCreateTask(false)}
+                            className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                        >
+                            &times;
+                        </button>
+                        {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
+                        <TaskCreate onClose={() => setShowCreateTask(false)} orgId={orgId} />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
