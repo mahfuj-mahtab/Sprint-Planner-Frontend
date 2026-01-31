@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function TaskCreate({ onClose, orgId }) {
+function TaskCreate({ onClose, orgId, sprintId }) {
     const [sprintName, setSprintName] = useState('')
     const [description, setDescription] = useState('')
     const [selectedMembers, setSelectedMembers] = useState([])
@@ -37,36 +37,36 @@ function TaskCreate({ onClose, orgId }) {
     const onSubmit = (data) => {
         console.log(data);
         console.log('Selected Members:', selectedMembers);
-        // const submitData = { ...data, assignTo: selectedMembers }
-        // api.post(`/api/v1/org/add/sprint/${orgId}`, submitData).then((response) => {
-        //     console.log(response.data.message)
-        //     onClose();
-        //     toast.success(response.data.message, {
-        //         position: "top-right",
-        //         autoClose: 5000,
-        //         hideProgressBar: false,
-        //         closeOnClick: false,
-        //         pauseOnHover: true,
-        //         draggable: true,
-        //         progress: undefined,
-        //         theme: "light",
+        const submitData = { ...data, members: selectedMembers }
+        api.post(`/api/v1/org/team/add/task/org/${orgId}/sprint/${sprintId}`, submitData).then((response) => {
+            console.log(response.data.message)
+            onClose();
+            toast.success(response.data.message, {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
 
-        //     });
-        // }).catch((error) => {
-        //     console.log(error.response.data);
-        //     toast.error(error.response.data.message, {
-        //         position: "top-right",
-        //         autoClose: 5000,
-        //         hideProgressBar: false,
-        //         closeOnClick: false,
-        //         pauseOnHover: true,
-        //         draggable: true,
-        //         progress: undefined,
-        //         theme: "light",
+            });
+        }).catch((error) => {
+            console.log(error.response.data);
+            toast.error(error.response.data.message, {  
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
 
-        //     });
-        //     console.error("There was an error!", error);
-        // });
+            });
+            console.error("There was an error!", error);
+        });
     }
     useEffect(() => {
         api.get(`/api/v1/org/team/fetch/${orgId}`).then((response) => {
@@ -106,18 +106,20 @@ function TaskCreate({ onClose, orgId }) {
                             <label for="brand" className="block mb-2 text-sm font-medium text-gray-900">Status</label>
                             <select name="status" id="status" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("status", { required: true })}>
                                 <option value="">Select Status</option>
-                                <option value="todo">To Do</option>
-                                <option value="inprogress">In Progress</option>
-                                <option value="done">Done</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Work In Progress">Work In Progress</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Completed">Completed</option>
                             </select>
                         </div>
                         <div className="w-full">
                             <label for="price" className="block mb-2 text-sm font-medium text-gray-900">Priority</label>
                             <select name="priority" id="priority" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("priority", { required: true })}>
                                 <option value="">Select Priority</option>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
                             </select>
                         </div>
 

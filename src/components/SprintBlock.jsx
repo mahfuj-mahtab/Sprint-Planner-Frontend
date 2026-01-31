@@ -1,5 +1,5 @@
 import React from 'react'
-
+import { convertDate } from '../utils/utils'
 function SprintBlock({ sprint = {}, onEdit, onDelete, onView }) {
   const {
     name = 'Sprint 1',
@@ -20,11 +20,7 @@ function SprintBlock({ sprint = {}, onEdit, onDelete, onView }) {
       default: return 'bg-gray-100 text-gray-800'
     }
   }
-  const convertDate = (dateStr) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, options);
-  }
+ 
 
   return (
     <div className='w-full bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 mb-3'>
