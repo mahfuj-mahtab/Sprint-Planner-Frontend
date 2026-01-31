@@ -203,7 +203,7 @@ function SprintDetails() {
                                 <h2 className="text-2xl font-bold mb-4">Team</h2>
                                 {sprintDetails?.teams && sprintDetails?.teams.length > 0 ? 
                                     sprintDetails?.teams.map((team, index) => (
-                                        <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { }} onRemoveMember={() => { }} />
+                                        <TeamCard key={index} members={team.members}  teamName={team.name} onAddMember={() => { }} onRemoveMember={() => { }} orgId={orgId} teamId={team._id} />
                                     ))
                                  : (
                                     <p className="text-gray-500">No teams available for this sprint.</p>
