@@ -52,7 +52,7 @@ function ShowOrgDetails() {
         <div>
             <div className="flex h-screen">
                 {/* Left Sidebar for Task Management */}
-                <div className="w-64 bg-gray-100 p-5 border-r border-gray-300">
+                <div className="w-64 bg-gray-100 p-5 border-r border-gray-300 h-full">
                     <LeftSidebar />
                 </div>
                 {/* Right Side - Tab Content */}
