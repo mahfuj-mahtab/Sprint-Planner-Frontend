@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function MemberAddToTeam({ onClose, orgId,teamId }) {
+function MemberAddToTeam({ onClose, orgId,teamId , onAddMember}) {
     const [orgDetails, setOrgDetails] = useState()
     const {
         register,
@@ -27,6 +27,9 @@ function MemberAddToTeam({ onClose, orgId,teamId }) {
                 theme: "light",
 
             });
+            if (onAddMember) {
+                onAddMember();
+            }
         }).catch((error) => {
             console.log(error.response.data);
             toast.error(error.response.data.message, {

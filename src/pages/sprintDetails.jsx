@@ -10,6 +10,8 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
+import { ToastContainer, toast } from 'react-toastify';
+
 import TaskCreate from '../components/TaskCreate'
 import StatusShow from '../components/PriorityShow'
 import PriorityShow from '../components/PriorityShow'
@@ -30,7 +32,7 @@ function SprintDetails() {
         { id: 'team', label: 'Team' },
         { id: 'tasks', label: 'Tasks' }
     ]
-    useEffect(() => {
+    const fetchSprintDetails = () => {
         api.get(`/api/v1/org/sprint/details/${sprintId}`).then((response) => {
             console.log(response.data)
             setSprintDetails(response.data);
@@ -39,7 +41,41 @@ function SprintDetails() {
         }).catch((error) => {
             console.error("There was an error!", error);
         });
-    }, [])
+    }
+    const handleTaskDelete = (taskId, teamId) => {
+        api.delete(`/api/v1/org/team/delete/task/org/${orgId}/sprint/${sprintId}/${taskId}/team/${teamId}`).then((response) => {
+            console.log(response.data)
+            toast.success(response.data.message, {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+
+            });
+            // Refresh sprint details after deletion
+            fetchSprintDetails();
+        }).catch((error) => {
+            console.error("There was an error!", error);
+            toast.error(error.response.data.message, {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+
+            });
+        });
+    }
+    useEffect(() => {
+        fetchSprintDetails();
+    }, [sprintId, orgId]);
     if (!sprintDetails) {
         return <div>Loading...</div>
     }
@@ -71,18 +107,18 @@ function SprintDetails() {
                             </div>
                             <div className="flex gap-4">
 
-                            <button
-                                onClick={() => setShowCreateTeam(true)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
-                            >
-                                + Create Team
-                            </button>
-                             <button
-                                onClick={() => setShowCreateTask(true)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
-                            >
-                                + Create Task
-                            </button>
+                                <button
+                                    onClick={() => setShowCreateTeam(true)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                                >
+                                    + Create Team
+                                </button>
+                                <button
+                                    onClick={() => setShowCreateTask(true)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                                >
+                                    + Create Task
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -104,25 +140,28 @@ function SprintDetails() {
 
                                                         <div className="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
                                                             <table className="w-full text-sm text-left rtl:text-right text-body">
-                                                                <thead className="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-default">
+                                                                <thead className="bg-gray-50 text-gray-700 border-b border-gray-200 font-semibold">
                                                                     <tr>
-                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                        <th scope="col" class="px-6 py-3">
                                                                             Task Title
                                                                         </th>
-                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                        <th scope="col" class="px-6 py-3">
                                                                             Assignee
                                                                         </th>
-                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                        <th scope="col" class="px-6 py-3">
                                                                             Start Date
                                                                         </th>
-                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                        <th scope="col" class="px-6 py-3">
                                                                             End Date
                                                                         </th>
-                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                        <th scope="col" class="px-6 py-3">
                                                                             Status
                                                                         </th>
-                                                                        <th scope="col" class="px-6 py-3 font-medium">
+                                                                        <th scope="col" class="px-6 py-3">
                                                                             Priority
+                                                                        </th>
+                                                                        <th scope="col" class="px-6 py-3">
+                                                                            Actions
                                                                         </th>
                                                                     </tr>
                                                                 </thead>
@@ -149,6 +188,19 @@ function SprintDetails() {
                                                                                 {/* {task.priority}
                                                                                  */}
                                                                                 <PriorityShow status={task.priority} />
+                                                                            </td>
+                                                                            <td class="">
+                                                                                <button className="text-blue-600 hover:text-blue-800">
+                                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                                                                </button>
+                                                                                <button className="ml-4 text-green-600 hover:text-green-800">
+                                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                                                </button>
+                                                                                <button 
+                                                                                onClick = {() => {handleTaskDelete(task._id, team._id)}}
+                                                                                className="ml-4 text-red-600 hover:text-red-800">
+                                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                                </button>   
                                                                             </td>
                                                                         </tr>
                                                                     ))}
@@ -201,13 +253,13 @@ function SprintDetails() {
                         {activeTab === 'team' && (
                             <div>
                                 <h2 className="text-2xl font-bold mb-4">Team</h2>
-                                {sprintDetails?.teams && sprintDetails?.teams.length > 0 ? 
+                                {sprintDetails?.teams && sprintDetails?.teams.length > 0 ?
                                     sprintDetails?.teams.map((team, index) => (
-                                        <TeamCard key={index} members={team.members}  teamName={team.name} onAddMember={() => { }} onRemoveMember={() => { }} orgId={orgId} teamId={team._id} />
+                                        <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { fetchSprintDetails() }} onRemoveMember={() => { fetchSprintDetails() }} orgId={orgId} teamId={team._id} />
                                     ))
-                                 : (
-                                    <p className="text-gray-500">No teams available for this sprint.</p>
-                                )}
+                                    : (
+                                        <p className="text-gray-500">No teams available for this sprint.</p>
+                                    )}
                             </div>
                         )}
 
@@ -231,11 +283,11 @@ function SprintDetails() {
                             &times;
                         </button>
                         {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-                        <TaskCreate onClose={() => setShowCreateTask(false)} orgId={orgId} sprintId={sprintId} />
+                        <TaskCreate onClose={() => setShowCreateTask(false)} orgId={orgId} sprintId={sprintId} onTaskCreated={() => fetchSprintDetails()} />
                     </div>
                 </div>
             )}
-              {showTeamCreate && (
+            {showTeamCreate && (
                 <div className="fixed inset-0 flex items-center justify-center z-50 ">
                     <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
                         <button
@@ -245,10 +297,23 @@ function SprintDetails() {
                             &times;
                         </button>
                         {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-                        <TeamCreate onClose={() => setShowCreateTeam(false)} orgId={orgId} />
+                        <TeamCreate onClose={() => setShowCreateTeam(false)} orgId={orgId} onTeamCreated={() => fetchSprintDetails()} />
                     </div>
                 </div>
             )}
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick={false}
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+
+            />
         </div>
     )
 }

@@ -5,6 +5,8 @@ import api from '../ApiInception'
 import { useNavigate, useParams } from 'react-router'
 import SprintBlock from '../components/SprintBlock'
 import LeftSidebar from '../components/LeftSidebar'
+import { ToastContainer, toast } from 'react-toastify';
+
 function ShowOrgDetails() {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showCreateSprint, setShowCreateSprint] = useState(false)
@@ -51,7 +53,7 @@ function ShowOrgDetails() {
             <div className="flex h-screen">
                 {/* Left Sidebar for Task Management */}
                 <div className="w-64 bg-gray-100 p-5 border-r border-gray-300">
-                   <LeftSidebar/>
+                    <LeftSidebar />
                 </div>
                 {/* Right Side - Tab Content */}
                 <div className="flex-1 bg-white">
@@ -140,6 +142,19 @@ function ShowOrgDetails() {
                 </div>
                 {/* Modal for Create Organization */}
             </div>
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick={false}
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+
+            />
         </div>
     )
 }

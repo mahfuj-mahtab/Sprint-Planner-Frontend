@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function TaskCreate({ onClose, orgId, sprintId }) {
+function TaskCreate({ onClose, orgId, sprintId, onTaskCreated }) {
     const [sprintName, setSprintName] = useState('')
     const [description, setDescription] = useState('')
     const [selectedMembers, setSelectedMembers] = useState([])
@@ -52,6 +52,9 @@ function TaskCreate({ onClose, orgId, sprintId }) {
                 theme: "light",
 
             });
+            if (onTaskCreated) {
+                onTaskCreated();
+            }
         }).catch((error) => {
             console.log(error.response.data);
             toast.error(error.response.data.message, {  

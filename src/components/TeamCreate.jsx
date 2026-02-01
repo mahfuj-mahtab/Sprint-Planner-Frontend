@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function TeamCreate({onClose,orgId}) {
+function TeamCreate({onClose,orgId, onTeamCreated}) {
     const [sprintName, setSprintName] = useState('')
     const [description, setDescription] = useState('')
     const {
@@ -27,6 +27,9 @@ function TeamCreate({onClose,orgId}) {
                 theme: "light",
 
             });
+            if (onTeamCreated) {
+                onTeamCreated();
+            }
         }).catch((error) => {
             console.log(error.response.data);
             toast.error(error.response.data.message, {
