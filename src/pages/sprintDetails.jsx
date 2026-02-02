@@ -18,11 +18,13 @@ import PriorityShow from '../components/PriorityShow'
 import SHowStatus from '../components/SHowStatus'
 import TeamCard from '../components/TeamCard'
 import TeamCreate from '../components/TeamCreate'
+import TaskEdit from '../components/TaskEdit'
 function SprintDetails() {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showTaskCreate, setShowCreateTask] = useState(false)
     const [showTeamCreate, setShowCreateTeam] = useState(false)
-
+    const [showTaskEdit, setShowTaskEdit] = useState(false)
+    const [editingTaskId, setEditingTaskId] = useState(null)
     const { orgId, sprintId } = useParams();
     const [orgDetails, setorgDetails] = useState()
     const [sprintDetails, setSprintDetails] = useState()
@@ -193,7 +195,12 @@ function SprintDetails() {
                                                                                 <button className="text-blue-600 hover:text-blue-800">
                                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                                                                 </button>
-                                                                                <button className="ml-4 text-green-600 hover:text-green-800">
+                                                                                <button 
+                                                                                onClick={() => {
+                                                                                    setEditingTaskId(task._id);
+                                                                                    setShowTaskEdit(true);
+                                                                                }}
+                                                                                className="ml-4 text-green-600 hover:text-green-800">
                                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                                                 </button>
                                                                                 <button 
@@ -284,6 +291,20 @@ function SprintDetails() {
                         </button>
                         {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
                         <TaskCreate onClose={() => setShowCreateTask(false)} orgId={orgId} sprintId={sprintId} onTaskCreated={() => fetchSprintDetails()} />
+                    </div>
+                </div>
+            )}
+             {showTaskEdit && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 ">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                        <button
+                            onClick={() => setShowTaskEdit(false)}
+                            className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                        >
+                            &times;
+                        </button>
+                        {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
+                        <TaskEdit onClose={() => setShowTaskEdit(false)} orgId={orgId} sprintId={sprintId} onTaskCreated={() => fetchSprintDetails()} taskId={editingTaskId} />
                     </div>
                 </div>
             )}
