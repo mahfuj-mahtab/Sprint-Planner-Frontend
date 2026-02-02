@@ -19,6 +19,7 @@ import SHowStatus from '../components/SHowStatus'
 import TeamCard from '../components/TeamCard'
 import TeamCreate from '../components/TeamCreate'
 import TaskEdit from '../components/TaskEdit'
+import TeamWiseAnalytics from '../components/TeamWiseAnalytics'
 function SprintDetails() {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showTaskCreate, setShowCreateTask] = useState(false)
@@ -252,8 +253,8 @@ function SprintDetails() {
 
                         {activeTab === 'analytics' && (
                             <div>
-                                <h2 className="text-2xl font-bold mb-4">Analytics</h2>
-                                <p className="text-gray-600">Analytics and reports will be displayed here.</p>
+                                {/* <h2 className="text-2xl font-bold mb-4">Analytics</h2> */}
+                              <TeamWiseAnalytics teams={sprintDetails?.teams}/>
                             </div>
                         )}
 
