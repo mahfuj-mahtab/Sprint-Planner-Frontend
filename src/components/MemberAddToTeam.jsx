@@ -1,10 +1,12 @@
-import React, { useState,useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function MemberAddToTeam({ onClose, orgId,teamId , onAddMember}) {
+import MemberAddToOrg from './MemberAddToOrg';
+function MemberAddToTeam({ onClose, orgId, teamId, onAddMember, fetchOrg }) {
     const [orgDetails, setOrgDetails] = useState()
+    const [memberAddShow, setMemberAddShow] = useState(false)
     const {
         register,
         handleSubmit,
@@ -46,16 +48,19 @@ function MemberAddToTeam({ onClose, orgId,teamId , onAddMember}) {
             console.error("There was an error!", error);
         });
     }
+    const fetchOrgDetails = () => {
+        api.get(`/api/v1/org/fetch/${orgId}`).then((response) => {
+            console.log(response.data)
+            setOrgDetails(response.data);
+            // setProfileDetaile(response.data);
+        }).catch((error) => {
+            console.error("There was an error!", error);
+        });
+    }
     useEffect(() => {
-      api.get(`/api/v1/org/fetch/${orgId}`).then((response) => {
-          console.log(response.data)
-          setOrgDetails(response.data);
-          // setProfileDetaile(response.data);
-      }).catch((error) => {
-          console.error("There was an error!", error);
-      });
+        fetchOrgDetails()
     }, [])
-    if(!orgDetails){
+    if (!orgDetails) {
         return <div>Loading...</div>
     }
     return (
@@ -66,21 +71,23 @@ function MemberAddToTeam({ onClose, orgId,teamId , onAddMember}) {
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
                         <div className="sm:col-span-2">
                             <label for="name" className="block mb-2 text-sm font-medium text-gray-900">Member</label>
-                           <select name="memberId" id="memberId" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("user", { required: true })}>
-                            {orgDetails && orgDetails.organization.members.map((member)=>(
-                                <option value={member.user?._id}>{member.user?.fullName}</option>
-                            ))}
-                           </select>
+                            <select name="memberId" id="memberId" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("user", { required: true })}>
+                                <option>Select Member</option>
+                                {orgDetails && orgDetails.organization.members.map((member) => (
+                                    <option value={member.user?._id}>{member.user?.fullName}</option>
+                                ))}
+                            </select>
+                            <button className='ml-[82%] mt-2 text-sm mb-1 font-semibold' onClick={() => setMemberAddShow(true)}>+ Add Member</button>
                         </div>
 
-                        <div className="sm:col-span-2">
+                        <div className="sm:col-span-2 mt-[-30px]">
                             <label for="name" className="block mb-2 text-sm font-medium text-gray-900">Role</label>
-                           <select name="role" id="role" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("role", { required: true })}>
-                            <option value="">Select a role</option>
-                            <option value="admin">Admin</option>
-                            <option value="editor">Editor</option>
-                            <option value="viewer">Viewer</option>
-                           </select>
+                            <select name="role" id="role" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("role", { required: true })}>
+                                <option value="">Select a role</option>
+                                <option value="admin">Admin</option>
+                                <option value="editor">Editor</option>
+                                <option value="viewer">Viewer</option>
+                            </select>
                         </div>
 
 
@@ -89,6 +96,20 @@ function MemberAddToTeam({ onClose, orgId,teamId , onAddMember}) {
                         Add Team
                     </button>
                 </form>
+                {memberAddShow && (
+                    <div className="fixed inset-0 flex items-center justify-center z-50 ">
+                        <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                            <button
+                                onClick={() => setMemberAddShow(false)}
+                                className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                            >
+                                &times;
+                            </button>
+                            {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
+                            <MemberAddToOrg onClose={() => setMemberAddShow(false)} orgId={orgId} onTeamCreated={() => onAddMember()} fetchOrgDetails={fetchOrgDetails} />
+                        </div>
+                    </div>
+                )}
             </div>
         </section></div>
     )

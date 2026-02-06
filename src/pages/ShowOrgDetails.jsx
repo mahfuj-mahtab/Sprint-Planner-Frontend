@@ -6,10 +6,16 @@ import { useNavigate, useParams } from 'react-router'
 import SprintBlock from '../components/SprintBlock'
 import LeftSidebar from '../components/LeftSidebar'
 import { ToastContainer, toast } from 'react-toastify';
+import TaskCreate from '../components/TaskCreate'
+import TeamCreate from '../components/TeamCreate'
+import MembersShow from '../components/MembersShow'
+
 
 function ShowOrgDetails() {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showCreateSprint, setShowCreateSprint] = useState(false)
+    const [showTeamCreate, setShowCreateTeam] = useState(false)
+
     const [orgDetails, setorgDetails] = useState()
     const { orgId } = useParams();
     const navigate = useNavigate()
@@ -17,9 +23,10 @@ function ShowOrgDetails() {
         { id: 'sprint', label: 'Sprint' },
         { id: 'analytics', label: 'Analytics' },
         { id: 'team', label: 'Team' },
+        { id: 'member', label: 'Members' },
         { id: 'tasks', label: 'Tasks' }
     ]
-    useEffect(() => {
+    const orgFetch = () => {
         api.get(`/api/v1/org/fetch/${orgId}`).then((response) => {
             console.log(response.data)
             setorgDetails(response.data);
@@ -27,6 +34,9 @@ function ShowOrgDetails() {
         }).catch((error) => {
             console.error("There was an error!", error);
         });
+    }
+    useEffect(() => {
+        orgFetch()
     }, [])
 
     const handleDeleteSprint = (sprintId) => {
@@ -76,12 +86,21 @@ function ShowOrgDetails() {
                                     </button>
                                 ))}
                             </div>
-                            <button
-                                onClick={() => setShowCreateSprint(true)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
-                            >
-                                + Create Sprint
-                            </button>
+                            <div className="flex gap-4">
+
+                                <button
+                                    onClick={() => setShowCreateTeam(true)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                                >
+                                    + Create Team
+                                </button>
+                                <button
+                                    onClick={() => setShowCreateSprint(true)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                                >
+                                    + Create Sprint
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -97,6 +116,7 @@ function ShowOrgDetails() {
                                         onEdit={() => { }}
                                         onView={() => handleViewSprint(sprint._id)}
                                         onDelete={() => { handleDeleteSprint(sprint._id) }}
+                                        fetchOrg = {()=>fetchOrg()}
                                     />
                                 ))}
                             </div>
@@ -115,7 +135,12 @@ function ShowOrgDetails() {
                                 <p className="text-gray-600">Team members and details will be displayed here.</p>
                             </div>
                         )}
-
+                        {activeTab === 'member' && (
+                            <div>
+                                <h2 className="text-2xl font-bold mb-4">Members</h2>
+                                <MembersShow members={orgDetails.organization?.members} orgId={orgId} />
+                            </div>
+                        )}
                         {activeTab === 'tasks' && (
                             <div>
                                 <h2 className="text-2xl font-bold mb-4">Tasks</h2>
@@ -136,6 +161,20 @@ function ShowOrgDetails() {
                                 </button>
                                 {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
                                 <SprintCreate onClose={() => setShowCreateSprint(false)} orgId={orgId} />
+                            </div>
+                        </div>
+                    )}
+                    {showTeamCreate && (
+                        <div className="fixed inset-0 flex items-center justify-center z-50 ">
+                            <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                                <button
+                                    onClick={() => setShowCreateTeam(false)}
+                                    className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                                >
+                                    &times;
+                                </button>
+                                {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
+                                <TeamCreate onClose={() => setShowCreateTeam(false)} orgId={orgId} onTeamCreated={() => fetchSprintDetails()} fetchOrg = {()=> fetchOrg() }/>
                             </div>
                         </div>
                     )}

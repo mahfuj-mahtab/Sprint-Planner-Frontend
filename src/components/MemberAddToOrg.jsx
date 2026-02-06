@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
+function MemberAddToOrg({onClose,orgId, onTeamCreated,fetchOrgDetails}) {
     const [sprintName, setSprintName] = useState('')
     const [description, setDescription] = useState('')
     const {
@@ -13,7 +13,7 @@ function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
         formState: { errors },
     } = useForm()
     const onSubmit = (data) => {
-        api.post(`/api/v1/org/team/add/${orgId}`, data).then((response) => {
+        api.patch(`/api/v1/users/org/add/member/${orgId}`, data).then((response) => {
             console.log(response.data.message)
             onClose();
             toast.success(response.data.message, {
@@ -27,9 +27,9 @@ function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
                 theme: "light",
 
             });
+            fetchOrgDetails()
             if (onTeamCreated) {
                 onTeamCreated();
-                fetchOrg()
             }
         }).catch((error) => {
             console.log(error.response.data);
@@ -55,7 +55,7 @@ function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
                         <div className="sm:col-span-2">
                             <label for="name" className="block mb-2 text-sm font-medium text-gray-900">Team Name</label>
-                            <input type="text" name="name" id="name" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Type team name" required="" {...register("name", { required: true })} />
+                            <input type="email" name="name" id="name" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Type team name" required="" {...register("email", { required: true })} />
                         </div>
                        
 
@@ -63,7 +63,7 @@ function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
 
                     </div>
                     <button type="submit" className="inline-flex items-center px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center text-white bg-blue-600 rounded-lg focus:ring-4 focus:ring-primary-200 hover:bg-primary-800">
-                        Add Team
+                        Add Member
                     </button>
                 </form>
             </div>
@@ -71,4 +71,4 @@ function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
     )
 }
 
-export default TeamCreate
+export default MemberAddToOrg

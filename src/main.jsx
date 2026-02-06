@@ -12,6 +12,7 @@ import Login from './pages/login.jsx';
 import Profile from './pages/profile.jsx';
 import ShowOrgDetails from './pages/ShowOrgDetails.jsx';
 import SprintDetails from './pages/sprintDetails.jsx';
+import MembersShow from './components/MembersShow.jsx';
 
 const router = createBrowserRouter([
   {
@@ -20,11 +21,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/user/login",
-    element:<Login/>
+    element: <Login />
   },
   {
     path: "/user/register",
-    element: <Register/>
+    element: <Register />
   },
   {
     path: "/user/profile",
@@ -32,11 +33,16 @@ const router = createBrowserRouter([
   },
   {
     path: "/user/profile/org/:orgId",
-    element : <ShowOrgDetails/>
+    element: <ShowOrgDetails />
   },
-    {
+  {
     path: "/user/profile/org/:orgId/sprint/:sprintId",
-    element : <SprintDetails/>
+    element: <SprintDetails />
+  }
+  ,
+  {
+    path: "/user/profile/org/:orgId/members/",
+    element: <MembersShow />
   }
 ]);
 

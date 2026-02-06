@@ -20,7 +20,7 @@ import TeamCard from '../components/TeamCard'
 import TeamCreate from '../components/TeamCreate'
 import TaskEdit from '../components/TaskEdit'
 import TeamWiseAnalytics from '../components/TeamWiseAnalytics'
-function SprintDetails() {
+function SprintDetails({fetchOrg}) {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showTaskCreate, setShowCreateTask] = useState(false)
     const [showTeamCreate, setShowCreateTeam] = useState(false)
@@ -263,7 +263,7 @@ function SprintDetails() {
                                 <h2 className="text-2xl font-bold mb-4">Team</h2>
                                 {sprintDetails?.teams && sprintDetails?.teams.length > 0 ?
                                     sprintDetails?.teams.map((team, index) => (
-                                        <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { fetchSprintDetails() }} onRemoveMember={() => { fetchSprintDetails() }} orgId={orgId} teamId={team._id} />
+                                        <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { fetchSprintDetails() }} onRemoveMember={() => { fetchSprintDetails() }} orgId={orgId} teamId={team._id} fetchOrg = {fetchOrg}/>
                                     ))
                                     : (
                                         <p className="text-gray-500">No teams available for this sprint.</p>

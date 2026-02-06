@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import MemberAddToTeam from "./MemberAddToTeam";
 import api from "../ApiInception";
 import { ToastContainer, toast } from 'react-toastify';
-function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamId }) {
+function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamId , fetchOrg}) {
   const [memberAddShow, setMemberAddShow] = useState(false)
   const handleMemberRemove = (memberId) => {
     // Call API to remove member from team
@@ -20,6 +20,7 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
       });
       console.log(response.data.message)
       // Refresh team details after removal
+      fetchOrg()
       if (onRemoveMember) {
         onRemoveMember();
       }
@@ -156,7 +157,7 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
               &times;
             </button>
             {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-            <MemberAddToTeam onClose={() => setMemberAddShow(false)} orgId={orgId} teamId={teamId} onAddMember={() => onAddMember()} />
+            <MemberAddToTeam onClose={() => setMemberAddShow(false)} orgId={orgId} teamId={teamId} onAddMember={() => onAddMember()} fetchOrg = {fetchOrg} />
           </div>
         </div>
       )}
