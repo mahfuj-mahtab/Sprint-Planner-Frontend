@@ -9,6 +9,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import TaskCreate from '../components/TaskCreate'
 import TeamCreate from '../components/TeamCreate'
 import MembersShow from '../components/MembersShow'
+import TeamCard from '../components/TeamCard'
 
 
 function ShowOrgDetails() {
@@ -24,7 +25,7 @@ function ShowOrgDetails() {
         { id: 'analytics', label: 'Analytics' },
         { id: 'team', label: 'Team' },
         { id: 'member', label: 'Members' },
-        { id: 'tasks', label: 'Tasks' }
+        // { id: 'tasks', label: 'Tasks' }
     ]
     const orgFetch = () => {
         api.get(`/api/v1/org/fetch/${orgId}`).then((response) => {
@@ -109,14 +110,16 @@ function ShowOrgDetails() {
                         {activeTab === 'sprint' && (
                             <div>
                                 <h2 className="text-2xl font-bold mb-4">Sprints</h2>
-                                {orgDetails && orgDetails.sprints && orgDetails.sprints.map((sprint) => (
+                                {orgDetails && orgDetails.sprintDetails && orgDetails.sprintDetails.map((sprint) => (
                                     <SprintBlock
-                                        key={sprint._id}
-                                        sprint={sprint}
+                                        key={sprint.sprint._id}
+                                        sprint={sprint.sprint}
                                         onEdit={() => { }}
-                                        onView={() => handleViewSprint(sprint._id)}
-                                        onDelete={() => { handleDeleteSprint(sprint._id) }}
-                                        fetchOrg = {()=>fetchOrg()}
+                                        onView={() => handleViewSprint(sprint.sprint._id)}
+                                        onDelete={() => { handleDeleteSprint(sprint.sprint._id) }}
+                                        fetchOrg={() => fetchOrg()}
+                                        total_task={sprint?.total_tasks}
+                                        completed_task={sprint?.completed_tasks}
                                     />
                                 ))}
                             </div>
@@ -132,7 +135,13 @@ function ShowOrgDetails() {
                         {activeTab === 'team' && (
                             <div>
                                 <h2 className="text-2xl font-bold mb-4">Team</h2>
-                                <p className="text-gray-600">Team members and details will be displayed here.</p>
+                                {orgDetails?.teams && orgDetails?.teams.length > 0 ?
+                                    orgDetails?.teams.map((team, index) => (
+                                        <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { orgFetch() }} onRemoveMember={() => { fetchSprintDetails() }} orgId={orgId} teamId={team._id} fetchOrg={orgFetch} />
+                                    ))
+                                    : (
+                                        <p className="text-gray-500">No teams available for this Organizations.</p>
+                                    )}
                             </div>
                         )}
                         {activeTab === 'member' && (
@@ -174,7 +183,7 @@ function ShowOrgDetails() {
                                     &times;
                                 </button>
                                 {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-                                <TeamCreate onClose={() => setShowCreateTeam(false)} orgId={orgId} onTeamCreated={() => fetchSprintDetails()} fetchOrg = {()=> fetchOrg() }/>
+                                <TeamCreate onClose={() => setShowCreateTeam(false)} orgId={orgId} onTeamCreated={() => fetchSprintDetails()} fetchOrg={() => fetchOrg()} />
                             </div>
                         </div>
                     )}

@@ -1,6 +1,6 @@
 import React from 'react'
 import { convertDate } from '../utils/utils'
-function SprintBlock({ sprint = {}, onEdit, onDelete, onView }) {
+function SprintBlock({ sprint = {}, onEdit, onDelete, onView, total_task, completed_task }) {
   const {
     name = 'Sprint 1',
     startDate = '23th Jan 2025',
@@ -11,7 +11,7 @@ function SprintBlock({ sprint = {}, onEdit, onDelete, onView }) {
     _id = null
   } = sprint
 
-  const progressPercentage = tasks > 0 ? (completedTasks / tasks) * 100 : 0
+  const progressPercentage = total_task > 0 ? (completed_task / total_task) * 100 : 0
 
   const getStatusBadgeColor = () => {
     switch(isActive) {
@@ -58,7 +58,7 @@ function SprintBlock({ sprint = {}, onEdit, onDelete, onView }) {
                             style={{ width: `${progressPercentage}%` }}
                         ></div>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">{completedTasks}/{tasks} tasks</p>
+                    <p className="text-xs text-gray-600 mt-1">{completed_task}/{total_task} tasks</p>
                 </div>
             </div>
 
