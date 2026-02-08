@@ -1,7 +1,7 @@
 import axios from "axios";
 // import { API_URL } from "./constant";
 import { useDispatch, useSelector } from "react-redux";
-import { setAccessToken } from "./store/slices/authSlice"
+import { login, setAccessToken } from "./store/slices/authSlice"
 import store from "./store/store";
 // Create an Axios instance
 const api = axios.create({
@@ -47,7 +47,10 @@ async function refreshAccessKey() {
     } catch (err) {
         // console.error("Refresh failed", err);
         // Redirect to login if needed
-        // window.location.href = "/auth/login/";
+        store.dispatch(login({
+            isAuthenticated : false
+        }))
+        window.location.href = "/user/login/";
         throw err;
     }
 }
@@ -66,7 +69,16 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
-
+const forceLogout = () => {
+  store.dispatch(
+    login({
+      isAuthenticated: false,
+      accessToken: null,
+      refreshToken: null,
+    })
+  );
+  window.location.href = "/user/login/";
+};
 
 // Response Interceptor → handles expired key & retries request
 api.interceptors.response.use(
@@ -80,6 +92,8 @@ api.interceptors.response.use(
             error.response.status === 401 && // Unauthorized
             !originalRequest._retry
         ) {
+            console.log("hhhh")
+            forceLogout()
             originalRequest._retry = true;
             const newKey = await refreshAccessKey();
             // console.log("Retrying request with new access token:");

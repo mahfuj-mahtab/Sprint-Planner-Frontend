@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function OrgCreate({ onClose }) {
+function OrgCreate({ onClose,fetchOrg }) {
   const [orgName, setOrgName] = useState('')
   const [description, setDescription] = useState('')
   const {
@@ -27,6 +27,7 @@ function OrgCreate({ onClose }) {
         theme: "light",
 
       });
+      fetchOrg()
     }).catch((error) => {
       console.log(error.response.data);
       toast.error(error.response.data.message, {

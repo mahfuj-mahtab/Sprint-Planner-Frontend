@@ -2,13 +2,19 @@ import React, { useState,useEffect } from 'react'
 import Profileheader from '../components/profileheader'
 import OrgCreate from '../components/OrgCreate'
 import api from '../ApiInception'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import LeftSidebar from '../components/LeftSidebar'
+import { useSelector } from 'react-redux'
 
 function Profile() {
     const [showCreateOrg, setShowCreateOrg] = useState(false)
     const [profileDetaile, setProfileDetaile] = useState()
+    const isAuthenticated = useSelector((state)=>state.auth.isAuthenticated)
+    const navigate = useNavigate()
     useEffect(() => {
+      if(!isAuthenticated){
+        navigate("/user/login")
+      }
       api.get('/api/v1/users/profile').then((response) => {
         console.log(response.data)
         setProfileDetaile(response.data);

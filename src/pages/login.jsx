@@ -3,9 +3,11 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import { login } from "../store/slices/authSlice.js";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 
 export default function Login() {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const {
     register,
     handleSubmit,
@@ -30,8 +32,10 @@ export default function Login() {
       dispatch(login({
         user: response.data.user,
         accessToken: response.data.accessToken,
-        refreshToken: response.data.refreshToken
+        refreshToken: response.data.refreshToken,
+        isAuthenticated : true
       }))
+      navigate('/user/profile')
     }).catch((error) => {
       console.log(error.response.data);
       toast.error(error.response.data.message, {
