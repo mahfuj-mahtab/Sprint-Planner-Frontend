@@ -4,6 +4,7 @@ import api from '../ApiInception'
 import { Link } from 'react-router'
 import { Plus, Building2, User, ChevronDown, ChevronRight } from 'lucide-react'
 import { ToastContainer, toast } from 'react-toastify';
+import OrgEdit from './OrgEdit'
 
 function LeftSidebar() {
     const [showCreateOrg, setShowCreateOrg] = useState(false)
@@ -11,6 +12,8 @@ function LeftSidebar() {
     const [orgsExpanded, setOrgsExpanded] = useState(true)
     const [orgCrudOption, setOrgCrudOption] = useState(false)
     const [openOrgMenu, setOpenOrgMenu] = useState(null);
+    const [orgEditPopup, setOrgEditPopup] = useState(false)
+    const [editOrgInfo, setEditOrgInfo] = useState({})
 
     const fetchOrg = () => {
 
@@ -56,6 +59,14 @@ function LeftSidebar() {
 
             });
         });
+    }
+    const handleOrgEdit = (org) => {
+        setOrgEditPopup(true)
+        setEditOrgInfo({
+            name: org?.name,
+            description: org?.description,
+            id: org?._id
+        })
     }
     if (!profileDetaile) {
         return <div className="p-4">Loading...</div>
@@ -134,11 +145,12 @@ function LeftSidebar() {
                                 {openOrgMenu === org._id && (
                                     <div className="absolute right-0 top-10 z-50 w-28 rounded-md bg-white shadow-lg border">
                                         <ul className="py-1 text-sm">
-                                            <li className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                                            <li onClick={() => handleOrgEdit(org)} className="px-3 py-2 hover:bg-gray-100 cursor-pointer">
                                                 Edit
+
                                             </li>
-                                            <li className="px-3 py-2 text-red-600 hover:bg-red-50 cursor-pointer">
-                                                <button onClick={() => handleOrgDelete(org._id)}>Delete</button>
+                                            <li onClick={() => handleOrgDelete(org._id)} className="px-3 py-2 text-red-600 hover:bg-red-50 cursor-pointer">
+                                                Delete
                                             </li>
                                         </ul>
                                     </div>
@@ -165,7 +177,22 @@ function LeftSidebar() {
                             >
                                 &times;
                             </button>
-                            <OrgCreate onClose={() => setShowCreateOrg(false)} fetchOrg={()=>fetchOrg()}/>
+                            <OrgCreate onClose={() => setShowCreateOrg(false)} fetchOrg={() => fetchOrg()} />
+                        </div>
+                    </div>
+                )
+            }
+            {
+                orgEditPopup && (
+                    <div className="fixed inset-0 flex items-center justify-center z-50  bg-opacity-50">
+                        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 relative">
+                            <button
+                                onClick={() => setOrgEditPopup(false)}
+                                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+                            >
+                                &times;
+                            </button>
+                            <OrgEdit onClose={() => setOrgEditPopup(false)} fetchOrg={() => fetchOrg()} org={editOrgInfo} popupClose={()=>setOpenOrgMenu(null)} />
                         </div>
                     </div>
                 )
