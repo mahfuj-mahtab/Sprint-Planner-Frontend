@@ -73,7 +73,7 @@ function LeftSidebar() {
     }
 
     return (
-        <div className="h-full bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto">
+        <div className="h-full bg-gray-50 border-r border-gray-200 p-2 overflow-y-auto">
             {/* Profile Section */}
             <div className="mb-6">
                 <Link to="/user/profile" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
