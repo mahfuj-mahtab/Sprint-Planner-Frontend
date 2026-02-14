@@ -1,10 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import { useNavigate } from 'react-router';
 import api from '../ApiInception';
-
-function Profileheader() {
+// import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import UserEdit from './UserEdit';
+function Profileheader(fetchUser,userDetails) {
+    const [profileEditShow, setProfileEditShow] = useState(false)
     const user = useSelector(state => state.auth.user);
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -33,9 +44,28 @@ function Profileheader() {
                     </svg>
                 </div>
 
-                <span className="text-dark text-sm hidden sm:block">
-                    {user?.fullName || user?.email || 'User'}
-                </span>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button variant="outline"> <span className="text-dark text-sm hidden sm:block"> {user?.fullName || user?.email || 'User'} </span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                            <DropdownMenuItem>Profile</DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <button onClick={()=>setProfileEditShow(true)}>Edit Profile</button>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>Team</DropdownMenuItem>
+                            <DropdownMenuItem>Subscription</DropdownMenuItem>
+                        </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
 
                 <button
                     onClick={handleLogout}
@@ -44,6 +74,20 @@ function Profileheader() {
                     Logout
                 </button>
             </div>
+            {profileEditShow && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 ">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                        <button
+                            onClick={() => setProfileEditShow(false)}
+                            className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                        >
+                            &times;
+                        </button>
+                        {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
+                        <UserEdit onClose={() => setProfileEditShow(false)} userDetails={userDetails} fetchUser={() => fetchUser()} />
+                    </div>
+                </div>
+            )}
         </div>
 
 
