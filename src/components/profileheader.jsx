@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import { useNavigate } from 'react-router';
@@ -14,12 +14,18 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import UserEdit from './UserEdit';
-function Profileheader(fetchUser,userDetails) {
+import { fetchUser } from '../utils/utils';
+function Profileheader() {
     const [profileEditShow, setProfileEditShow] = useState(false)
-    const user = useSelector(state => state.auth.user);
+    // const user = userDetails?.user
+    const [userDetails, setUserDetails] = useState()
     const dispatch = useDispatch();
     const navigate = useNavigate();
-
+    const loadUser = async () => {
+        const user = await fetchUser()
+        console.log(user)
+        setUserDetails(user)
+    }
     const handleLogout = () => {
         api.post("/api/v1/users/logout/").then(() => {
 
@@ -29,7 +35,12 @@ function Profileheader(fetchUser,userDetails) {
             console.log(error)
         })
     };
-
+    useEffect(() => {
+        loadUser()
+    }, [])
+    if(!userDetails){
+        return <p>loading</p>
+    }
     return (
         <div className="w-full h-14 bg-gray-50 flex items-center justify-between px-6 border-b-2">
             <div className="text-dark font-medium text-sm">
@@ -47,7 +58,7 @@ function Profileheader(fetchUser,userDetails) {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button variant="outline"> <span className="text-dark text-sm hidden sm:block"> {user?.fullName || user?.email || 'User'} </span>
+                        <button variant="outline"> <span className="text-dark text-sm hidden sm:block"> {userDetails?.user.fullName || userDetails?.user?.email || 'User'} </span>
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -55,7 +66,7 @@ function Profileheader(fetchUser,userDetails) {
                             <DropdownMenuLabel>My Account</DropdownMenuLabel>
                             <DropdownMenuItem>Profile</DropdownMenuItem>
                             <DropdownMenuItem>
-                                <button onClick={()=>setProfileEditShow(true)}>Edit Profile</button>
+                                <button onClick={() => setProfileEditShow(true)}>Edit Profile</button>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuGroup>
@@ -84,7 +95,7 @@ function Profileheader(fetchUser,userDetails) {
                             &times;
                         </button>
                         {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-                        <UserEdit onClose={() => setProfileEditShow(false)} userDetails={userDetails} fetchUser={() => fetchUser()} />
+                        <UserEdit onClose={() => setProfileEditShow(false)} userDetails={userDetails} fetchUser={() => loadUser()} />
                     </div>
                 </div>
             )}

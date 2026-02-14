@@ -25,7 +25,7 @@ function ShowOrgDetails() {
     const navigate = useNavigate()
     const tabs = [
         { id: 'sprint', label: 'Sprint' },
-        { id: 'analytics', label: 'Analytics' },
+        // { id: 'analytics', label: 'Analytics' },
         { id: 'team', label: 'Team' },
         { id: 'member', label: 'Members' },
         // { id: 'tasks', label: 'Tasks' }
@@ -97,13 +97,13 @@ function ShowOrgDetails() {
 
                                 <button
                                     onClick={() => setShowCreateTeam(true)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-1 px-4 rounded transition-colors"
                                 >
                                     + Create Team
                                 </button>
                                 <button
                                     onClick={() => setShowCreateSprint(true)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-1 px-4 rounded transition-colors"
                                 >
                                     + Create Sprint
                                 </button>

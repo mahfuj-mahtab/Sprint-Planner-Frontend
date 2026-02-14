@@ -13,7 +13,7 @@ function UserEdit({ onClose, fetchUser, userDetails }) {
         formState: { errors },
     } = useForm()
     const onSubmit = (data) => {
-        api.patch(`/api/v1/org/edit/sprint/${orgId}/${sprintId}`, data).then((response) => {
+        api.patch(`/api/v1/users/profile/edit`, data).then((response) => {
             console.log(response.data.message)
             onClose();
             toast.success(response.data.message, {
@@ -27,7 +27,7 @@ function UserEdit({ onClose, fetchUser, userDetails }) {
                 theme: "light",
 
             });
-            orgFetch()
+            fetchUser()
         }).catch((error) => {
             console.log(error.response.data);
             toast.error(error.response.data.message, {
@@ -47,7 +47,7 @@ function UserEdit({ onClose, fetchUser, userDetails }) {
     useEffect(() => {
         console.log(userDetails)
         reset({
-            fullName : userDetails?.fullName
+            fullName : userDetails?.user?.fullName || ""
         })
     }, [])
 
@@ -64,11 +64,11 @@ function UserEdit({ onClose, fetchUser, userDetails }) {
                         </div>
                         <div className="w-full">
                             <label for="brand" className="block mb-2 text-sm font-medium text-gray-900">Email Address</label>
-                            <input type="date" name="brand" id="brand" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Product brand" required="" disabled value="abc" />
+                            <input type="text" name="brand" id="brand" className="bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Product brand" required="" disabled value={userDetails?.user?.email}  />
                         </div>
                         <div className="w-full">
                             <label for="price" className="block mb-2 text-sm font-medium text-gray-900">Username</label>
-                            <input type="date" name="price" id="price" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="$2999" required="" value="username" />
+                            <input type="text" name="price" id="price" className="bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="$2999" required="" disabled value={userDetails?.user?.username} />
                         </div>
 
 

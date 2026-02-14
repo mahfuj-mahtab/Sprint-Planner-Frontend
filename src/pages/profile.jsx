@@ -5,25 +5,24 @@ import api from '../ApiInception'
 import { Link, useNavigate } from 'react-router'
 import LeftSidebar from '../components/LeftSidebar'
 import { useSelector } from 'react-redux'
-
+import { fetchUser } from '../utils/utils'
 function Profile() {
   const [showCreateOrg, setShowCreateOrg] = useState(false)
   const [profileDetaile, setProfileDetaile] = useState()
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
   const navigate = useNavigate()
-  const fetchUser = () => {
-    api.get('/api/v1/users/profile').then((response) => {
-      console.log(response.data)
-      setProfileDetaile(response.data);
-    }).catch((error) => {
-      console.error("There was an error!", error);
-    });
+
+  const loadUser = async () => {
+    const user = await fetchUser()
+    console.log(user)
+    setProfileDetaile(user)
   }
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/user/login")
     }
-    fetchUser()
+
+    loadUser()
   }, [])
   if (!profileDetaile) {
     return <div>Loading...</div>
@@ -36,7 +35,7 @@ function Profile() {
       </div>
       {/* Right Side - Empty for Tasks */}
       <div className="flex-1 bg-white">
-        <Profileheader fetchUser={fetchUser} userDetails = {profileDetaile}/>
+        <Profileheader />
       </div>
 
     </div>

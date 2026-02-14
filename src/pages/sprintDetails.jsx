@@ -33,7 +33,7 @@ function SprintDetails({fetchOrg}) {
         { id: 'sprint', label: 'Sprint' },
         { id: 'analytics', label: 'Analytics' },
         { id: 'team', label: 'Team' },
-        { id: 'tasks', label: 'Tasks' }
+        // { id: 'tasks', label: 'Tasks' }
     ]
     const fetchSprintDetails = () => {
         api.get(`/api/v1/org/sprint/details/${sprintId}`).then((response) => {
@@ -112,13 +112,13 @@ function SprintDetails({fetchOrg}) {
 
                                 <button
                                     onClick={() => setShowCreateTeam(true)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-1 px-4 rounded transition-colors"
                                 >
                                     + Create Team
                                 </button>
                                 <button
                                     onClick={() => setShowCreateTask(true)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                                    className="bg-blue-600 hover:bg-blue-700 text-sm  text-white font-semibold py-2 px-4 rounded transition-colors"
                                 >
                                     + Create Task
                                 </button>
