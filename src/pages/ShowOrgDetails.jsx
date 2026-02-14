@@ -10,12 +10,15 @@ import TaskCreate from '../components/TaskCreate'
 import TeamCreate from '../components/TeamCreate'
 import MembersShow from '../components/MembersShow'
 import TeamCard from '../components/TeamCard'
+import SprintEdit from '../components/SprintEdit'
 
 
 function ShowOrgDetails() {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showCreateSprint, setShowCreateSprint] = useState(false)
     const [showTeamCreate, setShowCreateTeam] = useState(false)
+    const [showSprintEdit, setShowSprintEdit] = useState(false)
+    const [sprintId, setSprintId] = useState()
 
     const [orgDetails, setorgDetails] = useState()
     const { orgId } = useParams();
@@ -39,7 +42,10 @@ function ShowOrgDetails() {
     useEffect(() => {
         orgFetch()
     }, [])
-
+    const handleSprintEdit = (sprintId)=>{
+        setSprintId(sprintId)
+        setShowSprintEdit(true)
+    }
     const handleDeleteSprint = (sprintId) => {
         api.delete(`/api/v1/org/delete/sprint/${orgId}/${sprintId}`).then((response) => {
             console.log(response.data)
@@ -114,7 +120,7 @@ function ShowOrgDetails() {
                                     <SprintBlock
                                         key={sprint.sprint._id}
                                         sprint={sprint.sprint}
-                                        onEdit={() => { }}
+                                        onEdit={() => { handleSprintEdit(sprint.sprint._id)}}
                                         onView={() => handleViewSprint(sprint.sprint._id)}
                                         onDelete={() => { handleDeleteSprint(sprint.sprint._id) }}
                                         fetchOrg={() => fetchOrg()}
@@ -184,6 +190,20 @@ function ShowOrgDetails() {
                                 </button>
                                 {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
                                 <TeamCreate onClose={() => setShowCreateTeam(false)} orgId={orgId} onTeamCreated={() => fetchSprintDetails()} fetchOrg={() => fetchOrg()} />
+                            </div>
+                        </div>
+                    )}
+                     {showSprintEdit && (
+                        <div className="fixed inset-0 flex items-center justify-center z-50 ">
+                            <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                                <button
+                                    onClick={() => setShowSprintEdit(false)}
+                                    className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                                >
+                                    &times;
+                                </button>
+                                {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
+                                <SprintEdit onClose={() => setShowSprintEdit(false)} orgId={orgId} sprintId={sprintId} orgFetch={()=>orgFetch()}/>
                             </div>
                         </div>
                     )}

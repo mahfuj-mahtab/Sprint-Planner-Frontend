@@ -2,6 +2,7 @@ import React from 'react'
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import { useNavigate } from 'react-router';
+import api from '../ApiInception';
 
 function Profileheader() {
     const user = useSelector(state => state.auth.user);
@@ -9,8 +10,13 @@ function Profileheader() {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        dispatch(logout());
-        navigate('/login');
+        api.post("/api/v1/users/logout/").then(() => {
+
+            dispatch(logout());
+            navigate('/user/login');
+        }).catch((error) => {
+            console.log(error)
+        })
     };
 
     return (
