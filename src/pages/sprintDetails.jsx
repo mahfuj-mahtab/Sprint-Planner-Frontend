@@ -20,7 +20,8 @@ import TeamCard from '../components/TeamCard'
 import TeamCreate from '../components/TeamCreate'
 import TaskEdit from '../components/TaskEdit'
 import TeamWiseAnalytics from '../components/TeamWiseAnalytics'
-function SprintDetails({fetchOrg}) {
+import { useIsMobile } from '../components/CheckMobile'
+function SprintDetails({ fetchOrg }) {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showTaskCreate, setShowCreateTask] = useState(false)
     const [showTeamCreate, setShowCreateTeam] = useState(false)
@@ -29,6 +30,8 @@ function SprintDetails({fetchOrg}) {
     const { orgId, sprintId } = useParams();
     const [orgDetails, setorgDetails] = useState()
     const [sprintDetails, setSprintDetails] = useState()
+    const [showLeftSideBar, setShowLeftSideBar] = useState(true)
+    const isMobile = useIsMobile()
     const tabs = [
         { id: 'sprint', label: 'Sprint' },
         { id: 'analytics', label: 'Analytics' },
@@ -77,6 +80,9 @@ function SprintDetails({fetchOrg}) {
         });
     }
     useEffect(() => {
+        if(isMobile){
+            setShowLeftSideBar(false)
+        }
         fetchSprintDetails();
     }, [sprintId, orgId]);
     if (!sprintDetails) {
@@ -86,15 +92,37 @@ function SprintDetails({fetchOrg}) {
         <div>
             <div className="flex h-screen">
                 {/* Left Sidebar for Task Management */}
-                <div className="w-64 bg-gray-100 border-r border-gray-300 h-full">
-                    <LeftSidebar />
-                </div>
+                {showLeftSideBar && (
+                    <div className="w-64 bg-gray-100 border-r border-gray-300 h-full">
+                        <LeftSidebar />
+                    </div>
+                )}
                 {/* Right Side - Empty for Tasks */}
                 <div className="flex-1 bg-white h-full overflow-y-auto">
                     <Profileheader />
                     <div className="border-b border-gray-300 bg-gray-50">
                         <div className="flex items-center justify-between px-6">
                             <div className="flex gap-8">
+                                <button onClick={() => setShowLeftSideBar(prev => !prev)}
+                                    className={`py-4 px-2 font-medium text-sm transition-colors border-b-2 text-gray-600 border-transparent hover:text-gray-800'
+                                            }`}>
+                                    {showLeftSideBar ?
+
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
+                                            <path d="M9 4v16" stroke-width="2" />
+                                            <path d="M13 12l3-3m0 0l-3-3m3 3H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        :
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
+                                            <path d="M9 4v16" stroke-width="2" />
+                                            <path d="M11 12l-3-3m0 0l3-3m-3 3h6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+
+                                    }
+
+                                </button>
                                 {tabs.map((tab) => (
                                     <button
                                         key={tab.id}
@@ -196,19 +224,19 @@ function SprintDetails({fetchOrg}) {
                                                                                 <button className="text-blue-600 hover:text-blue-800">
                                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                                                                 </button>
-                                                                                <button 
-                                                                                onClick={() => {
-                                                                                    setEditingTaskId(task._id);
-                                                                                    setShowTaskEdit(true);
-                                                                                }}
-                                                                                className="ml-4 text-green-600 hover:text-green-800">
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        setEditingTaskId(task._id);
+                                                                                        setShowTaskEdit(true);
+                                                                                    }}
+                                                                                    className="ml-4 text-green-600 hover:text-green-800">
                                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                                                 </button>
-                                                                                <button 
-                                                                                onClick = {() => {handleTaskDelete(task._id, team._id)}}
-                                                                                className="ml-4 text-red-600 hover:text-red-800">
+                                                                                <button
+                                                                                    onClick={() => { handleTaskDelete(task._id, team._id) }}
+                                                                                    className="ml-4 text-red-600 hover:text-red-800">
                                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                                                </button>   
+                                                                                </button>
                                                                             </td>
                                                                         </tr>
                                                                     ))}
@@ -254,7 +282,7 @@ function SprintDetails({fetchOrg}) {
                         {activeTab === 'analytics' && (
                             <div>
                                 {/* <h2 className="text-2xl font-bold mb-4">Analytics</h2> */}
-                              <TeamWiseAnalytics teams={sprintDetails?.teams}/>
+                                <TeamWiseAnalytics teams={sprintDetails?.teams} />
                             </div>
                         )}
 
@@ -263,7 +291,7 @@ function SprintDetails({fetchOrg}) {
                                 <h2 className="text-2xl font-bold mb-4">Team</h2>
                                 {sprintDetails?.teams && sprintDetails?.teams.length > 0 ?
                                     sprintDetails?.teams.map((team, index) => (
-                                        <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { fetchSprintDetails() }} onRemoveMember={() => { fetchSprintDetails() }} orgId={orgId} teamId={team._id} fetchOrg = {fetchOrg}/>
+                                        <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { fetchSprintDetails() }} onRemoveMember={() => { fetchSprintDetails() }} orgId={orgId} teamId={team._id} fetchOrg={fetchOrg} />
                                     ))
                                     : (
                                         <p className="text-gray-500">No teams available for this sprint.</p>
@@ -295,7 +323,7 @@ function SprintDetails({fetchOrg}) {
                     </div>
                 </div>
             )}
-             {showTaskEdit && (
+            {showTaskEdit && (
                 <div className="fixed inset-0 flex items-center justify-center z-50 ">
                     <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
                         <button

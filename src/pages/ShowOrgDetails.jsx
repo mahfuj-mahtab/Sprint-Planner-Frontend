@@ -11,6 +11,7 @@ import TeamCreate from '../components/TeamCreate'
 import MembersShow from '../components/MembersShow'
 import TeamCard from '../components/TeamCard'
 import SprintEdit from '../components/SprintEdit'
+import { useIsMobile } from '../components/CheckMobile'
 
 
 function ShowOrgDetails() {
@@ -19,6 +20,8 @@ function ShowOrgDetails() {
     const [showTeamCreate, setShowCreateTeam] = useState(false)
     const [showSprintEdit, setShowSprintEdit] = useState(false)
     const [sprintId, setSprintId] = useState()
+    const [showLeftSideBar, setShowLeftSideBar] = useState(true)
+    const isMobile = useIsMobile()
 
     const [orgDetails, setorgDetails] = useState()
     const { orgId } = useParams();
@@ -40,9 +43,12 @@ function ShowOrgDetails() {
         });
     }
     useEffect(() => {
+         if(isMobile){
+            setShowLeftSideBar(false)
+        }
         orgFetch()
     }, [])
-    const handleSprintEdit = (sprintId)=>{
+    const handleSprintEdit = (sprintId) => {
         setSprintId(sprintId)
         setShowSprintEdit(true)
     }
@@ -69,9 +75,11 @@ function ShowOrgDetails() {
         <div>
             <div className="flex h-screen">
                 {/* Left Sidebar for Task Management */}
-                <div className="w-64 bg-gray-100 border-r border-gray-300 h-full">
-                    <LeftSidebar />
-                </div>
+                {showLeftSideBar && (
+                    <div className="w-64 bg-gray-100 border-r border-gray-300 h-full">
+                        <LeftSidebar />
+                    </div>
+                )}
                 {/* Right Side - Tab Content */}
                 <div className="flex-1 bg-white">
                     <Profileheader />
@@ -80,6 +88,26 @@ function ShowOrgDetails() {
                     <div className="border-b border-gray-300 bg-gray-50">
                         <div className="flex items-center justify-between px-6">
                             <div className="flex gap-8">
+                                <button onClick={() => setShowLeftSideBar(prev => !prev)}
+                                    className={`py-4 px-2 font-medium text-sm transition-colors border-b-2 text-gray-600 border-transparent hover:text-gray-800'
+                                            }`}>
+                                    {showLeftSideBar ?
+
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
+                                            <path d="M9 4v16" stroke-width="2" />
+                                            <path d="M13 12l3-3m0 0l-3-3m3 3H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        :
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
+                                            <path d="M9 4v16" stroke-width="2" />
+                                            <path d="M11 12l-3-3m0 0l3-3m-3 3h6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+
+                                    }
+
+                                </button>
                                 {tabs.map((tab) => (
                                     <button
                                         key={tab.id}
@@ -93,17 +121,17 @@ function ShowOrgDetails() {
                                     </button>
                                 ))}
                             </div>
-                            <div className="flex gap-4">
+                            <div className="flex lg:gap-4 gap-2">
 
                                 <button
                                     onClick={() => setShowCreateTeam(true)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-1 px-4 rounded transition-colors"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold lg:py-1 lg:px-4 rounded transition-colors px-1 py-1"
                                 >
                                     + Create Team
                                 </button>
                                 <button
                                     onClick={() => setShowCreateSprint(true)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-1 px-4 rounded transition-colors"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm lg:py-1 lg:px-4 rounded transition-colors"
                                 >
                                     + Create Sprint
                                 </button>
@@ -112,15 +140,15 @@ function ShowOrgDetails() {
                     </div>
 
                     {/* Tab Content */}
-                    <div className="p-6">
+                    <div className="lg:p-6 p-2">
                         {activeTab === 'sprint' && (
                             <div>
-                                <h2 className="text-2xl font-bold mb-4">Sprints</h2>
+                                <h2 className="lg:text-2xl text-lg font-bold mb-4">Sprints</h2>
                                 {orgDetails && orgDetails.sprintDetails && orgDetails.sprintDetails.map((sprint) => (
                                     <SprintBlock
                                         key={sprint.sprint._id}
                                         sprint={sprint.sprint}
-                                        onEdit={() => { handleSprintEdit(sprint.sprint._id)}}
+                                        onEdit={() => { handleSprintEdit(sprint.sprint._id) }}
                                         onView={() => handleViewSprint(sprint.sprint._id)}
                                         onDelete={() => { handleDeleteSprint(sprint.sprint._id) }}
                                         fetchOrg={() => fetchOrg()}
@@ -193,7 +221,7 @@ function ShowOrgDetails() {
                             </div>
                         </div>
                     )}
-                     {showSprintEdit && (
+                    {showSprintEdit && (
                         <div className="fixed inset-0 flex items-center justify-center z-50 ">
                             <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
                                 <button
@@ -203,7 +231,7 @@ function ShowOrgDetails() {
                                     &times;
                                 </button>
                                 {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-                                <SprintEdit onClose={() => setShowSprintEdit(false)} orgId={orgId} sprintId={sprintId} orgFetch={()=>orgFetch()}/>
+                                <SprintEdit onClose={() => setShowSprintEdit(false)} orgId={orgId} sprintId={sprintId} orgFetch={() => orgFetch()} />
                             </div>
                         </div>
                     )}

@@ -24,7 +24,7 @@ function SprintBlock({ sprint = {}, onEdit, onDelete, onView, total_task, comple
 
     return (
         <div className='w-full bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 mb-3'>
-            <div className="grid grid-cols-4 gap-4 items-center">
+            <div className="grid grid-cols-4 gap-4  items-center">
                 {/* Sprint Info */}
                 <div>
                     <h3 className="text-sm font-semibold text-gray-600">Sprint Name</h3>
@@ -64,7 +64,7 @@ function SprintBlock({ sprint = {}, onEdit, onDelete, onView, total_task, comple
 
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 justify-end mr-10">
+                <div className="flex gap-2 justify-end lg:mr-10">
                     {onView && (
                        
                     <button className="text-blue-600 hover:text-blue-800"  onClick = {() => onView(_id)}>
