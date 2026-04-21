@@ -23,23 +23,23 @@ function SprintBlock({ sprint = {}, onEdit, onDelete, onView, total_task, comple
 
 
     return (
-        <div className='w-full bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 mb-3'>
+        <div className='w-full bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 mb-3'>
             <div className="grid grid-cols-4 gap-4  items-center">
                 {/* Sprint Info */}
                 <div>
-                    <h3 className="text-sm font-semibold text-gray-600">Sprint Name</h3>
-                    <p className="text-lg font-bold text-gray-800">{name}</p>
+                    <h3 className="text-sm font-semibold text-muted-foreground">Sprint</h3>
+                    <p className="text-lg font-semibold text-foreground">{name}</p>
                 </div>
 
                 {/* Dates */}
                 <div>
                     <div className="mb-2">
-                        <h4 className="text-xs font-semibold text-gray-600">Start Date</h4>
-                        <p className="text-sm text-gray-700">{convertDate(startDate)}</p>
+                        <h4 className="text-xs font-semibold text-muted-foreground">Start</h4>
+                        <p className="text-sm text-foreground">{convertDate(startDate)}</p>
                     </div>
                     <div>
-                        <h4 className="text-xs font-semibold text-gray-600">End Date</h4>
-                        <p className="text-sm text-gray-700">{convertDate(endDate)}</p>
+                        <h4 className="text-xs font-semibold text-muted-foreground">End</h4>
+                        <p className="text-sm text-foreground">{convertDate(endDate)}</p>
                     </div>
                 </div>
 
@@ -51,14 +51,14 @@ function SprintBlock({ sprint = {}, onEdit, onDelete, onView, total_task, comple
                         </span>
                     </div>
                     <div>
-                        <h4 className="text-xs font-semibold text-gray-600">Progress</h4>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <h4 className="text-xs font-semibold text-muted-foreground">Progress</h4>
+                        <div className="w-full bg-muted rounded-full h-2 mt-1">
                             <div
-                                className="bg-blue-600 h-2 rounded-full transition-all"
+                                className="bg-foreground h-2 rounded-full transition-all"
                                 style={{ width: `${progressPercentage}%` }}
                             ></div>
                         </div>
-                        <p className="text-xs text-gray-600 mt-1">{completed_task}/{total_task} tasks</p>
+                        <p className="text-xs text-muted-foreground mt-1">{completed_task}/{total_task} tasks</p>
                     </div>
                 </div>
 

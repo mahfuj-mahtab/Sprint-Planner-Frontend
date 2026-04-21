@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function TaskCreate({ onClose, orgId, sprintId, onTaskCreated }) {
+function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
     const [sprintName, setSprintName] = useState('')
     const [description, setDescription] = useState('')
     const [selectedMembers, setSelectedMembers] = useState([])
@@ -72,7 +72,10 @@ function TaskCreate({ onClose, orgId, sprintId, onTaskCreated }) {
         });
     }
     useEffect(() => {
-        api.get(`/api/v1/org/team/fetch/${orgId}`).then((response) => {
+        const url = projectId
+            ? `/api/v1/org/project/${projectId}/team/fetch/${orgId}`
+            : `/api/v1/org/team/fetch/${orgId}`;
+        api.get(url).then((response) => {
             console.log(response.data)
             setTeamDetails(response.data);
             // setProfileDetaile(response.data);

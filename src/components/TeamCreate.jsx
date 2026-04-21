@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
+function TeamCreate({ onClose, orgId, projectId, onTeamCreated, fetchOrg }) {
     const [sprintName, setSprintName] = useState('')
     const [description, setDescription] = useState('')
     const {
@@ -13,7 +13,10 @@ function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
         formState: { errors },
     } = useForm()
     const onSubmit = (data) => {
-        api.post(`/api/v1/org/team/add/${orgId}`, data).then((response) => {
+        const url = projectId
+            ? `/api/v1/org/project/${projectId}/team/add/${orgId}`
+            : `/api/v1/org/team/add/${orgId}`;
+        api.post(url, data).then((response) => {
             console.log(response.data.message)
             onClose();
             toast.success(response.data.message, {
@@ -29,7 +32,7 @@ function TeamCreate({onClose,orgId, onTeamCreated,fetchOrg}) {
             });
             if (onTeamCreated) {
                 onTeamCreated();
-                fetchOrg()
+                if (fetchOrg) fetchOrg()
             }
         }).catch((error) => {
             console.log(error.response.data);

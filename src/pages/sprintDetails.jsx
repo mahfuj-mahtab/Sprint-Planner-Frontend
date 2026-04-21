@@ -27,7 +27,7 @@ function SprintDetails({ fetchOrg }) {
     const [showTeamCreate, setShowCreateTeam] = useState(false)
     const [showTaskEdit, setShowTaskEdit] = useState(false)
     const [editingTaskId, setEditingTaskId] = useState(null)
-    const { orgId, sprintId } = useParams();
+    const { orgId, projectId, sprintId } = useParams();
     const [orgDetails, setorgDetails] = useState()
     const [sprintDetails, setSprintDetails] = useState()
     const [showLeftSideBar, setShowLeftSideBar] = useState(true)
@@ -85,6 +85,7 @@ function SprintDetails({ fetchOrg }) {
         }
         fetchSprintDetails();
     }, [sprintId, orgId]);
+    const effectiveProjectId = sprintDetails?.sprint?.project_id || projectId;
     if (!sprintDetails) {
         return <div>Loading...</div>
     }
@@ -319,7 +320,7 @@ function SprintDetails({ fetchOrg }) {
                             &times;
                         </button>
                         {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-                        <TaskCreate onClose={() => setShowCreateTask(false)} orgId={orgId} sprintId={sprintId} onTaskCreated={() => fetchSprintDetails()} />
+                        <TaskCreate onClose={() => setShowCreateTask(false)} orgId={orgId} projectId={effectiveProjectId} sprintId={sprintId} onTaskCreated={() => fetchSprintDetails()} />
                     </div>
                 </div>
             )}
@@ -333,7 +334,7 @@ function SprintDetails({ fetchOrg }) {
                             &times;
                         </button>
                         {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-                        <TaskEdit onClose={() => setShowTaskEdit(false)} orgId={orgId} sprintId={sprintId} onTaskCreated={() => fetchSprintDetails()} taskId={editingTaskId} />
+                        <TaskEdit onClose={() => setShowTaskEdit(false)} orgId={orgId} projectId={effectiveProjectId} sprintId={sprintId} onTaskCreated={() => fetchSprintDetails()} taskId={editingTaskId} />
                     </div>
                 </div>
             )}
@@ -347,7 +348,7 @@ function SprintDetails({ fetchOrg }) {
                             &times;
                         </button>
                         {/* <OrgCreate onClose={() => setShowCreateOrg(false)} /> */}
-                        <TeamCreate onClose={() => setShowCreateTeam(false)} orgId={orgId} onTeamCreated={() => fetchSprintDetails()} />
+                        <TeamCreate onClose={() => setShowCreateTeam(false)} orgId={orgId} projectId={effectiveProjectId} onTeamCreated={() => fetchSprintDetails()} />
                     </div>
                 </div>
             )}

@@ -73,16 +73,16 @@ function LeftSidebar() {
     }
 
     return (
-        <div className="h-full bg-gray-50 border-r border-gray-200 p-2 overflow-y-auto">
+        <div className="h-full bg-sidebar border-r border-border p-2 overflow-y-auto">
             {/* Profile Section */}
             <div className="mb-6">
-                <Link to="/user/profile" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                <Link to="/user/profile" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-foreground/90 flex items-center justify-center">
                         <User className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <p className="font-medium text-gray-900">{profileDetaile.user?.fullName || 'User'}</p>
-                        <p className="text-sm text-gray-500">{profileDetaile.user?.email}</p>
+                        <p className="font-medium text-foreground">{profileDetaile.user?.fullName || 'User'}</p>
+                        <p className="text-sm text-muted-foreground">{profileDetaile.user?.email}</p>
                     </div>
                 </Link>
             </div>
@@ -92,14 +92,14 @@ function LeftSidebar() {
                 <div className="flex justify-between items-center mb-3">
                     <button
                         onClick={() => setOrgsExpanded(!orgsExpanded)}
-                        className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 font-medium"
+                        className="flex items-center space-x-2 text-muted-foreground hover:text-foreground font-medium"
                     >
                         {orgsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         <Building2 className="w-5 h-5" />
                         <span>Organizations</span>
                     </button>
                     <button
-                        className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                        className="p-1 text-foreground hover:bg-muted rounded transition-colors"
                         onClick={() => setShowCreateOrg(true)}
                         title="Create Organization"
                     >
@@ -116,7 +116,7 @@ function LeftSidebar() {
                             >
                                 <Link
                                     to={`/user/profile/org/${org._id}`}
-                                    className="w-[93%] mr-3 flex items-center space-x-2 px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                    className="w-[93%] mr-3 flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                                 >
                                     <Building2 className="w-4 h-4" />
                                     <span className="truncate">{org.name}</span>

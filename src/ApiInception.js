@@ -1,67 +1,61 @@
 import axios from "axios";
-// import { API_URL } from "./constant";
-import { useDispatch, useSelector } from "react-redux";
-import { login, setAccessToken } from "./store/slices/authSlice"
+import { login, setAccessToken } from "./store/slices/authSlice";
 import store from "./store/store";
-// Create an Axios instance
+
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
 });
 
-// This function gets the current access key (from localStorage or cookies)
 function getAccessKey() {
     return store.getState().auth.accessToken || "";
 }
 
-// This function saves a new access key
 function setAccessKey(key) {
-    store.dispatch(setAccessToken(key))
+    store.dispatch(setAccessToken(key));
 }
 
-// This function refreshes the access key
+const forceLogout = () => {
+    store.dispatch(
+        login({
+            isAuthenticated: false,
+            accessToken: null,
+            refreshToken: null,
+        })
+    );
+    window.location.href = "/user/login/";
+};
+
+// Tries to get a new access token using the refresh token.
+// If refresh fails or refresh token is missing → force logout.
 async function refreshAccessKey() {
+    const refreshKey = store.getState().auth.refreshToken || "";
+
+    if (!refreshKey) {
+        forceLogout();
+        throw new Error("No refresh token available");
+    }
+
     try {
-        const refreshKey = store.getState().auth.refreshToken || "";
-        await axios.post(
+        const { data } = await axios.post(
             `${import.meta.env.VITE_API_URL}/users/api/token/refresh/`,
-            {
-                refresh: refreshKey // <-- correct key name
-            },
-            {
-                headers: {
-                    "X-Custom-Domain": window.location.href,
-                }
-            }
-        )
-            .then((data) => {
-                // console.log("Refresh successful", data);
-                const newAccessKey = data.data.access;
-                setAccessKey(newAccessKey)
-                return newAccessKey;
+            { refresh: refreshKey },
+            { headers: { "X-Custom-Domain": window.location.href } }
+        );
 
-
-            })
-            .catch((error) => { })
-        // const newAccessKey = res.data.accessKey;
-        // setAccessKey(newAccessKey);
+        const newAccessKey = data.access;
+        setAccessKey(newAccessKey);
+        return newAccessKey;
     } catch (err) {
-        // console.error("Refresh failed", err);
-        // Redirect to login if needed
-        store.dispatch(login({
-            isAuthenticated : false
-        }))
-        window.location.href = "/user/login/";
+        // Refresh token is expired or invalid → log the user out
+        forceLogout();
         throw err;
     }
 }
 
-// Request Interceptor → adds headers before each request
+// ── Request interceptor: attach access token to every request ──────────────
 api.interceptors.request.use(
-    async (config) => {
-        // config.headers["X-Custom-Domain"] = window.location.href;
+    (config) => {
         const token = getAccessKey();
-        // console.log("Attaching access token to request:");
-        // console.log(token);
         if (token) {
             config.headers["Authorization"] = `Bearer ${token}`;
         }
@@ -69,37 +63,25 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
-const forceLogout = () => {
-  store.dispatch(
-    login({
-      isAuthenticated: false,
-      accessToken: null,
-      refreshToken: null,
-    })
-  );
-  window.location.href = "/user/login/";
-};
 
-// Response Interceptor → handles expired key & retries request
+// ── Response interceptor: on 401 try refresh once, then retry ──────────────
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        // If access key expired & request wasn't retried yet
         if (
-            error.response &&
-            error.response.status === 401 && // Unauthorized
-            !originalRequest._retry
+            error.response?.status === 401 &&
+            !originalRequest._retry              // prevent infinite retry loop
         ) {
-            console.log("hhhh")
-            forceLogout()
             originalRequest._retry = true;
+
+            // refreshAccessKey() already calls forceLogout() if refresh fails,
+            // so we just let the error propagate in that case.
             const newKey = await refreshAccessKey();
-            // console.log("Retrying request with new access token:");
-            // console.log(newKey);
+
             originalRequest.headers["Authorization"] = `Bearer ${newKey}`;
-            return api(originalRequest);
+            return api(originalRequest);         // retry the original request
         }
 
         return Promise.reject(error);

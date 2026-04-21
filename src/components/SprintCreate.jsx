@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function SprintCreate({onClose,orgId}) {
+function SprintCreate({ onClose, orgId, projectId }) {
     const [sprintName, setSprintName] = useState('')
     const [description, setDescription] = useState('')
     const {
@@ -13,7 +13,10 @@ function SprintCreate({onClose,orgId}) {
         formState: { errors },
     } = useForm()
     const onSubmit = (data) => {
-        api.post(`/api/v1/org/add/sprint/${orgId}`, data).then((response) => {
+        const url = projectId
+            ? `/api/v1/org/project/${projectId}/add/sprint/${orgId}`
+            : `/api/v1/org/add/sprint/${orgId}`;
+        api.post(url, data).then((response) => {
             console.log(response.data.message)
             onClose();
             toast.success(response.data.message, {

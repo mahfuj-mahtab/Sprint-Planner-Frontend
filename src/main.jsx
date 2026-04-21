@@ -36,7 +36,7 @@ const router = createBrowserRouter([
     element: <ShowOrgDetails />
   },
   {
-    path: "/user/profile/org/:orgId/sprint/:sprintId",
+    path: "/user/profile/org/:orgId/project/:projectId/sprint/:sprintId",
     element: <SprintDetails />
   }
   ,

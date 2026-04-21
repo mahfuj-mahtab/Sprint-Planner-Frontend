@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function TaskEdit({ onClose, orgId, sprintId, onTaskCreated, taskId }) {
+function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }) {
     const [taskDetail, setTaskDetail] = useState()
     const [selectedMembers, setSelectedMembers] = useState([])
     const [teamDetails, setTeamDetails] = useState([])
@@ -23,17 +23,17 @@ function TaskEdit({ onClose, orgId, sprintId, onTaskCreated, taskId }) {
         )
     }
     const handleTeamMembers = (teamId) => {
-        const team = teamDetails?.teams.find(t => t._id === teamId);
-        if (team) {
-            const members = team.members.map(m => ({
-                id: m.user._id,
-                name: m.user.fullName
-            }));
-            setTeamMembers(members);
-        } else {
-            setTeamMembers([]);
-        }
+    const team = teamDetails?.teams?.find(t => t._id === teamId); // add ?. here
+    if (team) {
+        const members = team.members.map(m => ({
+            id: m.user._id,
+            name: m.user.fullName
+        }));
+        setTeamMembers(members);
+    } else {
+        setTeamMembers([]);
     }
+}
     const onSubmit = (data) => {
         console.log(data);
         console.log('Selected Members:', selectedMembers);
@@ -92,7 +92,10 @@ function TaskEdit({ onClose, orgId, sprintId, onTaskCreated, taskId }) {
     }, [])
 
     useEffect(() => {
-        api.get(`/api/v1/org/team/fetch/${orgId}`).then((response) => {
+        const url = projectId
+            ? `/api/v1/org/project/${projectId}/team/fetch/${orgId}`
+            : `/api/v1/org/team/fetch/${orgId}`;
+        api.get(url).then((response) => {
             console.log(response.data)
             setTeamDetails(response.data);
             // setProfileDetaile(response.data);
@@ -102,10 +105,10 @@ function TaskEdit({ onClose, orgId, sprintId, onTaskCreated, taskId }) {
     }, [])
 
     useEffect(() => {
-        if (teamDetails && taskDetail) {
-            handleTeamMembers(taskDetail.team_id._id);
-        }
-    }, [teamDetails, taskDetail])
+    if (teamDetails?.teams && taskDetail) {
+        handleTeamMembers(taskDetail.team_id._id);
+    }
+}, [teamDetails, taskDetail])
     if(!taskDetail){
         return <div>Loading...</div>
     }
