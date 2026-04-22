@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import LeftSidebar from '../components/LeftSidebar'
 import Profileheader from '../components/profileheader'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import api from '../ApiInception'
 import { convertDate } from '../utils/utils'
 import {
@@ -13,7 +13,6 @@ import {
 import { ToastContainer, toast } from 'react-toastify';
 
 import TaskCreate from '../components/TaskCreate'
-import StatusShow from '../components/PriorityShow'
 import PriorityShow from '../components/PriorityShow'
 import SHowStatus from '../components/SHowStatus'
 import TeamCard from '../components/TeamCard'
@@ -28,7 +27,6 @@ function SprintDetails({ fetchOrg }) {
     const [showTaskEdit, setShowTaskEdit] = useState(false)
     const [editingTaskId, setEditingTaskId] = useState(null)
     const { orgId, projectId, sprintId } = useParams();
-    const [orgDetails, setorgDetails] = useState()
     const [sprintDetails, setSprintDetails] = useState()
     const [showLeftSideBar, setShowLeftSideBar] = useState(true)
     const isMobile = useIsMobile()
@@ -59,7 +57,7 @@ function SprintDetails({ fetchOrg }) {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme: "light",
+                theme: "dark",
 
             });
             // Refresh sprint details after deletion
@@ -74,13 +72,14 @@ function SprintDetails({ fetchOrg }) {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme: "light",
+                theme: "dark",
 
             });
         });
     }
     useEffect(() => {
-        if(isMobile){
+        if (isMobile) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setShowLeftSideBar(false)
         }
         fetchSprintDetails();
@@ -90,158 +89,161 @@ function SprintDetails({ fetchOrg }) {
         return <div>Loading...</div>
     }
     return (
-        <div>
-            <div className="flex h-screen">
-                {/* Left Sidebar for Task Management */}
-                {showLeftSideBar && (
-                    <div className="w-64 bg-gray-100 border-r border-gray-300 h-full">
-                        <LeftSidebar />
-                    </div>
-                )}
-                {/* Right Side - Empty for Tasks */}
-                <div className="flex-1 bg-white h-full overflow-y-auto">
-                    <Profileheader />
-                    <div className="border-b border-gray-300 bg-gray-50">
-                        <div className="flex items-center justify-between px-6">
-                            <div className="flex gap-8">
-                                <button onClick={() => setShowLeftSideBar(prev => !prev)}
-                                    className={`py-4 px-2 font-medium text-sm transition-colors border-b-2 text-gray-600 border-transparent hover:text-gray-800'
-                                            }`}>
-                                    {showLeftSideBar ?
+        <div className="flex h-screen bg-background">
+            {/* Left Sidebar for Task Management */}
+            {showLeftSideBar && (
+                <div className="w-64 bg-sidebar border-r border-border h-full">
+                    <LeftSidebar />
+                </div>
+            )}
+            {/* Right Side - Empty for Tasks */}
+            <div className="flex-1 bg-background h-full overflow-y-auto">
+                <Profileheader />
+                <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
+                    <div className="flex items-center justify-between px-6">
+                        <div className="flex gap-8">
+                            <button onClick={() => setShowLeftSideBar(prev => !prev)}
+                                className="py-4 px-2 font-medium text-sm transition-colors border-b-2 text-muted-foreground border-transparent hover:text-foreground"
+                                title="Toggle sidebar"
+                            >
+                                {showLeftSideBar ?
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth="2" />
+                                        <path d="M9 4v16" strokeWidth="2" />
+                                        <path d="M13 12l3-3m0 0l-3-3m3 3H9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    :
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth="2" />
+                                        <path d="M9 4v16" strokeWidth="2" />
+                                        <path d="M11 12l-3-3m0 0l3-3m-3 3h6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
 
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
-                                            <path d="M9 4v16" stroke-width="2" />
-                                            <path d="M13 12l3-3m0 0l-3-3m3 3H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                        :
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
-                                            <path d="M9 4v16" stroke-width="2" />
-                                            <path d="M11 12l-3-3m0 0l3-3m-3 3h6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
+                                }
 
-                                    }
-
-                                </button>
-                                {tabs.map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`py-4 px-2 font-medium text-sm transition-colors border-b-2 ${activeTab === tab.id
-                                            ? 'text-blue-600 border-blue-600'
-                                            : 'text-gray-600 border-transparent hover:text-gray-800'
-                                            }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="flex gap-4">
-
+                            </button>
+                            {tabs.map((tab) => (
                                 <button
-                                    onClick={() => setShowCreateTeam(true)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-1 px-4 rounded transition-colors"
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`py-4 px-2 font-medium text-sm transition-colors border-b-2 ${activeTab === tab.id
+                                        ? 'text-foreground border-foreground'
+                                        : 'text-muted-foreground border-transparent hover:text-foreground'
+                                        }`}
                                 >
-                                    + Create Team
+                                    {tab.label}
                                 </button>
-                                <button
-                                    onClick={() => setShowCreateTask(true)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-sm  text-white font-semibold py-2 px-4 rounded transition-colors"
-                                >
-                                    + Create Task
-                                </button>
-                            </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-4">
+
+                            <button
+                                onClick={() => setShowCreateTeam(true)}
+                                className="border border-border hover:bg-muted text-foreground font-medium text-sm py-1.5 px-4 rounded-md transition-colors"
+                            >
+                                + Create Team
+                            </button>
+                            <button
+                                onClick={() => setShowCreateTask(true)}
+                                className="bg-primary hover:brightness-95 text-sm text-primary-foreground font-semibold py-2 px-4 rounded-md transition-colors"
+                            >
+                                + Create Task
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    {/* Tab Content */}
-                    <div className="p-6">
-                        {activeTab === 'sprint' && (
-                            <div>
-                                <h2 className="text-2xl font-bold mb-4">{sprintDetails?.sprint?.name}</h2>
-                                {sprintDetails?.teams?.map((team) =>
-                                    <div className='w-full mr-10 border-2 h-auto mb-10 p-5 rounded-lg'>
+                {/* Tab Content */}
+                <div className="p-6">
+                    {activeTab === 'sprint' && (
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4 ww-heading">{sprintDetails?.sprint?.name}</h2>
+                            {sprintDetails?.teams?.map((team) =>
+                                <div key={team._id} className="w-full mb-8 rounded-xl border border-border bg-card p-5">
 
-                                        <Accordion type="single" collapsible defaultValue="item-1">
-                                            <AccordionItem value="item-1">
-                                                <AccordionTrigger className="text-lg font-semibold pl-2">{team.name} Team</AccordionTrigger>
-                                                <AccordionContent>
+                                    <Accordion type="single" collapsible defaultValue="item-1">
+                                        <AccordionItem value="item-1">
+                                            <AccordionTrigger className="text-lg font-semibold pl-2">{team.name} Team</AccordionTrigger>
+                                            <AccordionContent>
 
-                                                    {team.tasks.length === 0 ? <div className="p-4 text-gray-600">No tasks available for this team.</div> :
+                                                {team.tasks.length === 0 ? <div className="p-4 text-muted-foreground">No tasks available for this team.</div> :
 
-                                                        <div className="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-                                                            <table className="w-full text-sm text-left rtl:text-right text-body">
-                                                                <thead className="bg-gray-50 text-gray-700 border-b border-gray-200 font-semibold">
-                                                                    <tr>
-                                                                        <th scope="col" class="px-6 py-3">
-                                                                            Task Title
+                                                    <div className="relative overflow-x-auto rounded-xl border border-border bg-card">
+                                                        <table className="w-full text-sm text-left rtl:text-right text-foreground">
+                                                            <thead className="bg-muted/60 text-muted-foreground border-b border-border font-semibold">
+                                                                <tr>
+                                                                    <th scope="col" className="px-6 py-3">
+                                                                        Task Title
+                                                                    </th>
+                                                                    <th scope="col" className="px-6 py-3">
+                                                                        Assignee
+                                                                    </th>
+                                                                    <th scope="col" className="px-6 py-3">
+                                                                        Start Date
+                                                                    </th>
+                                                                    <th scope="col" className="px-6 py-3">
+                                                                        End Date
+                                                                    </th>
+                                                                    <th scope="col" className="px-6 py-3">
+                                                                        Status
+                                                                    </th>
+                                                                    <th scope="col" className="px-6 py-3">
+                                                                        Priority
+                                                                    </th>
+                                                                    <th scope="col" className="px-6 py-3">
+                                                                        Actions
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {team.tasks.map((task) => (
+                                                                    <tr key={task._id} className="border-b border-border">
+                                                                        <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-foreground">
+                                                                            {task.title}
                                                                         </th>
-                                                                        <th scope="col" class="px-6 py-3">
-                                                                            Assignee
-                                                                        </th>
-                                                                        <th scope="col" class="px-6 py-3">
-                                                                            Start Date
-                                                                        </th>
-                                                                        <th scope="col" class="px-6 py-3">
-                                                                            End Date
-                                                                        </th>
-                                                                        <th scope="col" class="px-6 py-3">
-                                                                            Status
-                                                                        </th>
-                                                                        <th scope="col" class="px-6 py-3">
-                                                                            Priority
-                                                                        </th>
-                                                                        <th scope="col" class="px-6 py-3">
-                                                                            Actions
-                                                                        </th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {team.tasks.map((task) => (
-                                                                        <tr key={task._id} class="bg-neutral-primary border-b border-default">
-                                                                            <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
-                                                                                {task.title}
-                                                                            </th>
-                                                                            <td class="px-6 py-4">
-                                                                                {task.assignee.length > 0 ? task.assignee.map((assignee) => assignee.fullName).join(", ") : "Unassigned"}
-                                                                                {/* {task.assignee?.name || "Unassigned"} */}
-                                                                            </td>
-                                                                            <td class="px-6 py-4">
-                                                                                {convertDate(task.startDate)}
-                                                                            </td>
-                                                                            <td class="px-6 py-4">
-                                                                                {convertDate(task.endDate)}
-                                                                            </td>
-                                                                            <td class="px-6 py-4">
-                                                                                <SHowStatus status={task.status} />
-                                                                            </td>
-                                                                            <td class="px-6 py-4">
-                                                                                {/* {task.priority}
+                                                                        <td className="px-6 py-4 text-muted-foreground">
+                                                                            {task.assignee.length > 0 ? task.assignee.map((assignee) => assignee.fullName).join(", ") : "Unassigned"}
+                                                                            {/* {task.assignee?.name || "Unassigned"} */}
+                                                                        </td>
+                                                                        <td className="px-6 py-4 text-muted-foreground">
+                                                                            {convertDate(task.startDate)}
+                                                                        </td>
+                                                                        <td className="px-6 py-4 text-muted-foreground">
+                                                                            {convertDate(task.endDate)}
+                                                                        </td>
+                                                                        <td className="px-6 py-4">
+                                                                            <SHowStatus status={task.status} />
+                                                                        </td>
+                                                                        <td className="px-6 py-4">
+                                                                            {/* {task.priority}
                                                                                  */}
-                                                                                <PriorityShow status={task.priority} />
-                                                                            </td>
-                                                                            <td class="">
-                                                                                <button className="text-blue-600 hover:text-blue-800">
-                                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        setEditingTaskId(task._id);
-                                                                                        setShowTaskEdit(true);
-                                                                                    }}
-                                                                                    className="ml-4 text-green-600 hover:text-green-800">
-                                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => { handleTaskDelete(task._id, team._id) }}
-                                                                                    className="ml-4 text-red-600 hover:text-red-800">
-                                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                                                </button>
-                                                                            </td>
-                                                                        </tr>
-                                                                    ))}
-                                                                    {/* <tr class="bg-neutral-primary border-b border-default">
+                                                                            <PriorityShow status={task.priority} />
+                                                                        </td>
+                                                                        <td className="px-6 py-4">
+                                                                            <button className="text-primary hover:opacity-80" title="View">
+                                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setEditingTaskId(task._id);
+                                                                                    setShowTaskEdit(true);
+                                                                                }}
+                                                                                className="ml-4 text-[#00d4ff] hover:opacity-80"
+                                                                                title="Edit"
+                                                                            >
+                                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => { handleTaskDelete(task._id, team._id) }}
+                                                                                className="ml-4 text-destructive hover:opacity-80"
+                                                                                title="Delete"
+                                                                            >
+                                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                                {/* <tr class="bg-neutral-primary border-b border-default">
                                                                         <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
                                                                             Apple MacBook Pro 17"
                                                                         </th>
@@ -263,59 +265,58 @@ function SprintDetails({ fetchOrg }) {
                                                                         </td>
                                                                     </tr> */}
 
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                }
 
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                        </Accordion>
-                                        <button onClick={() => setShowCreateTask(true)} className="inline-block mt-4 ml-5 text-gray-900 font-semibold hover:underline"> + Add Task</button>
-                                    </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    </Accordion>
+                                    <button onClick={() => setShowCreateTask(true)} className="inline-block mt-4 ml-2 text-primary font-semibold hover:opacity-80"> + Add Task</button>
+                                </div>
+                            )}
+
+
+
+                        </div>
+                    )}
+
+                    {activeTab === 'analytics' && (
+                        <div>
+                            {/* <h2 className="text-2xl font-bold mb-4">Analytics</h2> */}
+                            <TeamWiseAnalytics teams={sprintDetails?.teams} />
+                        </div>
+                    )}
+
+                    {activeTab === 'team' && (
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4 ww-heading">Team</h2>
+                            {sprintDetails?.teams && sprintDetails?.teams.length > 0 ?
+                                sprintDetails?.teams.map((team, index) => (
+                                    <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { fetchSprintDetails() }} onRemoveMember={() => { fetchSprintDetails() }} orgId={orgId} teamId={team._id} fetchOrg={fetchOrg} />
+                                ))
+                                : (
+                                    <p className="text-muted-foreground">No teams available for this sprint.</p>
                                 )}
+                        </div>
+                    )}
 
-
-
-                            </div>
-                        )}
-
-                        {activeTab === 'analytics' && (
-                            <div>
-                                {/* <h2 className="text-2xl font-bold mb-4">Analytics</h2> */}
-                                <TeamWiseAnalytics teams={sprintDetails?.teams} />
-                            </div>
-                        )}
-
-                        {activeTab === 'team' && (
-                            <div>
-                                <h2 className="text-2xl font-bold mb-4">Team</h2>
-                                {sprintDetails?.teams && sprintDetails?.teams.length > 0 ?
-                                    sprintDetails?.teams.map((team, index) => (
-                                        <TeamCard key={index} members={team.members} teamName={team.name} onAddMember={() => { fetchSprintDetails() }} onRemoveMember={() => { fetchSprintDetails() }} orgId={orgId} teamId={team._id} fetchOrg={fetchOrg} />
-                                    ))
-                                    : (
-                                        <p className="text-gray-500">No teams available for this sprint.</p>
-                                    )}
-                            </div>
-                        )}
-
-                        {activeTab === 'tasks' && (
-                            <div>
-                                <h2 className="text-2xl font-bold mb-4">Tasks</h2>
-                                <p className="text-gray-600">Tasks and activities will be displayed here.</p>
-                            </div>
-                        )}
-                    </div>
+                    {activeTab === 'tasks' && (
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4">Tasks</h2>
+                            <p className="text-muted-foreground">Tasks and activities will be displayed here.</p>
+                        </div>
+                    )}
                 </div>
-
             </div>
+
             {showTaskCreate && (
-                <div className="fixed inset-0 flex items-center justify-center z-50 ">
-                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+                    <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
                         <button
                             onClick={() => setShowCreateTask(false)}
-                            className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                            className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
                         >
                             &times;
                         </button>
@@ -325,11 +326,11 @@ function SprintDetails({ fetchOrg }) {
                 </div>
             )}
             {showTaskEdit && (
-                <div className="fixed inset-0 flex items-center justify-center z-50 ">
-                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+                    <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
                         <button
                             onClick={() => setShowTaskEdit(false)}
-                            className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                            className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
                         >
                             &times;
                         </button>
@@ -339,11 +340,11 @@ function SprintDetails({ fetchOrg }) {
                 </div>
             )}
             {showTeamCreate && (
-                <div className="fixed inset-0 flex items-center justify-center z-50 ">
-                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+                    <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
                         <button
                             onClick={() => setShowCreateTeam(false)}
-                            className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                            className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
                         >
                             &times;
                         </button>
@@ -362,7 +363,7 @@ function SprintDetails({ fetchOrg }) {
                 pauseOnFocusLoss
                 draggable
                 pauseOnHover
-                theme="light"
+                theme="dark"
 
             />
         </div>

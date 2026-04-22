@@ -57,7 +57,7 @@ function ShowOrgDetails() {
     if (isMobile) setShowLeftSideBar(false);
     orgFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [orgId]);
 
   const selectedProject = useMemo(
     () => projects.find((p) => p._id === selectedProjectId),
@@ -138,14 +138,14 @@ function ShowOrgDetails() {
               <button
                 onClick={() => setShowTeamCreate(true)}
                 disabled={!selectedProjectId}
-                className="bg-foreground hover:opacity-90 disabled:opacity-40 text-background text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
+                className="bg-primary hover:brightness-95 disabled:opacity-40 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
               >
                 + Team
               </button>
               <button
                 onClick={() => setShowCreateSprint(true)}
                 disabled={!selectedProjectId}
-                className="bg-foreground hover:opacity-90 disabled:opacity-40 text-background text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
+                className="bg-primary hover:brightness-95 disabled:opacity-40 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
               >
                 + Sprint
               </button>
@@ -254,11 +254,11 @@ function ShowOrgDetails() {
         </div>
 
         {showCreateSprint && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+            <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
               <button
                 onClick={() => setShowCreateSprint(false)}
-                className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
               >
                 &times;
               </button>
@@ -268,11 +268,11 @@ function ShowOrgDetails() {
         )}
 
         {showTeamCreate && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+            <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
               <button
                 onClick={() => setShowTeamCreate(false)}
-                className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
               >
                 &times;
               </button>
@@ -282,11 +282,11 @@ function ShowOrgDetails() {
         )}
 
         {showProjectCreate && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full mx-4 relative">
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+            <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-lg w-full mx-4 relative">
               <button
                 onClick={() => setShowProjectCreate(false)}
-                className="absolute top-2 right-4 font-bold text-gray-500 hover:text-gray-700 text-3xl"
+                className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
               >
                 &times;
               </button>
@@ -304,11 +304,11 @@ function ShowOrgDetails() {
         )}
 
         {showSprintEdit && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+            <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
               <button
                 onClick={() => setShowSprintEdit(false)}
-                className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
               >
                 &times;
               </button>
@@ -317,11 +317,10 @@ function ShowOrgDetails() {
           </div>
         )}
 
-        <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} closeOnClick={false} pauseOnHover theme="light" />
+        <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} closeOnClick={false} pauseOnHover theme="dark" />
       </div>
     </div>
   );
 }
 
 export default ShowOrgDetails;
-

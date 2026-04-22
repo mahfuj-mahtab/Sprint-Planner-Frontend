@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from "react-hook-form"
-import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import api from '../ApiInception';
 function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
-    const [sprintName, setSprintName] = useState('')
-    const [description, setDescription] = useState('')
     const [selectedMembers, setSelectedMembers] = useState([])
     const [teamDetails, setTeamDetails] = useState([])
     const [teamMembers, setTeamMembers] = useState([])
     const {
         register,
         handleSubmit,
-        watch,
-        formState: { errors },
     } = useForm()
     const handleMemberToggle = (memberId) => {
         setSelectedMembers(prev =>
@@ -49,7 +44,7 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme: "light",
+                theme: "dark",
 
             });
             if (onTaskCreated) {
@@ -65,7 +60,7 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme: "light",
+                theme: "dark",
 
             });
             console.error("There was an error!", error);
@@ -85,32 +80,32 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
     }, [])
 
     return (
-        <div><section className="bg-white ">
-            <div className="py-8 px-4 mx-auto max-w-2xl lg:py-4">
-                <h2 className="mb-4 text-xl font-bold text-gray-900">Add a new Task</h2>
+        <div><section className="bg-transparent">
+            <div className="px-0 mx-auto max-w-2xl">
+                <h2 className="mb-4 text-xl font-bold ww-heading">Add a new Task</h2>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
                         <div className="sm:col-span-2">
-                            <label for="name" className="block mb-2 text-sm font-medium text-gray-900">Task Name</label>
-                            <input type="text" name="name" id="name" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Type task name" required="" {...register("name", { required: true })} />
+                            <label htmlFor="name" className="ww-label">Task Name</label>
+                            <input type="text" name="name" id="name" className="ww-input" placeholder="Type task name" required="" {...register("name", { required: true })} />
                         </div>
                         <div className="sm:col-span-2">
-                            <label for="description" className="block mb-2 text-sm font-medium text-gray-900">Task Description</label>
-                            <textarea type="text" name="description" id="description" className="bg-gray-50 h-40 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Type task description" required="" {...register("description", { required: true })} />
+                            <label htmlFor="description" className="ww-label">Task Description</label>
+                            <textarea type="text" name="description" id="description" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 h-40" placeholder="Type task description" required="" {...register("description", { required: true })} />
                         </div>
 
                         <div className="w-full">
-                            <label for="brand" className="block mb-2 text-sm font-medium text-gray-900">Start Date</label>
-                            <input type="date" name="brand" id="brand" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Product brand" required="" {...register("startDate", { required: true })} />
+                            <label htmlFor="startDate" className="ww-label">Start Date</label>
+                            <input type="date" id="startDate" className="ww-input" required="" {...register("startDate", { required: true })} />
                         </div>
                         <div className="w-full">
-                            <label for="price" className="block mb-2 text-sm font-medium text-gray-900">End Date</label>
-                            <input type="date" name="price" id="price" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="$2999" required="" {...register("endDate", { required: true })} />
+                            <label htmlFor="endDate" className="ww-label">End Date</label>
+                            <input type="date" id="endDate" className="ww-input" required="" {...register("endDate", { required: true })} />
                         </div>
 
                         <div className="w-full">
-                            <label for="brand" className="block mb-2 text-sm font-medium text-gray-900">Status</label>
-                            <select name="status" id="status" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("status", { required: true })}>
+                            <label htmlFor="status" className="ww-label">Status</label>
+                            <select name="status" id="status" className="ww-input" required="" {...register("status", { required: true })}>
                                 <option value="">Select Status</option>
                                 <option value="Pending">Pending</option>
                                 <option value="Work In Progress">Work In Progress</option>
@@ -120,8 +115,8 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
                             </select>
                         </div>
                         <div className="w-full">
-                            <label for="price" className="block mb-2 text-sm font-medium text-gray-900">Priority</label>
-                            <select name="priority" id="priority" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("priority", { required: true })}>
+                            <label htmlFor="priority" className="ww-label">Priority</label>
+                            <select name="priority" id="priority" className="ww-input" required="" {...register("priority", { required: true })}>
                                 <option value="">Select Priority</option>
                                 <option value="Low">Low</option>
                                 <option value="Medium">Medium</option>
@@ -130,8 +125,8 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
                         </div>
 
                         <div className="sm:col-span-2">
-                            <label for="description" className="block mb-2 text-sm font-medium text-gray-900">Team</label>
-                            <select name="team" id="team" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("team", { required: true })} onChange={(e) => { handleTeamMembers(e.target.value) }}>
+                            <label htmlFor="team" className="ww-label">Team</label>
+                            <select name="team" id="team" className="ww-input" required="" {...register("team", { required: true })} onChange={(e) => { handleTeamMembers(e.target.value) }}>
                                 <option value="">Select Team</option>
                                 {teamDetails?.teams?.map((team) => (
                                     <option key={team._id} value={team._id}>{team.name}</option>
@@ -140,7 +135,7 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
                         </div>
                         {teamMembers.length != 0 && (
                             <div className="sm:col-span-2">
-                                <label className="block mb-4 text-sm font-medium text-gray-900">Assign To</label>
+                                <label className="ww-label mb-4">Assign To</label>
                                 <div className="grid grid-cols-3 gap-4">
                                     {teamMembers.map((member) => (
                                         <div key={member.id} className="flex items-center">
@@ -149,9 +144,9 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
                                                 id={`member-${member.id}`}
                                                 checked={selectedMembers.includes(member.id)}
                                                 onChange={() => handleMemberToggle(member.id)}
-                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                                                className="w-4 h-4 rounded border-border bg-card text-primary focus:ring-primary/30 focus:ring-2 cursor-pointer"
                                             />
-                                            <label htmlFor={`member-${member.id}`} className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                                            <label htmlFor={`member-${member.id}`} className="ml-2 text-sm font-medium text-muted-foreground cursor-pointer">
                                                 {member.name}
                                             </label>
                                         </div>
@@ -161,7 +156,7 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
 
                         )}
                     </div>
-                    <button type="submit" className="inline-flex items-center px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center text-white bg-blue-600 rounded-lg focus:ring-4 focus:ring-primary-200 hover:bg-primary-800">
+                    <button type="submit" className="ww-btn-primary mt-6">
                         Add Task
                     </button>
                 </form>

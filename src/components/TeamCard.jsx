@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import MemberAddToTeam from "./MemberAddToTeam";
 import api from "../ApiInception";
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamId , fetchOrg}) {
   const [memberAddShow, setMemberAddShow] = useState(false)
   const handleMemberRemove = (memberId) => {
@@ -15,7 +15,7 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        theme: "light",
+        theme: "dark",
 
       });
       console.log(response.data.message)
@@ -33,7 +33,7 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        theme: "light",
+        theme: "dark",
 
       });
       console.log(error.response.data);
@@ -50,7 +50,7 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        theme: "light",
+        theme: "dark",
 
       });
       console.log(response.data.message)
@@ -67,7 +67,7 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        theme: "light",
+        theme: "dark",
 
       });
       console.log(error.response.data);
@@ -76,15 +76,15 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
 
   }
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 max-w-md w-full border-2 float-left mr-5">
+    <div className="bg-card border border-border rounded-xl p-5 max-w-md w-full float-left mr-5">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-foreground">
             {teamName}
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {members.length} member{members.length !== 1 && "s"}
           </p>
         </div>
@@ -92,15 +92,15 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
         <div className="flex space-x-2">
           <button
             onClick={() => setMemberAddShow(true)}
-            className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="flex items-center space-x-1 text-sm text-primary hover:opacity-80 font-medium"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
             <span>Add</span>
           </button>
-          <button className="text-green-600 hover:text-green-800">
+          <button className="text-[#00d4ff] hover:opacity-80" title="Edit team">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
           </button>
-          <button className="text-red-600 hover:text-red-800" onClick={() => { handleTeamDelete() }}>
+          <button className="text-destructive hover:opacity-80" onClick={() => { handleTeamDelete() }} title="Delete team">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
           </button>
         </div>
@@ -108,7 +108,7 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
 
       {/* Members */}
       {members.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">
+        <p className="text-sm text-muted-foreground text-center py-6">
           No members yet
         </p>
       ) : (
@@ -116,21 +116,21 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
           {members.map((member, index) => (
             <li
               key={index}
-              className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 transition"
+              className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition"
             >
               <div className="flex items-center gap-3">
 
                 {/* Avatar */}
-                <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-medium">
+                <div className="w-8 h-8 rounded-full bg-muted border border-border text-foreground flex items-center justify-center text-sm font-medium">
                   {member.user.fullName?.charAt(0)?.toUpperCase()}
                 </div>
 
                 {/* Info */}
                 <div>
-                  <p className="text-sm font-medium text-gray-800">
+                  <p className="text-sm font-medium text-foreground">
                     {member.user.fullName}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                   </p>
                 </div>
@@ -139,7 +139,7 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
               {/* Remove */}
               <button
                 onClick={() => handleMemberRemove(member.user._id)}
-                className="text-xs text-gray-400 hover:text-red-500 transition"
+                className="text-xs text-muted-foreground hover:text-destructive transition"
               >
                 Remove
               </button>
@@ -148,11 +148,11 @@ function TeamCard({ teamName, members, onAddMember, onRemoveMember, orgId, teamI
         </ul>
       )}
       {memberAddShow && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+          <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
             <button
               onClick={() => setMemberAddShow(false)}
-              className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+              className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
             >
               &times;
             </button>

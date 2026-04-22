@@ -1,16 +1,11 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useForm } from "react-hook-form"
-import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
 function OrgCreate({ onClose,fetchOrg }) {
-  const [orgName, setOrgName] = useState('')
-  const [description, setDescription] = useState('')
   const {
     register,
     handleSubmit,
-    watch,
-    formState: { errors },
   } = useForm()
   const onSubmit = (data) => {
     api.post(`/api/v1/users/org/create`, data).then((response) => {
@@ -24,7 +19,7 @@ function OrgCreate({ onClose,fetchOrg }) {
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        theme: "light",
+        theme: "dark",
 
       });
       fetchOrg()
@@ -38,7 +33,7 @@ function OrgCreate({ onClose,fetchOrg }) {
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        theme: "light",
+        theme: "dark",
 
       });
       console.error("There was an error!", error);
@@ -47,36 +42,35 @@ function OrgCreate({ onClose,fetchOrg }) {
   }
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6 text-center">Create Organization</h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+      <h2 className="text-xl font-bold mb-6 text-center ww-heading">Create Organization</h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="mb-4">
-          <label htmlFor="orgName" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="orgName" className="ww-label">
             Organization Name
           </label>
           <input
             type="text"
             id="orgName"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="ww-input"
             required
             {...register("name")}
           />
         </div>
         <div className="mb-6">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="description" className="ww-label">
             Description
           </label>
           <textarea
             id="description"
-
             rows="4"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             required
             {...register("description")}
           />
         </div>
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="ww-btn-primary w-full"
         >
           Create Organization
         </button>
@@ -91,7 +85,7 @@ function OrgCreate({ onClose,fetchOrg }) {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
+        theme="dark"
 
       />
     </div>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import { Link } from 'react-router-dom';
+import Logo from '@/components/branding/Logo'
+import { cn } from '@/lib/utils'
 
 function useInView(threshold = 0.12) {
   const ref = useRef(null)
@@ -68,204 +70,194 @@ export default function App() {
   }, [open])
 
   return (
-    <div style={{ fontFamily: "'DM Sans',sans-serif", background: '#080c10', color: '#e8edf2', minHeight: '100vh' }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=Syne:wght@700;800&display=swap');
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
-        body{overflow-x:hidden}
-        ::selection{background:#00ff9433}
-        ::-webkit-scrollbar{width:4px}
-        ::-webkit-scrollbar-track{background:#080c10}
-        ::-webkit-scrollbar-thumb{background:#00ff94;border-radius:2px}
-
-        .dot-bg{background-image:radial-gradient(circle,#1e2a3a 1px,transparent 1px);background-size:28px 28px}
-
-        .card{background:#0d1117;border:1px solid #1e2a3a;border-radius:16px;padding:1.6rem;height:100%;transition:transform .25s,box-shadow .25s}
-        .card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,255,148,.1)}
-
-        .tag{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block}
-
-        .btn-p{background:#00ff94;color:#080c10;font-weight:700;padding:13px 26px;border-radius:8px;border:none;cursor:pointer;font-size:15px;transition:all .2s;white-space:nowrap;font-family:'DM Sans',sans-serif}
-        .btn-p:hover{background:#00e882;transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,255,148,.35)}
-        .btn-o{background:transparent;color:#e8edf2;font-weight:600;padding:13px 26px;border-radius:8px;border:1.5px solid #1e2a3a;cursor:pointer;font-size:15px;transition:all .2s;white-space:nowrap;font-family:'DM Sans',sans-serif}
-        .btn-o:hover{border-color:#00ff9466;color:#00ff94}
-
-        .glass{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-        .float{animation:float 4s ease-in-out infinite}
-
-        @keyframes up{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
-        .up{animation:up .7s ease both}
-
-        /* NAV */
-        .nav-links{display:flex;align-items:center;gap:2rem}
-        @media(max-width:767px){.nav-links{display:none}}
-        .burger{display:none;background:none;border:1px solid #1e2a3a;border-radius:8px;padding:7px 9px;cursor:pointer;flex-direction:column;gap:5px;flex-shrink:0}
-        @media(max-width:767px){.burger{display:flex}}
-        .nav-btns{display:flex;gap:10px;align-items:center}
-        @media(max-width:400px){.nav-btns{display:none}}
-
-        /* MOBILE DRAWER */
-        .drawer{position:fixed;top:64px;left:0;right:0;bottom:0;background:#080c10;z-index:49;display:flex;flex-direction:column;padding:1rem 1.5rem;gap:.5rem;transition:opacity .3s,transform .3s;overflow-y:auto}
-        .drawer.hide{opacity:0;transform:translateY(-10px);pointer-events:none}
-        .drawer a{color:#94a3b8;font-size:16px;text-decoration:none;padding:14px 0;border-bottom:1px solid #1e2a3a;font-weight:500}
-        .drawer-btns{display:flex;gap:10px;padding-top:1rem}
-
-        /* HERO */
-        .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
-        @media(max-width:880px){.hero-grid{grid-template-columns:1fr;gap:2.5rem}}
-
-        /* FLOW */
-        .flow-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem}
-        @media(max-width:880px){.flow-grid{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:480px){.flow-grid{grid-template-columns:1fr}}
-
-        /* FEATURES */
-        .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
-        @media(max-width:880px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:520px){.feat-grid{grid-template-columns:1fr}}
-
-        /* BOARD */
-        .board-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}
-        @media(max-width:380px){
-          .board-grid{grid-template-columns:1fr}
-          .board-col-2,.board-col-3{display:none}
-        }
-
-        /* HERO BUTTONS */
-        .hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
-
-        /* STATS */
-        .stats{display:flex;gap:2.5rem;margin-top:2.5rem;flex-wrap:wrap}
-
-        /* CTA INNER */
-        .cta-inner{padding:clamp(2rem,5vw,3.5rem);text-align:center}
-
-        /* FOOTER */
-        .footer-r{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
-        @media(max-width:600px){.footer-r{flex-direction:column;text-align:center}}
-
-        /* SECTION PADDING */
-        .sp{padding:80px 1.5rem}
-        @media(max-width:640px){.sp{padding:60px 1.25rem}}
-
-        /* HEADINGS */
-        .sh{font-family:'Syne',sans-serif;font-size:clamp(1.7rem,4vw,2.8rem);font-weight:800;color:#e8edf2}
-        .hh{font-family:'Syne',sans-serif;font-size:clamp(2rem,6vw,3.8rem);font-weight:800;line-height:1.1}
-      `}</style>
+    <div className="min-h-screen bg-background text-foreground">
 
       {/* ── NAV ── */}
-      <header className="glass" style={{
-        position:'fixed',top:0,left:0,right:0,zIndex:50,
-        background: scrolled ? 'rgba(8,12,16,.93)' : 'transparent',
-        borderBottom: scrolled ? '1px solid #1e2a3a' : '1px solid transparent',
-        transition:'all .3s',
-      }}>
-        <div style={{maxWidth:1200,margin:'0 auto',padding:'0 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between',height:64}}>
-          <a href="/" style={{textDecoration:'none',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-            <div style={{width:32,height:32,background:'#00ff94',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <span style={{color:'#080c10',fontWeight:800,fontSize:16,fontFamily:'Syne,sans-serif'}}>W</span>
-            </div>
-            <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'1.2rem',color:'#e8edf2'}}>WeekWins</span>
-          </a>
+      <header
+        className={cn(
+          "ww-glass fixed inset-x-0 top-0 z-50 border-b transition-all",
+          scrolled ? "border-border bg-background/90" : "border-transparent bg-transparent"
+        )}
+      >
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
+          <Logo to="/" />
 
-          <nav className="nav-links">
-            {['Features','How it Works','Team','Contact'].map(l=>(
-              <a key={l} href={`#${l.toLowerCase().replace(/ /g,'-')}`}
-                style={{color:'#94a3b8',fontSize:14,textDecoration:'none',fontWeight:500,transition:'color .2s'}}
-                onMouseEnter={e=>e.target.style.color='#00ff94'}
-                onMouseLeave={e=>e.target.style.color='#94a3b8'}
-              >{l}</a>
+          <nav className="hidden items-center gap-8 md:flex">
+            {["Features", "How it Works", "Team", "Contact"].map((l) => (
+              <a
+                key={l}
+                href={`#${l.toLowerCase().replace(/ /g, "-")}`}
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              >
+                {l}
+              </a>
             ))}
           </nav>
 
-          <div style={{display:'flex',gap:10,alignItems:'center'}}>
-            <div className="nav-btns">
-              <Link to = "/user/login" className="btn-o" style={{padding:'7px 16px',fontSize:13}}>Log in</Link>
-              <button className="btn-p" style={{padding:'7px 16px',fontSize:13}}>Get started →</button>
+          <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-2 sm:flex">
+              <Link
+                to="/user/login"
+                className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-[13px] font-semibold text-foreground transition hover:border-primary/40 hover:text-primary"
+              >
+                Log in
+              </Link>
+              <Link
+                to="/user/register"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-[13px] font-bold text-primary-foreground transition hover:brightness-95 hover:shadow-[0_8px_24px_rgba(0,255,148,0.35)]"
+              >
+                Get started →
+              </Link>
             </div>
-            <button className="burger" onClick={()=>setOpen(o=>!o)} aria-label="menu">
-              {[0,1,2].map(i=>(
-                <span key={i} style={{
-                  display:'block',width:20,height:2,background:'#94a3b8',borderRadius:2,transition:'all .3s',
-                  transform: open&&i===0?'rotate(45deg) translate(5px,5px)':open&&i===2?'rotate(-45deg) translate(5px,-5px)':'none',
-                  opacity: open&&i===1?0:1,
-                }}/>
+
+            <button
+              className="flex flex-col gap-1.5 rounded-md border border-border bg-transparent p-2 md:hidden"
+              onClick={() => setOpen((o) => !o)}
+              aria-label="menu"
+            >
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="block h-0.5 w-5 rounded bg-muted-foreground transition"
+                  style={{
+                    transform:
+                      open && i === 0
+                        ? "rotate(45deg) translate(5px,5px)"
+                        : open && i === 2
+                          ? "rotate(-45deg) translate(5px,-5px)"
+                          : "none",
+                    opacity: open && i === 1 ? 0 : 1,
+                  }}
+                />
               ))}
             </button>
           </div>
         </div>
-
       </header>
 
       {/* Mobile drawer — must live OUTSIDE <header> because backdrop-filter creates a
           new containing block that traps position:fixed children inside it */}
-      <div className={`drawer ${open?'':'hide'}`}>
-        {['Features','How it Works','Team','Contact'].map(l=>(
-          <a key={l} href={`#${l.toLowerCase().replace(/ /g,'-')}`} onClick={()=>setOpen(false)}>{l}</a>
+      <div
+        className={cn(
+          "fixed inset-x-0 bottom-0 top-16 z-40 flex flex-col gap-2 overflow-y-auto border-t border-border bg-background px-6 py-4 transition",
+          open ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-2 opacity-0"
+        )}
+      >
+        {["Features", "How it Works", "Team", "Contact"].map((l) => (
+          <a
+            key={l}
+            href={`#${l.toLowerCase().replace(/ /g, "-")}`}
+            onClick={() => setOpen(false)}
+            className="border-b border-border py-4 text-base font-medium text-muted-foreground hover:text-primary"
+          >
+            {l}
+          </a>
         ))}
-        <div className="drawer-btns">
-          <button className="btn-o" style={{flex:1,padding:'11px'}}>Log in</button>
-          <button className="btn-p" style={{flex:1,padding:'11px'}}>Get started →</button>
+        <div className="flex gap-2 pt-2">
+          <Link
+            to="/user/login"
+            onClick={() => setOpen(false)}
+            className="flex-1 rounded-md border border-border px-4 py-2 text-center text-sm font-semibold text-foreground hover:border-primary/40 hover:text-primary"
+          >
+            Log in
+          </Link>
+          <Link
+            to="/user/register"
+            onClick={() => setOpen(false)}
+            className="flex-1 rounded-md bg-primary px-4 py-2 text-center text-sm font-bold text-primary-foreground hover:brightness-95"
+          >
+            Get started →
+          </Link>
         </div>
       </div>
 
       {/* ── HERO ── */}
-      <section className="dot-bg" style={{paddingTop:130,paddingBottom:80,paddingLeft:'1.5rem',paddingRight:'1.5rem',position:'relative',overflow:'hidden'}}>
-        <div style={{position:'absolute',top:'10%',left:'5%',width:500,height:500,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,255,148,.06) 0%,transparent 70%)',pointerEvents:'none'}}/>
-        <div style={{position:'absolute',top:'30%',right:0,width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,212,255,.05) 0%,transparent 70%)',pointerEvents:'none'}}/>
-        <div style={{maxWidth:1200,margin:'0 auto'}}>
-          <div className="hero-grid">
+      <section className="ww-dot-bg relative overflow-hidden px-6 pb-20 pt-32">
+        <div className="pointer-events-none absolute left-[5%] top-[10%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(0,255,148,0.08)_0%,transparent_70%)]" />
+        <div className="pointer-events-none absolute right-0 top-[30%] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(0,212,255,0.07)_0%,transparent_70%)]" />
+        <div className="mx-auto max-w-[1200px]">
+          <div className="grid items-center gap-16 lg:grid-cols-2">
             {/* Copy */}
             <div>
-              <div className="tag up" style={{background:'#00ff9415',color:'#00ff94',border:'1px solid #00ff9430',marginBottom:'1.25rem',animationDelay:'0ms'}}>
+              <div className="ww-tag mb-5 border-primary/25 bg-primary/10 text-primary">
                 Built for dev teams
               </div>
-              <h1 className="hh">
-                <span className="up" style={{display:'block',animationDelay:'80ms'}}>Win every week.</span>
-                <span className="up" style={{display:'block',color:'#94a3b8',animationDelay:'180ms'}}>Ship every sprint.</span>
+              <h1 className="ww-heading text-[clamp(2rem,6vw,3.8rem)] leading-[1.1]">
+                <span className="block">Win every week.</span>
+                <span className="block text-muted-foreground">Ship every sprint.</span>
               </h1>
-              <p className="up" style={{color:'#64748b',fontSize:'1.05rem',lineHeight:1.8,margin:'1.5rem 0 2rem',maxWidth:480,animationDelay:'260ms'}}>
+              <p className="mt-6 max-w-[520px] text-[1.05rem] leading-8 text-muted-foreground">
                 WeekWins is a sprint-driven project manager for small dev teams.
                 Organise work into{' '}
-                <strong style={{color:'#94a3b8'}}>orgs → projects → sprints → tasks</strong>.
+                <strong className="text-foreground/80">orgs → projects → sprints → tasks</strong>.
                 Stop context-switching. Start shipping.
               </p>
-              <div className="hero-btns up" style={{animationDelay:'340ms'}}>
-                <button className="btn-p">Start for free →</button>
-                <button className="btn-o">See how it works</button>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/user/register" className="ww-btn-primary">
+                  Start for free →
+                </Link>
+                <a href="#how-it-works" className="ww-btn-outline">
+                  See how it works
+                </a>
               </div>
-              <div className="stats up" style={{animationDelay:'420ms'}}>
-                {[['10x','faster sprint planning'],['100%','team visibility'],['0','wasted stand-ups']].map(([n,l])=>(
+              <div className="mt-10 flex flex-wrap gap-10">
+                {[
+                  ["10x", "faster sprint planning"],
+                  ["100%", "team visibility"],
+                  ["0", "wasted stand-ups"],
+                ].map(([n, l]) => (
                   <div key={n}>
-                    <div style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'1.5rem',color:'#00ff94'}}>{n}</div>
-                    <div style={{color:'#64748b',fontSize:11,fontFamily:'DM Mono,monospace',marginTop:2}}>{l}</div>
+                    <div className="ww-heading text-2xl text-primary">{n}</div>
+                    <div className="mt-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
+                      {l}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Mockup */}
-            <div className="float">
-              <div style={{background:'#0d1117',border:'1px solid #1e2a3a',borderRadius:16,overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,.6)'}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,padding:'11px 16px',borderBottom:'1px solid #1e2a3a',background:'#0a0f14'}}>
-                  {['#ff5f57','#febc2e','#28c840'].map(c=><div key={c} style={{width:11,height:11,borderRadius:'50%',background:c}}/>)}
-                  <span style={{fontFamily:'DM Mono,monospace',fontSize:11,color:'#475569',marginLeft:8}}>weekwins — sprint #12</span>
+            <div>
+              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_24px_64px_rgba(0,0,0,0.60)]">
+                <div className="flex items-center gap-2 border-b border-border bg-secondary px-4 py-3">
+                  {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
+                    <div key={c} className="h-[11px] w-[11px] rounded-full" style={{ background: c }} />
+                  ))}
+                  <span className="ml-2 text-[11px] text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
+                    weekwins — sprint #12
+                  </span>
                 </div>
-                <div className="board-grid">
-                  {BOARD_COLS.map((col,ci)=>(
-                    <div key={col.label} className={ci===1?'board-col-2':ci===2?'board-col-3':''}>
-                      <div style={{fontFamily:'DM Mono,monospace',fontSize:10,color:col.color,marginBottom:10,textTransform:'uppercase',letterSpacing:'.1em'}}>{col.label}</div>
-                      {col.tasks.map(([task,pri])=>{
-                        const av=AVS[avi++%AVS.length]
-                        return(
-                          <div key={task} style={{background:'#111827',border:'1px solid #1e2a3a',borderRadius:8,padding:'10px 11px',marginBottom:8}}>
-                            <div style={{fontSize:12,fontWeight:500,color:'#cbd5e1',marginBottom:6}}>{task}</div>
-                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                              <span style={{fontSize:10,fontFamily:'DM Mono,monospace',color:PRI[pri],background:PRI[pri]+'18',padding:'2px 6px',borderRadius:4}}>{pri}</span>
-                              <div style={{width:20,height:20,borderRadius:'50%',background:'#1e2a3a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'#64748b',fontFamily:'DM Mono,monospace'}}>{av}</div>
+                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
+                  {BOARD_COLS.map((col, ci) => (
+                    <div key={col.label} className={cn(ci > 0 ? "hidden sm:block" : "", ci === 2 ? "hidden md:block" : "")}>
+                      <div
+                        className="mb-2 text-[10px] uppercase tracking-[0.10em]"
+                        style={{ fontFamily: "DM Mono, monospace", color: col.color }}
+                      >
+                        {col.label}
+                      </div>
+                      {col.tasks.map(([task, pri]) => {
+                        const av = AVS[avi++ % AVS.length]
+                        return (
+                          <div key={task} className="mb-2 rounded-lg border border-border bg-muted px-3 py-2">
+                            <div className="mb-2 text-xs font-medium text-foreground/90">{task}</div>
+                            <div className="flex items-center justify-between">
+                              <span
+                                className="rounded-md px-1.5 py-0.5 text-[10px]"
+                                style={{
+                                  fontFamily: "DM Mono, monospace",
+                                  color: PRI[pri],
+                                  background: `${PRI[pri]}18`,
+                                }}
+                              >
+                                {pri}
+                              </span>
+                              <div
+                                className="grid h-5 w-5 place-items-center rounded-full border border-border text-[8px] text-muted-foreground"
+                                style={{ fontFamily: "DM Mono, monospace" }}
+                              >
+                                {av}
+                              </div>
                             </div>
                           </div>
                         )
@@ -273,9 +265,11 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                <div style={{padding:'11px 16px',borderTop:'1px solid #1e2a3a',display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{width:8,height:8,borderRadius:'50%',background:'#00ff94',boxShadow:'0 0 8px #00ff94',flexShrink:0}}/>
-                  <span style={{fontFamily:'DM Mono,monospace',fontSize:10,color:'#475569'}}>Sprint ends in 3d 14h · 6/9 tasks done</span>
+                <div className="flex items-center gap-3 border-t border-border px-4 py-3">
+                  <div className="h-2 w-2 shrink-0 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
+                  <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
+                    Sprint ends in 3d 14h · 6/9 tasks done
+                  </span>
                 </div>
               </div>
             </div>
@@ -284,23 +278,32 @@ export default function App() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="sp" style={{background:'#0a0f14'}}>
-        <div style={{maxWidth:1200,margin:'0 auto'}}>
+      <section id="how-it-works" className="bg-secondary px-6 py-20">
+        <div className="mx-auto max-w-[1200px]">
           <FadeIn>
-            <div style={{textAlign:'center',marginBottom:'3.5rem'}}>
-              <div className="tag" style={{background:'#00d4ff15',color:'#00d4ff',border:'1px solid #00d4ff30',marginBottom:'1rem'}}>The WeekWins Model</div>
-              <h2 className="sh">One structure. Zero chaos.</h2>
-              <p style={{color:'#64748b',fontSize:'1rem',marginTop:'.75rem'}}>Every piece of work has a home — and a deadline.</p>
+            <div className="mb-14 text-center">
+              <div className="ww-tag mb-4 border-[rgba(0,212,255,0.25)] bg-[rgba(0,212,255,0.10)] text-[#00d4ff]">
+                The WeekWins Model
+              </div>
+              <h2 className="ww-heading text-[clamp(1.7rem,4vw,2.8rem)]">One structure. Zero chaos.</h2>
+              <p className="mt-3 text-base text-muted-foreground">Every piece of work has a home — and a deadline.</p>
             </div>
           </FadeIn>
-          <div className="flow-grid">
-            {FLOW.map((f,i)=>(
-              <FadeIn key={f.label} delay={i*100}>
-                <div className="card">
-                  <div style={{width:46,height:46,borderRadius:12,background:`${f.color}15`,border:`1px solid ${f.color}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.3rem',marginBottom:'1.1rem'}}>{f.icon}</div>
-                  <div style={{fontFamily:'DM Mono,monospace',fontSize:10,color:f.color,marginBottom:6,letterSpacing:'.12em'}}>Step {f.step}</div>
-                  <h3 style={{fontFamily:'Syne,sans-serif',fontSize:'1rem',fontWeight:700,color:'#e8edf2',marginBottom:8}}>{f.label}</h3>
-                  <p style={{color:'#64748b',fontSize:13.5,lineHeight:1.7}}>{f.desc}</p>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {FLOW.map((f, i) => (
+              <FadeIn key={f.label} delay={i * 100}>
+                <div className="ww-card ww-card-hover h-full">
+                  <div
+                    className="mb-4 grid h-12 w-12 place-items-center rounded-xl border text-xl"
+                    style={{ background: `${f.color}15`, borderColor: `${f.color}30` }}
+                  >
+                    {f.icon}
+                  </div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ fontFamily: "DM Mono, monospace", color: f.color }}>
+                    Step {f.step}
+                  </div>
+                  <h3 className="ww-heading text-base">{f.label}</h3>
+                  <p className="mt-2 text-[13.5px] leading-7 text-muted-foreground">{f.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -309,22 +312,26 @@ export default function App() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className="sp dot-bg" style={{background:'#080c10'}}>
-        <div style={{maxWidth:1200,margin:'0 auto'}}>
+      <section id="features" className="ww-dot-bg bg-background px-6 py-20">
+        <div className="mx-auto max-w-[1200px]">
           <FadeIn>
-            <div style={{textAlign:'center',marginBottom:'3.5rem'}}>
-              <div className="tag" style={{background:'#a78bfa15',color:'#a78bfa',border:'1px solid #a78bfa30',marginBottom:'1rem'}}>Features</div>
-              <h2 className="sh">Everything your team actually needs.</h2>
-              <p style={{color:'#64748b',fontSize:'1rem',marginTop:'.75rem'}}>No bloat. No 200-tab dashboards. Just the features that move work forward.</p>
+            <div className="mb-14 text-center">
+              <div className="ww-tag mb-4 border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.10)] text-[#a78bfa]">
+                Features
+              </div>
+              <h2 className="ww-heading text-[clamp(1.7rem,4vw,2.8rem)]">Everything your team actually needs.</h2>
+              <p className="mt-3 text-base text-muted-foreground">
+                No bloat. No 200-tab dashboards. Just the features that move work forward.
+              </p>
             </div>
           </FadeIn>
-          <div className="feat-grid">
-            {FEATURES.map((f,i)=>(
-              <FadeIn key={f.title} delay={i*70}>
-                <div className="card">
-                  <div style={{fontSize:'1.8rem',marginBottom:'.9rem'}}>{f.icon}</div>
-                  <h3 style={{fontFamily:'Syne,sans-serif',fontSize:'1rem',fontWeight:700,color:'#e8edf2',marginBottom:8}}>{f.title}</h3>
-                  <p style={{color:'#64748b',fontSize:13.5,lineHeight:1.7}}>{f.desc}</p>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f, i) => (
+              <FadeIn key={f.title} delay={i * 70}>
+                <div className="ww-card ww-card-hover h-full">
+                  <div className="mb-4 text-[1.8rem]">{f.icon}</div>
+                  <h3 className="ww-heading text-base">{f.title}</h3>
+                  <p className="mt-2 text-[13.5px] leading-7 text-muted-foreground">{f.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -333,19 +340,23 @@ export default function App() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="sp" style={{background:'#0a0f14'}}>
-        <div style={{maxWidth:860,margin:'0 auto'}}>
+      <section className="bg-secondary px-6 py-20">
+        <div className="mx-auto max-w-[860px]">
           <FadeIn>
-            <div className="cta-inner" style={{background:'linear-gradient(135deg,#0d1117,#111827)',border:'1px solid #1e2a3a',borderRadius:20,position:'relative',overflow:'hidden'}}>
-              <div style={{position:'absolute',top:'-60px',left:'50%',transform:'translateX(-50%)',width:280,height:280,borderRadius:'50%',background:'radial-gradient(circle,rgba(0,255,148,.08) 0%,transparent 70%)',pointerEvents:'none'}}/>
-              <div className="tag" style={{background:'#00ff9415',color:'#00ff94',border:'1px solid #00ff9430',marginBottom:'1.25rem'}}>Free to start</div>
-              <h2 className="sh" style={{marginBottom:'1rem'}}>Ready to win your first week?</h2>
-              <p style={{color:'#64748b',fontSize:'1rem',maxWidth:440,margin:'0 auto 2rem'}}>
+            <div className="relative overflow-hidden rounded-3xl border border-border bg-[linear-gradient(135deg,#0d1117,#111827)] px-8 py-12 text-center">
+              <div className="pointer-events-none absolute -top-16 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(0,255,148,0.10)_0%,transparent_70%)]" />
+              <div className="ww-tag mb-5 border-primary/25 bg-primary/10 text-primary">Free to start</div>
+              <h2 className="ww-heading text-[clamp(1.7rem,4vw,2.8rem)]">Ready to win your first week?</h2>
+              <p className="mx-auto mt-3 max-w-[440px] text-base text-muted-foreground">
                 Set up your org, create a sprint, assign tasks — and actually ship what you planned.
               </p>
-              <div style={{display:'flex',gap:'1rem',flexWrap:'wrap',justifyContent:'center'}}>
-                <button className="btn-p">Create your org →</button>
-                <button className="btn-o">View demo</button>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Link to="/user/register" className="ww-btn-primary">
+                  Create your org →
+                </Link>
+                <a href="#features" className="ww-btn-outline">
+                  View demo
+                </a>
               </div>
             </div>
           </FadeIn>
@@ -353,22 +364,18 @@ export default function App() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{borderTop:'1px solid #1e2a3a',padding:'2rem 1.5rem',background:'#080c10'}}>
-        <div style={{maxWidth:1200,margin:'0 auto'}}>
-          <div className="footer-r">
-            <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:28,height:28,background:'#00ff94',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                <span style={{color:'#080c10',fontWeight:800,fontSize:13,fontFamily:'Syne,sans-serif'}}>W</span>
-              </div>
-              <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'1rem',color:'#e8edf2'}}>WeekWins</span>
+      <footer className="border-t border-border bg-background px-6 py-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+            <Logo to="/" size="sm" />
+            <div className="text-[11px] text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
+              © 2026 WeekWins · Built for dev teams that ship
             </div>
-            <div style={{fontFamily:'DM Mono,monospace',fontSize:11,color:'#475569'}}>© 2026 WeekWins · Built for dev teams that ship</div>
-            <div style={{display:'flex',gap:'1.5rem'}}>
-              {['Privacy','Terms','Contact'].map(l=>(
-                <a key={l} href="#" style={{color:'#475569',fontSize:13,textDecoration:'none',transition:'color .2s'}}
-                  onMouseEnter={e=>e.target.style.color='#00ff94'}
-                  onMouseLeave={e=>e.target.style.color='#475569'}
-                >{l}</a>
+            <div className="flex gap-6">
+              {["Privacy", "Terms", "Contact"].map((l) => (
+                <a key={l} href="#" className="text-sm text-muted-foreground transition-colors hover:text-primary">
+                  {l}
+                </a>
               ))}
             </div>
           </div>

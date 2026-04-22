@@ -3,11 +3,11 @@ import React from 'react'
 function SHowStatus({ status }) {
     return (
         <>
-            {status === 'Pending' && <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">Pending</span>}
-            {status === 'Work In Progress' && <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Work In Progress</span>}
-            {status === 'Completed' && <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Completed</span>}
-            {status === 'Hold' && <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Hold</span>}
-            {status === 'Cancelled' && <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">Cancelled</span>}
+            {status === 'Pending' && <span className="bg-muted text-muted-foreground border border-border text-xs font-medium px-2.5 py-0.5 rounded">Pending</span>}
+            {status === 'Work In Progress' && <span className="bg-[rgba(0,212,255,0.12)] text-[#00d4ff] border border-border text-xs font-medium px-2.5 py-0.5 rounded">Work In Progress</span>}
+            {status === 'Completed' && <span className="bg-primary/10 text-primary border border-primary/25 text-xs font-medium px-2.5 py-0.5 rounded">Completed</span>}
+            {status === 'Hold' && <span className="bg-[rgba(255,107,53,0.12)] text-[#ff6b35] border border-border text-xs font-medium px-2.5 py-0.5 rounded">Hold</span>}
+            {status === 'Cancelled' && <span className="bg-destructive/10 text-destructive border border-destructive/25 text-xs font-medium px-2.5 py-0.5 rounded">Cancelled</span>}
         </>
     )
 }

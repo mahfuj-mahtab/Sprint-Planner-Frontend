@@ -14,6 +14,9 @@ import ShowOrgDetails from './pages/ShowOrgDetails.jsx';
 import SprintDetails from './pages/sprintDetails.jsx';
 import MembersShow from './components/MembersShow.jsx';
 
+// Use the WeekWins dark theme across the app by default.
+document.documentElement.classList.add('dark')
+
 const router = createBrowserRouter([
   {
     path: "/",

@@ -1,17 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useForm } from "react-hook-form"
-import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import api from '../ApiInception';
 import MemberAddToOrg from './MemberAddToOrg';
-function MemberAddToTeam({ onClose, orgId, teamId, onAddMember, fetchOrg }) {
+function MemberAddToTeam({ onClose, orgId, teamId, onAddMember }) {
     const [orgDetails, setOrgDetails] = useState()
     const [memberAddShow, setMemberAddShow] = useState(false)
     const {
         register,
         handleSubmit,
-        watch,
-        formState: { errors },
     } = useForm()
     const onSubmit = (data) => {
         console.log(data)
@@ -26,7 +23,7 @@ function MemberAddToTeam({ onClose, orgId, teamId, onAddMember, fetchOrg }) {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme: "light",
+                theme: "dark",
 
             });
             if (onAddMember) {
@@ -42,13 +39,13 @@ function MemberAddToTeam({ onClose, orgId, teamId, onAddMember, fetchOrg }) {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme: "light",
+                theme: "dark",
 
             });
             console.error("There was an error!", error);
         });
     }
-    const fetchOrgDetails = () => {
+    const fetchOrgDetails = useCallback(() => {
         api.get(`/api/v1/org/fetch/${orgId}`).then((response) => {
             console.log(response.data)
             setOrgDetails(response.data);
@@ -56,33 +53,35 @@ function MemberAddToTeam({ onClose, orgId, teamId, onAddMember, fetchOrg }) {
         }).catch((error) => {
             console.error("There was an error!", error);
         });
-    }
+    }, [orgId])
     useEffect(() => {
         fetchOrgDetails()
-    }, [])
+    }, [fetchOrgDetails])
     if (!orgDetails) {
         return <div>Loading...</div>
     }
     return (
-        <div><section className="bg-white ">
-            <div className="py-8 px-4 mx-auto max-w-2xl lg:py-16">
-                <h2 className="mb-4 text-xl font-bold text-gray-900">Add a new Team</h2>
+        <div><section className="bg-transparent">
+            <div className="px-0 mx-auto max-w-2xl">
+                <h2 className="mb-4 text-xl font-bold ww-heading">Add a member</h2>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
                         <div className="sm:col-span-2">
-                            <label for="name" className="block mb-2 text-sm font-medium text-gray-900">Member</label>
-                            <select name="memberId" id="memberId" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("user", { required: true })}>
+                            <label htmlFor="memberId" className="ww-label">Member</label>
+                            <select name="memberId" id="memberId" className="ww-input" required="" {...register("user", { required: true })}>
                                 <option>Select Member</option>
                                 {orgDetails && orgDetails.organization.members.map((member) => (
                                     <option value={member.user?._id}>{member.user?.fullName}</option>
                                 ))}
                             </select>
-                            <button className='ml-[82%] mt-2 text-sm mb-1 font-semibold' onClick={() => setMemberAddShow(true)}>+ Add Member</button>
+                            <button type="button" className="mt-2 text-sm font-semibold text-primary hover:opacity-80" onClick={() => setMemberAddShow(true)}>
+                                + Add Member
+                            </button>
                         </div>
 
                         <div className="sm:col-span-2 mt-[-30px]">
-                            <label for="name" className="block mb-2 text-sm font-medium text-gray-900">Role</label>
-                            <select name="role" id="role" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required="" {...register("role", { required: true })}>
+                            <label htmlFor="role" className="ww-label">Role</label>
+                            <select name="role" id="role" className="ww-input" required="" {...register("role", { required: true })}>
                                 <option value="">Select a role</option>
                                 <option value="admin">Admin</option>
                                 <option value="editor">Editor</option>
@@ -92,16 +91,16 @@ function MemberAddToTeam({ onClose, orgId, teamId, onAddMember, fetchOrg }) {
 
 
                     </div>
-                    <button type="submit" className="inline-flex items-center px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center text-white bg-blue-600 rounded-lg focus:ring-4 focus:ring-primary-200 hover:bg-primary-800">
-                        Add Team
+                    <button type="submit" className="ww-btn-primary mt-6">
+                        Add Member
                     </button>
                 </form>
                 {memberAddShow && (
-                    <div className="fixed inset-0 flex items-center justify-center z-50 ">
-                        <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full mx-4 relative">
+                    <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
+                        <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
                             <button
                                 onClick={() => setMemberAddShow(false)}
-                                className="absolute top-2 right-5 font-bold text-gray-500 hover:text-gray-700 text-4xl"
+                                className="absolute top-2 right-4 font-bold text-muted-foreground hover:text-foreground text-3xl"
                             >
                                 &times;
                             </button>

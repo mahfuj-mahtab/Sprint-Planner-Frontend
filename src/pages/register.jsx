@@ -1,8 +1,11 @@
 import { useForm } from "react-hook-form"
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
+import { Link, useNavigate } from "react-router-dom";
+import AuthShell from "@/components/layout/AuthShell";
 
 export default function Register() {
+    const navigate = useNavigate()
     const {
         register,
         handleSubmit,
@@ -10,164 +13,134 @@ export default function Register() {
         formState: { errors },
     } = useForm()
     const onSubmit = (data) => {
-        axios.post(`${import.meta.env.VITE_API_URL}/api/v1/users/register`, data).then((response) => {
-            console.log(response)
-            toast.success(response.data.message, {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-                
+        axios
+            .post(`${import.meta.env.VITE_API_URL}/api/v1/users/register`, data)
+            .then((response) => {
+                toast.success(response.data.message || "Account created", {
+                    position: "top-right",
+                    autoClose: 2500,
+                    theme: "dark",
+                });
+                setTimeout(() => navigate("/user/login"), 600);
+            })
+            .catch((error) => {
+                toast.error(error.response?.data?.message || "Registration failed", {
+                    position: "top-right",
+                    autoClose: 4000,
+                    theme: "dark",
+                });
+                console.error("There was an error!", error);
             });
-        }).catch((error) => {
-            console.log(error.response.data);
-            toast.error(error.response.data.message, {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-              
-            });
-            console.error("There was an error!", error);
-        });
     }
+    const password = watch("password")
     return (
         <>
-            {/*
-        This example requires updating your template:
+            <AuthShell
+                title="Create your account"
+                subtitle="Create an org, plan sprints, assign tasks — and ship what you planned."
+                kicker="Start free"
+                sideTitle="One structure."
+                sideSubtitle="Zero chaos."
+                features={[
+                    { icon: "⚡", label: "Sprint Planning", desc: "Build focused sprint plans in minutes." },
+                    { icon: "🧑‍💻", label: "Team Assignment", desc: "Every task has a clear owner." },
+                    { icon: "📊", label: "Priority & Status", desc: "Track work from Pending to Done." },
+                ]}
+            >
+                <form onSubmit={handleSubmit(onSubmit)} method="POST" className="space-y-5">
+                    <div>
+                        <label className="ww-label" htmlFor="fullName">
+                            Full name
+                        </label>
+                        <input
+                            id="fullName"
+                            type="text"
+                            autoComplete="name"
+                            className={`ww-input ${errors.fullName ? "border-destructive focus-visible:ring-destructive/25" : ""}`}
+                            {...register("fullName", { required: "Full name is required" })}
+                        />
+                        {errors.fullName && <p className="mt-2 text-xs text-destructive">⚠ {errors.fullName.message}</p>}
+                    </div>
 
-        ```
-        <html class="h-full bg-white">
-        <body class="h-full">
-        ```
-      */}
-            <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-                <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-                    <img
-                        alt="Your Company"
-                        src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
-                        className="mx-auto h-10 w-auto"
-                    />
-                    <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
-                        Sign in to your account
-                    </h2>
-                </div>
+                    <div>
+                        <label className="ww-label" htmlFor="username">
+                            Username
+                        </label>
+                        <input
+                            id="username"
+                            type="text"
+                            autoComplete="username"
+                            className={`ww-input ${errors.username ? "border-destructive focus-visible:ring-destructive/25" : ""}`}
+                            {...register("username", { required: "Username is required" })}
+                        />
+                        {errors.username && <p className="mt-2 text-xs text-destructive">⚠ {errors.username.message}</p>}
+                    </div>
 
-                <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                    <form onSubmit={handleSubmit(onSubmit)} method="POST" className="space-y-6">
-                        <div>
-                            <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
-                                Full Name
-                            </label>
-                            <div className="mt-2">
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="text"
-                                    required
-                                    autoComplete="text"
-                                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                                    {...register("fullName")}
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
-                                User Name
-                            </label>
-                            <div className="mt-2">
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="text"
-                                    required
-                                    autoComplete="text"
-                                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                                    {...register("username")}
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
-                                Email address
-                            </label>
-                            <div className="mt-2">
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    required
-                                    autoComplete="email"
-                                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                                    {...register("email")}
-                                />
-                            </div>
-                        </div>
+                    <div>
+                        <label className="ww-label" htmlFor="email">
+                            Email address
+                        </label>
+                        <input
+                            id="email"
+                            type="email"
+                            autoComplete="email"
+                            placeholder="you@company.com"
+                            className={`ww-input ${errors.email ? "border-destructive focus-visible:ring-destructive/25" : ""}`}
+                            {...register("email", {
+                                required: "Email is required",
+                                pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email" },
+                            })}
+                        />
+                        {errors.email && <p className="mt-2 text-xs text-destructive">⚠ {errors.email.message}</p>}
+                    </div>
 
-                        <div>
-                            <div className="flex items-center justify-between">
-                                <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
-                                    Password
-                                </label>
-                                <div className="text-sm">
-                                    <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                                        Forgot password?
-                                    </a>
-                                </div>
-                            </div>
-                            <div className="mt-2">
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    autoComplete="current-password"
-                                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                                    {...register("password")}
-                                />
-                            </div>
-                        </div>
+                    <div>
+                        <label className="ww-label" htmlFor="password">
+                            Password
+                        </label>
+                        <input
+                            id="password"
+                            type="password"
+                            autoComplete="new-password"
+                            placeholder="At least 6 characters"
+                            className={`ww-input ${errors.password ? "border-destructive focus-visible:ring-destructive/25" : ""}`}
+                            {...register("password", { required: "Password is required", minLength: { value: 6, message: "At least 6 characters" } })}
+                        />
+                        {errors.password && <p className="mt-2 text-xs text-destructive">⚠ {errors.password.message}</p>}
+                    </div>
 
-                        <div>
-                            <button
-                                type="submit"
-                                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                            >
-                                Register
-                            </button>
-                        </div>
-                    </form>
+                    <div>
+                        <label className="ww-label" htmlFor="confirmPassword">
+                            Confirm password
+                        </label>
+                        <input
+                            id="confirmPassword"
+                            type="password"
+                            autoComplete="new-password"
+                            className={`ww-input ${errors.confirmPassword ? "border-destructive focus-visible:ring-destructive/25" : ""}`}
+                            {...register("confirmPassword", {
+                                required: "Please confirm your password",
+                                validate: (v) => v === password || "Passwords do not match",
+                            })}
+                        />
+                        {errors.confirmPassword && (
+                            <p className="mt-2 text-xs text-destructive">⚠ {errors.confirmPassword.message}</p>
+                        )}
+                    </div>
 
-                    <p className="mt-10 text-center text-sm/6 text-gray-500">
-                        Not a member?{' '}
-                        <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                            Start a 14 day free trial
-                        </a>
+                    <button type="submit" className="ww-btn-primary w-full">
+                        Create account →
+                    </button>
+
+                    <p className="text-center text-sm text-muted-foreground">
+                        Already have an account?{" "}
+                        <Link to="/user/login" className="font-semibold text-primary hover:opacity-80">
+                            Sign in →
+                        </Link>
                     </p>
-                </div>
-                <ToastContainer
-                    position="top-right"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick={false}
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="light"
-                    
-                />
-
-            </div>
+                </form>
+            </AuthShell>
+            <ToastContainer position="top-right" autoClose={4000} theme="dark" />
         </>
     )
 }
