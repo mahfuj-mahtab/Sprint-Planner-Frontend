@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react'
 import OrgCreate from './OrgCreate'
 import api from '../ApiInception'
 import { Link } from 'react-router'
-import { Plus, Building2, User, ChevronDown, ChevronRight, CheckSquare } from 'lucide-react'
+import { Plus, Building2, User, ChevronDown, ChevronRight, CheckSquare, ListChecks } from 'lucide-react'
 import { ToastContainer, toast } from 'react-toastify';
 import OrgEdit from './OrgEdit'
+import { Skeleton } from './ui/Loading'
 
 function LeftSidebar() {
     const [showCreateOrg, setShowCreateOrg] = useState(false)
@@ -68,7 +69,45 @@ function LeftSidebar() {
         })
     }
     if (!profileDetaile) {
-        return <div className="p-4">Loading...</div>
+        return (
+            <div className="h-full bg-sidebar border-r border-border p-2 overflow-y-auto">
+                <div className="mb-6 p-3 rounded-lg border border-border bg-card">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="w-10 h-10 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-40" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mb-6 p-3 rounded-lg border border-border bg-card">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="w-10 h-10 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-28" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-4" />
+                        <Skeleton className="h-4 w-28" />
+                    </div>
+                    <Skeleton className="h-7 w-7" />
+                </div>
+
+                <div className="space-y-2">
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className="p-3 rounded-lg border border-border bg-card">
+                            <Skeleton className="h-4 w-40" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -95,6 +134,19 @@ function LeftSidebar() {
                     <div>
                         <p className="font-medium text-foreground">My Tasks</p>
                         <p className="text-sm text-muted-foreground">Daily to-dos</p>
+                    </div>
+                </Link>
+            </div>
+
+            {/* Assigned Sprint Tasks */}
+            <div className="mb-6">
+                <Link to="/user/assigned-tasks" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                        <ListChecks className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                        <p className="font-medium text-foreground">My Task</p>
+                        <p className="text-sm text-muted-foreground">Sprint assignments</p>
                     </div>
                 </Link>
             </div>

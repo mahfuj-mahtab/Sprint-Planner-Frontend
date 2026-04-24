@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form"
 import { toast } from 'react-toastify';
 import api from '../ApiInception';
 import MemberAddToOrg from './MemberAddToOrg';
+import { Skeleton, Spinner } from './ui/Loading';
 function MemberAddToTeam({ onClose, orgId, teamId, onAddMember }) {
     const [orgDetails, setOrgDetails] = useState()
     const [memberAddShow, setMemberAddShow] = useState(false)
@@ -58,7 +59,24 @@ function MemberAddToTeam({ onClose, orgId, teamId, onAddMember }) {
         fetchOrgDetails()
     }, [fetchOrgDetails])
     if (!orgDetails) {
-        return <div>Loading...</div>
+        return (
+            <div className="px-0 mx-auto max-w-2xl">
+                <div className="mb-4">
+                    <Skeleton className="h-6 w-40" />
+                </div>
+                <div className="space-y-4">
+                    <div>
+                        <Skeleton className="h-4 w-24 mb-2" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div>
+                        <Skeleton className="h-4 w-16 mb-2" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <Spinner label="Loading members…" className="pt-2" />
+                </div>
+            </div>
+        )
     }
     return (
         <div><section className="bg-transparent">

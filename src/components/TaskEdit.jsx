@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from "react-hook-form"
 import { toast } from 'react-toastify';
 import api from '../ApiInception';
+import { Skeleton, Spinner } from './ui/Loading';
 function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }) {
     const [taskDetail, setTaskDetail] = useState()
     const [selectedMembers, setSelectedMembers] = useState([])
     const [teamDetails, setTeamDetails] = useState([])
     const [teamMembers, setTeamMembers] = useState([])
+    const [featureModules, setFeatureModules] = useState([])
     const {
         register,
         handleSubmit,
@@ -80,7 +82,8 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
                 endDate: response.data.task.endDate.split('T')[0],
                 status: response.data.task.status,
                 priority: response.data.task.priority,
-                team: response.data.task.team_id._id
+                team: response.data.task.team_id._id,
+                featureId: response.data.task?.feature_id?._id || ""
             });
             // setProfileDetaile(response.data);
         }).catch((error) => {
@@ -99,6 +102,12 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
         }).catch((error) => {
             console.error("There was an error!", error);
         });
+
+        if (projectId) {
+            api.get(`/api/v1/org/${orgId}/projects/${projectId}/features/summary`).then((r) => {
+                if (r.data?.success) setFeatureModules(r.data.modules || []);
+            }).catch(() => setFeatureModules([]));
+        }
     }, [])
 
     useEffect(() => {
@@ -108,10 +117,28 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
         }
     }, [teamDetails, taskDetail])
     if(!taskDetail){
-        return <div>Loading...</div>
+        return (
+            <div className="px-0 mx-auto max-w-2xl">
+                <Skeleton className="h-6 w-32 mb-4" />
+                <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-40 w-full" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <Spinner label="Loading task…" />
+                </div>
+            </div>
+        )
     }
     if(!teamDetails.teams){
-        return <div>Loading...</div>
+        return (
+            <div className="px-0 mx-auto max-w-2xl">
+                <Skeleton className="h-6 w-32 mb-4" />
+                <Spinner label="Loading teams…" />
+            </div>
+        )
     }
     return (
         <div><section className="bg-transparent">
@@ -156,6 +183,23 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
                                 <option value="Medium">Medium</option>
                                 <option value="High">High</option>
                             </select>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                            <label htmlFor="featureId" className="ww-label">Feature (optional)</label>
+                            <select name="featureId" id="featureId" className="ww-input" {...register("featureId")}>
+                                <option value="">Unassigned</option>
+                                {featureModules.map((m) => (
+                                    <optgroup key={m._id} label={m.name}>
+                                        {(m.features || []).map((f) => (
+                                            <option key={f._id} value={f._id}>{f.name}</option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                            {featureModules.length === 0 && (
+                                <p className="text-xs text-muted-foreground mt-2">No features found for this project (add them in Project → Features).</p>
+                            )}
                         </div>
 
                         <div className="sm:col-span-2">

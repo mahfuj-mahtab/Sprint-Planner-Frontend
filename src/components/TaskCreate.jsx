@@ -6,6 +6,7 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
     const [selectedMembers, setSelectedMembers] = useState([])
     const [teamDetails, setTeamDetails] = useState([])
     const [teamMembers, setTeamMembers] = useState([])
+    const [featureModules, setFeatureModules] = useState([])
     const {
         register,
         handleSubmit,
@@ -77,6 +78,14 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
         }).catch((error) => {
             console.error("There was an error!", error);
         });
+
+        if (projectId) {
+            api.get(`/api/v1/org/${orgId}/projects/${projectId}/features/summary`).then((r) => {
+                if (r.data?.success) setFeatureModules(r.data.modules || []);
+            }).catch(() => {
+                setFeatureModules([]);
+            });
+        }
     }, [])
 
     return (
@@ -122,6 +131,23 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
                                 <option value="Medium">Medium</option>
                                 <option value="High">High</option>
                             </select>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                            <label htmlFor="featureId" className="ww-label">Feature (optional)</label>
+                            <select name="featureId" id="featureId" className="ww-input" {...register("featureId")}>
+                                <option value="">Unassigned</option>
+                                {featureModules.map((m) => (
+                                    <optgroup key={m._id} label={m.name}>
+                                        {(m.features || []).map((f) => (
+                                            <option key={f._id} value={f._id}>{f.name}</option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                            {featureModules.length === 0 && (
+                                <p className="text-xs text-muted-foreground mt-2">No features found for this project (add them in Project → Features).</p>
+                            )}
                         </div>
 
                         <div className="sm:col-span-2">
