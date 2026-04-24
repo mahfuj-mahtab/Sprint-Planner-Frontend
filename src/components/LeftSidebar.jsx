@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import OrgCreate from './OrgCreate'
 import api from '../ApiInception'
 import { Link } from 'react-router'
-import { Plus, Building2, User, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Building2, User, ChevronDown, ChevronRight, CheckSquare } from 'lucide-react'
 import { ToastContainer, toast } from 'react-toastify';
 import OrgEdit from './OrgEdit'
 
@@ -82,6 +82,19 @@ function LeftSidebar() {
                     <div>
                         <p className="font-medium text-foreground">{profileDetaile.user?.fullName || 'User'}</p>
                         <p className="text-sm text-muted-foreground">{profileDetaile.user?.email}</p>
+                    </div>
+                </Link>
+            </div>
+
+            {/* My Todos Section */}
+            <div className="mb-6">
+                <Link to="/user/todos" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors bg-muted/50">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <CheckSquare className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div>
+                        <p className="font-medium text-foreground">My Tasks</p>
+                        <p className="text-sm text-muted-foreground">Daily to-dos</p>
                     </div>
                 </Link>
             </div>
