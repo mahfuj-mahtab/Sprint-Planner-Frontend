@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import './App.css'
 import { Link } from 'react-router-dom';
 import Logo from '@/components/branding/Logo'
 import { cn } from '@/lib/utils'

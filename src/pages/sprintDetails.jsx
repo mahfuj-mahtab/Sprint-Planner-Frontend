@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import LeftSidebar from '../components/LeftSidebar'
-import Profileheader from '../components/profileheader'
 import { useNavigate, useParams } from 'react-router'
 import api from '../ApiInception'
 import { convertDate } from '../utils/utils'
@@ -19,9 +17,9 @@ import TeamCard from '../components/TeamCard'
 import TeamCreate from '../components/TeamCreate'
 import TaskEdit from '../components/TaskEdit'
 import TeamWiseAnalytics from '../components/TeamWiseAnalytics'
-import { useIsMobile } from '../components/CheckMobile'
 import { ArrowLeft } from 'lucide-react'
 import { Skeleton, Spinner } from '../components/ui/Loading'
+import DashboardLayout from "@/components/layout/DashboardLayout";
 function SprintDetails({ fetchOrg }) {
     const [activeTab, setActiveTab] = useState('sprint')
     const [showTaskCreate, setShowCreateTask] = useState(false)
@@ -31,8 +29,6 @@ function SprintDetails({ fetchOrg }) {
     const { orgId, projectId, sprintId } = useParams();
     const navigate = useNavigate();
     const [sprintDetails, setSprintDetails] = useState()
-    const [showLeftSideBar, setShowLeftSideBar] = useState(true)
-    const isMobile = useIsMobile()
     const tabs = [
         { id: 'sprint', label: 'Sprint' },
         { id: 'analytics', label: 'Analytics' },
@@ -81,133 +77,85 @@ function SprintDetails({ fetchOrg }) {
         });
     }
     useEffect(() => {
-        if (isMobile) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setShowLeftSideBar(false)
-        }
         fetchSprintDetails();
     }, [sprintId, orgId]);
     const effectiveProjectId = sprintDetails?.sprint?.project_id || projectId;
     if (!sprintDetails) {
         return (
-            <div className="flex h-screen bg-background">
-                {showLeftSideBar && (
-                    <div className="w-64 bg-sidebar border-r border-border h-full">
-                        <LeftSidebar />
-                    </div>
-                )}
-                <div className="flex-1 bg-background h-full overflow-y-auto">
-                    <Profileheader />
-                    <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
-                        <div className="flex items-center justify-between px-6">
-                            <div className="flex gap-4 items-center py-4">
-                                <button
-                                    onClick={() => setShowLeftSideBar(prev => !prev)}
-                                    className="py-2 px-2 font-medium text-sm transition-colors text-muted-foreground hover:text-foreground"
-                                    title="Toggle sidebar"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth="2" />
-                                        <path d="M9 4v16" strokeWidth="2" />
-                                    </svg>
-                                </button>
-                                <Skeleton className="h-4 w-64" />
-                            </div>
-                            <Skeleton className="h-9 w-28" />
-                        </div>
-                    </div>
-                    <div className="p-6">
-                        <Skeleton className="h-7 w-72 mb-4" />
-                        <div className="space-y-3">
-                            {[0, 1].map((i) => (
-                                <div key={i} className="w-full rounded-xl border border-border bg-card p-5">
-                                    <Skeleton className="h-5 w-48 mb-3" />
-                                    <Skeleton className="h-4 w-full mb-2" />
-                                    <Skeleton className="h-4 w-2/3" />
-                                </div>
-                            ))}
-                        </div>
-                        <Spinner className="mt-6" label="Loading sprint…" />
+            <DashboardLayout>
+                <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
+                    <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+                        <Skeleton className="h-4 w-64" />
+                        <Skeleton className="h-9 w-28" />
                     </div>
                 </div>
-            </div>
+                <div className="p-4 sm:p-6">
+                    <Skeleton className="h-7 w-72 mb-4" />
+                    <div className="space-y-3">
+                        {[0, 1].map((i) => (
+                            <div key={i} className="w-full rounded-xl border border-border bg-card p-5">
+                                <Skeleton className="h-5 w-48 mb-3" />
+                                <Skeleton className="h-4 w-full mb-2" />
+                                <Skeleton className="h-4 w-2/3" />
+                            </div>
+                        ))}
+                    </div>
+                    <Spinner className="mt-6" label="Loading sprint…" />
+                </div>
+            </DashboardLayout>
         )
     }
     return (
-        <div className="flex h-screen bg-background">
-            {/* Left Sidebar for Task Management */}
-            {showLeftSideBar && (
-                <div className="w-64 bg-sidebar border-r border-border h-full">
-                    <LeftSidebar />
-                </div>
-            )}
-            {/* Right Side - Empty for Tasks */}
-            <div className="flex-1 bg-background h-full overflow-y-auto">
-                <Profileheader />
-                <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
-                    <div className="flex items-center justify-between px-6">
-                        <div className="flex gap-6 items-center">
-                            <button
-                                onClick={() => navigate(`/user/profile/org/${orgId}?view=details&projectId=${effectiveProjectId}&tab=sprints`)}
-                                className="py-4 pr-2 font-medium text-sm transition-colors text-muted-foreground hover:text-foreground flex items-center gap-2"
-                                title="Back to project"
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                Project
-                            </button>
-                            <button onClick={() => setShowLeftSideBar(prev => !prev)}
-                                className="py-4 px-2 font-medium text-sm transition-colors border-b-2 text-muted-foreground border-transparent hover:text-foreground"
-                                title="Toggle sidebar"
-                            >
-                                {showLeftSideBar ?
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth="2" />
-                                        <path d="M9 4v16" strokeWidth="2" />
-                                        <path d="M13 12l3-3m0 0l-3-3m3 3H9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    :
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth="2" />
-                                        <path d="M9 4v16" strokeWidth="2" />
-                                        <path d="M11 12l-3-3m0 0l3-3m-3 3h6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
+        <DashboardLayout>
+            <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
+                <div className="px-4 sm:px-6 py-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <button
+                            onClick={() => navigate(`/user/profile/org/${orgId}?view=details&projectId=${effectiveProjectId}&tab=sprints`)}
+                            className="shrink-0 inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition"
+                            title="Back to project"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Project
+                        </button>
 
-                                }
-
-                            </button>
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`py-4 px-2 font-medium text-sm transition-colors border-b-2 ${activeTab === tab.id
-                                        ? 'text-foreground border-foreground'
-                                        : 'text-muted-foreground border-transparent hover:text-foreground'
-                                        }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex gap-4">
-
-                            <button
-                                onClick={() => setShowCreateTeam(true)}
-                                className="border border-border hover:bg-muted text-foreground font-medium text-sm py-1.5 px-4 rounded-md transition-colors"
-                            >
-                                + Create Team
-                            </button>
-                            <button
-                                onClick={() => setShowCreateTask(true)}
-                                className="bg-primary hover:brightness-95 text-sm text-primary-foreground font-semibold py-2 px-4 rounded-md transition-colors"
-                            >
-                                + Create Task
-                            </button>
+                        <div className="min-w-0 flex-1 overflow-x-auto">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
+                                {tabs.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
+                                            ? 'bg-muted text-foreground'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                                            }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Tab Content */}
-                <div className="p-6">
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setShowCreateTeam(true)}
+                            className="border border-border hover:bg-muted text-foreground font-medium text-sm py-1.5 px-4 rounded-md transition-colors"
+                        >
+                            + Create Team
+                        </button>
+                        <button
+                            onClick={() => setShowCreateTask(true)}
+                            className="bg-primary hover:brightness-95 text-sm text-primary-foreground font-semibold py-2 px-4 rounded-md transition-colors"
+                        >
+                            + Create Task
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-4 sm:p-6">
                     {activeTab === 'sprint' && (
                         <div>
                             <h2 className="text-2xl font-bold mb-4 ww-heading">{sprintDetails?.sprint?.name}</h2>
@@ -362,8 +310,6 @@ function SprintDetails({ fetchOrg }) {
                         </div>
                     )}
                 </div>
-            </div>
-
             {showTaskCreate && (
                 <div className="fixed inset-0 flex items-center justify-center z-50 bg-background/70 backdrop-blur">
                     <div className="bg-card border border-border p-6 rounded-2xl shadow-lg max-w-2xl w-full mx-4 relative">
@@ -419,7 +365,7 @@ function SprintDetails({ fetchOrg }) {
                 theme="dark"
 
             />
-        </div>
+        </DashboardLayout>
     )
 }
 

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../ApiInception';
-import LeftSidebar from './LeftSidebar';
 import { Trash2, Edit2, AlertCircle, Clock, Plus, Calendar, Zap, X, Check } from 'lucide-react';
-import Profileheader from './profileheader';
 import { Spinner } from './ui/Loading';
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const MyTodo = () => {
     const [todos, setTodos] = useState([]);
@@ -213,30 +212,18 @@ const MyTodo = () => {
     const capPct = analysis ? Math.min(100, (analysis.totalHours / analysis.availableHours) * 100) : 0;
 
     if (loading) return (
-        <div className="flex h-screen bg-background">
-            <div className="w-64 bg-sidebar border-r border-border h-full">
-                <LeftSidebar />
-            </div>
-            <div className="flex-1 bg-background overflow-y-auto">
-                <Profileheader />
-                <div className="p-6">
-                    <div className="max-w-5xl mx-auto">
-                        <Spinner label="Loading tasks…" />
-                    </div>
+        <DashboardLayout>
+            <div className="p-4 sm:p-6">
+                <div className="max-w-5xl mx-auto">
+                    <Spinner label="Loading tasks…" />
                 </div>
             </div>
-        </div>
+        </DashboardLayout>
     );
 
     return (
-        <div className="flex h-screen bg-background">
-            <div className="w-64 bg-sidebar border-r border-border h-full">
-                <LeftSidebar />
-            </div>
-
-            <div className="flex-1 bg-background overflow-y-auto">
-                <Profileheader />
-                <div className="max-w-5xl mx-auto px-6 py-6">
+        <DashboardLayout>
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
 
                     {/* ── Header ── */}
                     <div className="flex items-center justify-between mb-5">
@@ -528,9 +515,8 @@ const MyTodo = () => {
                         )}
                     </div>
 
-                </div>
             </div>
-        </div>
+        </DashboardLayout>
     );
 };
 

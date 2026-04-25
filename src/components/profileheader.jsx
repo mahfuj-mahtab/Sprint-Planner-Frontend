@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import { useNavigate } from 'react-router';
 import api from '../ApiInception';
+import { Menu } from "lucide-react";
 // import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -16,7 +17,7 @@ import {
 import UserEdit from './UserEdit';
 import { fetchUser } from '../utils/utils';
 import Logo from '@/components/branding/Logo'
-function Profileheader() {
+function Profileheader({ onMenuClick }) {
     const [profileEditShow, setProfileEditShow] = useState(false)
     // const user = userDetails?.user
     const [userDetails, setUserDetails] = useState()
@@ -49,8 +50,18 @@ function Profileheader() {
         return <p>loading</p>
     }
     return (
-        <div className="w-full h-14 bg-background/80 ww-glass flex items-center justify-between px-6 border-b border-border sticky top-0 z-40">
+        <div className="w-full h-14 bg-background/80 ww-glass flex items-center justify-between px-4 sm:px-6 border-b border-border sticky top-0 z-40">
             <div className="flex items-center gap-3">
+                {onMenuClick ? (
+                    <button
+                        type="button"
+                        onClick={onMenuClick}
+                        className="md:hidden inline-flex items-center justify-center rounded-md border border-border bg-card p-2 text-foreground hover:bg-muted transition"
+                        aria-label="Open sidebar"
+                    >
+                        <Menu className="w-5 h-5" />
+                    </button>
+                ) : null}
                 <Logo to="/user/profile" size="sm" />
                 <div className="hidden sm:block text-sm text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
                     Sprint Planner
