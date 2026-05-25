@@ -1,15 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ToastContainer, toast } from "react-toastify";
 import api from "../ApiInception";
 
 function ProjectEdit({ onClose, orgId, project, onUpdated }) {
+  const [clients, setClients] = useState([]);
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
+
+  useEffect(() => {
+    api.get(`/api/v1/org/${orgId}/clients`).then((r) => setClients(r.data.clients || [])).catch(() => {});
+  }, [orgId]);
 
   useEffect(() => {
     reset({
       name: project?.name || "",
       description: project?.description || "",
+      project_type: project?.project_type || "product",
+      status: project?.status || "active",
+      client_id: project?.client_id || "",
+      budget: project?.budget ?? "",
     });
   }, [project, reset]);
 
@@ -19,6 +28,10 @@ function ProjectEdit({ onClose, orgId, project, onUpdated }) {
       .patch(`/api/v1/org/${orgId}/projects/${project._id}`, {
         name: data.name,
         description: data.description,
+        project_type: data.project_type,
+        status: data.status,
+        client_id: data.client_id || null,
+        budget: data.budget,
       })
       .then((response) => {
         toast.success(response.data.message || "Project updated", { position: "top-right", autoClose: 4000, theme: "dark" });
@@ -49,6 +62,42 @@ function ProjectEdit({ onClose, orgId, project, onUpdated }) {
             placeholder="Optional"
             {...register("description")}
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="ww-label mb-1">Type</label>
+            <select className="ww-input w-full" {...register("project_type")}>
+              <option value="product">Product</option>
+              <option value="client_work">Client work</option>
+              <option value="internal">Internal</option>
+            </select>
+          </div>
+          <div>
+            <label className="ww-label mb-1">Status</label>
+            <select className="ww-input w-full" {...register("status")}>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        {clients.length > 0 && (
+          <div>
+            <label className="ww-label mb-1">Client</label>
+            <select className="ww-input w-full" {...register("client_id")}>
+              <option value="">—</option>
+              {clients.map((c) => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div>
+          <label className="ww-label mb-1">Budget</label>
+          <input type="number" step="0.01" className="ww-input w-full" {...register("budget")} />
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-2">

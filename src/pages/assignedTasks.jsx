@@ -63,7 +63,7 @@ function AssignedTasks() {
 
   return (
     <DashboardLayout>
-      <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
+      <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4">
           <div>
             <h1 className="text-2xl font-semibold ww-heading">My Task</h1>

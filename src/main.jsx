@@ -15,6 +15,10 @@ import SprintDetails from './pages/sprintDetails.jsx';
 import MembersShow from './components/MembersShow.jsx';
 import MyTodo from './components/MyTodo.jsx';
 import AssignedTasks from './pages/assignedTasks.jsx';
+import OrgClients from './pages/OrgClients.jsx';
+import OrgFinance from './pages/OrgFinance.jsx';
+import OrgDashboard from './pages/OrgDashboard.jsx';
+import ProjectDashboard from './pages/ProjectDashboard.jsx';
 
 // Use the WeekWins dark theme across the app by default.
 document.documentElement.classList.add('dark')
@@ -39,6 +43,22 @@ const router = createBrowserRouter([
   {
     path: "/user/profile/org/:orgId",
     element: <ShowOrgDetails />
+  },
+  {
+    path: "/user/profile/org/:orgId/dashboard",
+    element: <OrgDashboard />
+  },
+  {
+    path: "/user/profile/org/:orgId/clients",
+    element: <OrgClients />
+  },
+  {
+    path: "/user/profile/org/:orgId/finance",
+    element: <OrgFinance />
+  },
+  {
+    path: "/user/profile/org/:orgId/project/:projectId/dashboard",
+    element: <ProjectDashboard />
   },
   {
     path: "/user/profile/org/:orgId/project/:projectId/sprint/:sprintId",

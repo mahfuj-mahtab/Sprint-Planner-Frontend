@@ -1,69 +1,107 @@
-import React from 'react'
-import api from '../ApiInception';
-import { toast } from 'react-toastify';
+import { useState } from "react";
+import { Crown, Mail, Trash2, User } from "lucide-react";
+import { toast } from "react-toastify";
+import api from "../ApiInception";
+import { MemberAvatar } from "./MemberAvatar";
+import { cn } from "@/lib/utils";
 
-function MemberCard({ name, id,orgId,role }) {
-    const handleMemberDelete = (id) => {
-        api.patch(`/api/v1/users/org/delete/member/${id}/${orgId}`).then((response) => {
-            console.log(response.data.message)
-            // onClose();
-            toast.success(response.data.message, {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "dark",
+const STATUS_STYLES = {
+  active: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  pending: "bg-amber-500/15 text-amber-200 border-amber-500/30",
+  inactive: "bg-muted/50 text-muted-foreground border-border",
+  banned: "bg-destructive/15 text-destructive border-destructive/30",
+};
 
-            });
-            // if (onAddMember) {
-            //     onAddMember();
-            // }
-        }).catch((error) => {
-            console.log(error.response.data);
-            toast.error(error.response.data.message, {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "dark",
+function MemberCard({ member, orgId, ownerId, onRemoved }) {
+  const [removing, setRemoving] = useState(false);
+  const user = member?.user;
+  const name = user?.fullName || "Unknown";
+  const email = user?.email || "";
+  const status = member?.status || "pending";
+  const isOwner = ownerId && user?._id?.toString() === ownerId?.toString();
 
-            });
-            console.error("There was an error!", error);
-        });
+  const handleMemberDelete = async () => {
+    if (isOwner) {
+      toast.error("Cannot remove the organization owner", { theme: "dark" });
+      return;
     }
-    return (
-        <div className='w-auto border border-border rounded-xl pt-4 pl-4 pb-4 pr-2 bg-card shadow-sm'>
-            <div className='flex items-center mb-4'>
-                <div>
+    if (!window.confirm(`Remove ${name} from this organization?`)) return;
+    setRemoving(true);
+    try {
+      const response = await api.patch(`/api/v1/users/org/delete/member/${user._id}/${orgId}`);
+      toast.success(response.data.message, { theme: "dark" });
+      onRemoved?.();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to remove member", { theme: "dark" });
+    } finally {
+      setRemoving(false);
+    }
+  };
 
-                    <img src="https://avatars.githubusercontent.com/u/30542294?v=4" alt="Profile" className="w-10 h-10 rounded-full mr-3" />
-                </div>
-                <div className=''>
-                    <h3 className='text-md font-semibold text-foreground'>{name}</h3>
-                    <p className='text-sm text-muted-foreground'>{role}</p>
-                </div>
-                <div className='mt-[-20px] ml-20'>
-                    <div className="flex space-x-2">
+  return (
+    <article
+      className={cn(
+        "group relative rounded-xl border bg-card p-4 transition hover:border-[#00d4ff]/25 hover:shadow-[0_8px_32px_rgba(0,212,255,0.06)]",
+        isOwner ? "border-primary/30 bg-primary/[0.04]" : "border-border"
+      )}
+    >
+      {isOwner ? (
+        <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded-md border border-primary/40 bg-primary/10 text-primary">
+          <Crown className="w-3 h-3" />
+          Owner
+        </span>
+      ) : null}
 
-                        <button className="text-[#00d4ff] hover:opacity-80" title="Edit">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        </button>
-                        <button className="text-destructive hover:opacity-80" onClick={() => { handleMemberDelete(id) }} title="Remove">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            {/* <p className='text-gray-700 mb-4'>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p> */}
-            {/* <button className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600'>View Profile</button> */}
+      <div className="flex items-start gap-3">
+        <MemberAvatar name={name} size="lg" accent={isOwner ? "primary" : "cyan"} />
+        <div className={cn("min-w-0 flex-1", isOwner && "pr-20")}>
+          <h3 className="font-semibold text-foreground truncate">{name}</h3>
+          {email ? (
+            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 truncate">
+              <Mail className="w-3 h-3 shrink-0 opacity-60" />
+              {email}
+            </p>
+          ) : null}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span
+              className={cn(
+                "text-[10px] px-2 py-0.5 rounded-md border uppercase tracking-wide font-medium",
+                STATUS_STYLES[status] || STATUS_STYLES.pending
+              )}
+            >
+              {status}
+            </span>
+            {user?.role ? (
+              <span className="text-[10px] px-2 py-0.5 rounded-md border border-border text-muted-foreground capitalize">
+                {user.role}
+              </span>
+            ) : null}
+          </div>
         </div>
-    )
+      </div>
+
+      {!isOwner ? (
+        <div className="mt-4 pt-3 border-t border-border/60 flex justify-end">
+          <button
+            type="button"
+            disabled={removing}
+            onClick={handleMemberDelete}
+            className="text-xs inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5 transition disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {removing ? "Removing…" : "Remove"}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4 pt-3 border-t border-border/60">
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5" />
+            Organization owner — full access
+          </p>
+        </div>
+      )}
+    </article>
+  );
 }
 
-export default MemberCard
+export default MemberCard;

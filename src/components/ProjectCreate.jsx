@@ -1,10 +1,17 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ToastContainer, toast } from "react-toastify";
 import api from "../ApiInception";
 
 function ProjectCreate({ onClose, orgId, onCreated }) {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const [clients, setClients] = useState([]);
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: { project_type: "product", status: "active" },
+  });
+
+  useEffect(() => {
+    api.get(`/api/v1/org/${orgId}/clients`).then((r) => setClients(r.data.clients || [])).catch(() => {});
+  }, [orgId]);
 
   const onSubmit = (data) => {
     api
@@ -42,6 +49,42 @@ function ProjectCreate({ onClose, orgId, onCreated }) {
             placeholder="Optional"
             {...register("description")}
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="ww-label mb-1">Type</label>
+            <select className="ww-input w-full" {...register("project_type")}>
+              <option value="product">Product</option>
+              <option value="client_work">Client work</option>
+              <option value="internal">Internal</option>
+            </select>
+          </div>
+          <div>
+            <label className="ww-label mb-1">Status</label>
+            <select className="ww-input w-full" {...register("status")}>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        {clients.length > 0 && (
+          <div>
+            <label className="ww-label mb-1">Client (optional)</label>
+            <select className="ww-input w-full" {...register("client_id")}>
+              <option value="">—</option>
+              {clients.map((c) => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div>
+          <label className="ww-label mb-1">Budget (optional)</label>
+          <input type="number" step="0.01" className="ww-input w-full" placeholder="0" {...register("budget")} />
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-2">

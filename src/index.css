@@ -187,6 +187,21 @@
   .ww-input {
     @apply h-11 w-full rounded-xl border border-border bg-card px-4 text-[14px] text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
+  .ww-input-sm {
+    @apply h-9 rounded-lg px-3 text-[13px];
+  }
+  .ww-input-md {
+    @apply h-10 rounded-lg px-3.5 text-sm;
+  }
+  .ww-card-sm {
+    @apply rounded-xl border border-border bg-card p-4 shadow-sm;
+  }
+  .ww-page {
+    @apply w-full px-4 sm:px-6 lg:px-8 py-5 max-w-7xl text-left;
+  }
+  .ww-page-full {
+    @apply w-full px-4 sm:px-6 lg:px-8 py-5 text-left;
+  }
   .ww-label {
     font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;

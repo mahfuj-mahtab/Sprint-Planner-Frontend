@@ -53,9 +53,11 @@ export default function DashboardLayout({ children, sidebar = <LeftSidebar /> })
         </div>
       </div>
 
-      <div className="flex-1 min-w-0 bg-background overflow-y-auto">
-        <Profileheader onMenuClick={() => setSidebarOpen(true)} />
-        {children}
+      <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-background">
+        <header className="shrink-0 z-40 border-b border-border bg-background">
+          <Profileheader onMenuClick={() => setSidebarOpen(true)} />
+        </header>
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

@@ -13,7 +13,8 @@ import SprintCreate from "../components/SprintCreate";
 import SprintEdit from "../components/SprintEdit";
 import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Pencil, Trash2, Users, Wallet } from "lucide-react";
+import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 function ShowOrgDetails() {
@@ -168,7 +169,7 @@ function ShowOrgDetails() {
   if (!orgDetails) {
     return (
       <DashboardLayout>
-        <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
+        <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4">
             <div className="space-y-2">
               <Skeleton className="h-3 w-28" />
@@ -206,7 +207,7 @@ function ShowOrgDetails() {
   return (
     <DashboardLayout>
       {view === "details" ? (
-        <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
+        <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30">
           <div className="px-4 sm:px-6 py-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <button
@@ -243,8 +244,15 @@ function ShowOrgDetails() {
             <div className="flex flex-wrap gap-2 items-center">
               <div className="hidden lg:block text-sm text-muted-foreground mr-2">
                 {selectedProject ? (
-                  <span>
-                    {orgName} / <span className="font-mono text-foreground">{selectedProject.name}</span>
+                  <span className="inline-flex items-center gap-2 flex-wrap">
+                    <span>
+                      {orgName} / <span className="font-mono text-foreground">{selectedProject.name}</span>
+                    </span>
+                    {selectedProject.currentVersion ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary">
+                        {selectedProject.currentVersion.name}
+                      </span>
+                    ) : null}
                   </span>
                 ) : (
                   <span>{orgName}</span>
@@ -253,6 +261,13 @@ function ShowOrgDetails() {
 
               {selectedProject ? (
                 <>
+                  <Link
+                    to={`/user/profile/org/${orgId}/project/${selectedProjectId}/dashboard`}
+                    className="border border-[#a78bfa]/40 bg-[#a78bfa]/10 hover:bg-[#a78bfa]/20 text-[#c4b5fd] text-sm font-semibold py-1.5 px-3 rounded-md transition-colors inline-flex items-center gap-2"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Dashboard
+                  </Link>
                   <button
                     onClick={() => { setEditingProject(selectedProject); setShowProjectEdit(true); }}
                     className="border border-border hover:bg-muted text-foreground text-sm font-medium py-1.5 px-3 rounded-md transition-colors inline-flex items-center gap-2"
@@ -290,14 +305,14 @@ function ShowOrgDetails() {
           </div>
         </div>
       ) : (
-        <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-14 z-30">
+        <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4">
             <div>
               <div className="text-sm text-muted-foreground">Organization</div>
               <div className="text-base font-semibold tracking-tight">{orgName}</div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               <button
                 onClick={() => setShowProjectCreate(true)}
                 className="bg-primary hover:brightness-95 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
@@ -312,6 +327,45 @@ function ShowOrgDetails() {
       <div className="lg:p-6 p-2">
           {view === "projects" ? (
             <div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 text-left">
+                <Link
+                  to={`/user/profile/org/${orgId}/dashboard`}
+                  className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#a78bfa]/40 transition"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#a78bfa]/30 bg-[#a78bfa]/10">
+                    <BarChart3 className="w-4 h-4 text-[#a78bfa]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-semibold group-hover:text-[#a78bfa]">Dashboard</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">Income, tasks, projects, charts</p>
+                  </div>
+                </Link>
+                <Link
+                  to={`/user/profile/org/${orgId}/clients`}
+                  className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#00d4ff]/30 transition"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#00d4ff]/30 bg-[#00d4ff]/10">
+                    <Users className="w-4 h-4 text-[#00d4ff]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-semibold group-hover:text-[#00d4ff]">Clients</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">CRM, budgets, payments</p>
+                  </div>
+                </Link>
+                <Link
+                  to={`/user/profile/org/${orgId}/finance`}
+                  className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-primary/30 transition"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
+                    <Wallet className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-semibold group-hover:text-primary">Finance</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">Accounts, income, expense</p>
+                  </div>
+                </Link>
+              </div>
+
               <h2 className="lg:text-2xl text-lg font-semibold mb-4">Projects</h2>
 
               {projects.length > 0 ? (
@@ -319,8 +373,13 @@ function ShowOrgDetails() {
                   {projects.map((p) => (
                     <div key={p._id} className="bg-card border border-border rounded-xl p-4 flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold truncate">{p.name}</h3>
+                          {p.currentVersion ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md border border-primary/40 bg-primary/10 text-primary font-mono">
+                              {p.currentVersion.name} · {p.currentVersion.status}
+                            </span>
+                          ) : null}
                           {p.isArchived ? (
                             <span className="text-xs px-2 py-0.5 rounded-md border border-border text-muted-foreground">Archived</span>
                           ) : null}
@@ -329,6 +388,13 @@ function ShowOrgDetails() {
                       </div>
 
                       <div className="shrink-0 flex items-center gap-2">
+                        <Link
+                          to={`/user/profile/org/${orgId}/project/${p._id}/dashboard`}
+                          className="border border-[#a78bfa]/40 bg-[#a78bfa]/10 hover:bg-[#a78bfa]/20 text-[#c4b5fd] text-sm font-semibold py-1.5 px-3 rounded-md transition-colors inline-flex items-center gap-1.5"
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                          Dashboard
+                        </Link>
                         <button
                           onClick={() => handleOpenProjectDetails(p._id)}
                           className="bg-primary hover:brightness-95 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
@@ -398,29 +464,38 @@ function ShowOrgDetails() {
           )}
 
           {view === "details" && activeTab === "team" && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">
-                Team{" "}
-                {selectedProject ? (
-                  <span className="text-muted-foreground font-normal">
-                    / <span className="font-mono">{selectedProject.name}</span>
-                  </span>
-                ) : null}
-              </h2>
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold ww-heading">
+                  Teams{" "}
+                  {selectedProject ? (
+                    <span className="text-muted-foreground font-normal text-base">
+                      / <span className="font-mono">{selectedProject.name}</span>
+                    </span>
+                  ) : null}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Project squads — assign org members with roles for this build.
+                </p>
+              </div>
               {orgDetails?.teams?.length > 0 ? (
-                orgDetails.teams.map((team) => (
-                  <TeamCard
-                    key={team._id}
-                    members={team.members}
-                    teamName={team.name}
-                    onAddMember={() => orgFetch()}
-                    orgId={orgId}
-                    teamId={team._id}
-                    fetchOrg={() => orgFetch()}
-                  />
-                ))
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {orgDetails.teams.map((team) => (
+                    <TeamCard
+                      key={team._id}
+                      members={team.members}
+                      teamName={team.name}
+                      onAddMember={() => orgFetch()}
+                      orgId={orgId}
+                      teamId={team._id}
+                      fetchOrg={() => orgFetch(selectedProjectId)}
+                    />
+                  ))}
+                </div>
               ) : (
-                <p className="text-muted-foreground">No teams available for this project.</p>
+                <div className="border border-dashed border-border rounded-xl p-8 bg-card text-center text-sm text-muted-foreground">
+                  No teams for this project yet. Use <strong className="text-foreground">+ Team</strong> in the header to create one.
+                </div>
               )}
             </div>
           )}
@@ -438,9 +513,19 @@ function ShowOrgDetails() {
           )}
 
           {view === "details" && activeTab === "member" && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Members</h2>
-              <MembersShow members={orgDetails.organization?.members} orgId={orgId} />
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold ww-heading">Organization members</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Everyone with access to this org. Owners cannot be removed.
+                </p>
+              </div>
+              <MembersShow
+                members={orgDetails.organization?.members}
+                orgId={orgId}
+                ownerId={orgDetails.organization?.owner_id}
+                onRefresh={() => orgFetch(selectedProjectId)}
+              />
             </div>
           )}
       </div>

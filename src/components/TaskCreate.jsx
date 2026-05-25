@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from "react-hook-form"
 import { toast } from 'react-toastify';
 import api from '../ApiInception';
-function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
+function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated, defaultTeamId }) {
     const [selectedMembers, setSelectedMembers] = useState([])
     const [teamDetails, setTeamDetails] = useState([])
     const [teamMembers, setTeamMembers] = useState([])
@@ -10,7 +10,14 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
     const {
         register,
         handleSubmit,
-    } = useForm()
+        setValue,
+    } = useForm({
+        defaultValues: {
+            team: defaultTeamId || "",
+            status: "Pending",
+            priority: "Medium",
+        },
+    })
     const handleMemberToggle = (memberId) => {
         setSelectedMembers(prev =>
             prev.includes(memberId)
@@ -72,9 +79,11 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
             ? `/api/v1/org/project/${projectId}/team/fetch/${orgId}`
             : `/api/v1/org/team/fetch/${orgId}`;
         api.get(url).then((response) => {
-            console.log(response.data)
             setTeamDetails(response.data);
-            // setProfileDetaile(response.data);
+            if (defaultTeamId) {
+                setValue("team", defaultTeamId);
+                handleTeamMembers(defaultTeamId);
+            }
         }).catch((error) => {
             console.error("There was an error!", error);
         });
@@ -86,7 +95,7 @@ function TaskCreate({ onClose, orgId, projectId, sprintId, onTaskCreated }) {
                 setFeatureModules([]);
             });
         }
-    }, [])
+    }, [defaultTeamId, orgId, projectId, setValue])
 
     return (
         <div><section className="bg-transparent">

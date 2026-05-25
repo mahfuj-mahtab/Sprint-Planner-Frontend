@@ -1,16 +1,40 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import OrgCreate from './OrgCreate'
 import api from '../ApiInception'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { Plus, Building2, User, ChevronDown, ChevronRight, CheckSquare, ListChecks } from 'lucide-react'
 import { ToastContainer, toast } from 'react-toastify';
 import OrgEdit from './OrgEdit'
 import { Skeleton } from './ui/Loading'
+import { cn } from '@/lib/utils'
 
 function LeftSidebar() {
+    const location = useLocation()
     const [showCreateOrg, setShowCreateOrg] = useState(false)
     const [profileDetaile, setProfileDetaile] = useState()
     const [orgsExpanded, setOrgsExpanded] = useState(true)
+
+    const activeOrgId = useMemo(() => {
+        const match = location.pathname.match(/^\/user\/profile\/org\/([^/]+)/)
+        return match?.[1] ?? null
+    }, [location.pathname])
+
+    const isProfileHomeActive = location.pathname === "/user/profile"
+    const isTodosActive = location.pathname.startsWith("/user/todos")
+    const isAssignedActive = location.pathname.startsWith("/user/assigned-tasks")
+
+    const navCardClass = (active, accent = "primary") =>
+        cn(
+            "flex items-center gap-3 p-3 rounded-lg border border-l-2 transition-colors no-underline",
+            active
+                ? accent === "amber"
+                    ? "bg-amber-500/15 border-amber-500/40 border-l-amber-500"
+                    : accent === "profile"
+                      ? "bg-muted/60 border-border border-l-primary"
+                      : "bg-primary/15 border-primary/40 border-l-primary"
+                : "border-transparent border-l-transparent hover:bg-muted/80"
+        )
+
     const [openOrgMenu, setOpenOrgMenu] = useState(null);
     const [orgEditPopup, setOrgEditPopup] = useState(false)
     const [editOrgInfo, setEditOrgInfo] = useState({})
@@ -114,25 +138,35 @@ function LeftSidebar() {
         <div className="h-full bg-sidebar border-r border-border p-2 overflow-y-auto">
             {/* Profile Section */}
             <div className="mb-6">
-                <Link to="/user/profile" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                <Link
+                    to="/user/profile"
+                    aria-current={isProfileHomeActive ? "page" : undefined}
+                    className={navCardClass(isProfileHomeActive, "profile")}
+                >
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
                         <User className="w-5 h-5 text-primary-foreground" />
                     </div>
-                    <div>
-                        <p className="font-medium text-foreground">{profileDetaile.user?.fullName || 'User'}</p>
-                        <p className="text-sm text-muted-foreground">{profileDetaile.user?.email}</p>
+                    <div className="min-w-0">
+                        <p className={cn("font-medium truncate", isProfileHomeActive && "text-primary")}>
+                            {profileDetaile.user?.fullName || "User"}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">{profileDetaile.user?.email}</p>
                     </div>
                 </Link>
             </div>
 
             {/* My Todos Section */}
             <div className="mb-6">
-                <Link to="/user/todos" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors bg-muted/50">
-                    <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                        <CheckSquare className="w-5 h-5 text-amber-500" />
+                <Link
+                    to="/user/todos"
+                    aria-current={isTodosActive ? "page" : undefined}
+                    className={navCardClass(isTodosActive, "amber")}
+                >
+                    <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                        <CheckSquare className={cn("w-5 h-5", isTodosActive ? "text-amber-400" : "text-amber-500")} />
                     </div>
                     <div>
-                        <p className="font-medium text-foreground">My Tasks</p>
+                        <p className={cn("font-medium", isTodosActive && "text-amber-200")}>My Tasks</p>
                         <p className="text-sm text-muted-foreground">Daily to-dos</p>
                     </div>
                 </Link>
@@ -140,12 +174,16 @@ function LeftSidebar() {
 
             {/* Assigned Sprint Tasks */}
             <div className="mb-6">
-                <Link to="/user/assigned-tasks" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
-                        <ListChecks className="w-5 h-5 text-primary" />
+                <Link
+                    to="/user/assigned-tasks"
+                    aria-current={isAssignedActive ? "page" : undefined}
+                    className={navCardClass(isAssignedActive, "primary")}
+                >
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                        <ListChecks className={cn("w-5 h-5", isAssignedActive ? "text-primary" : "text-primary/80")} />
                     </div>
                     <div>
-                        <p className="font-medium text-foreground">My Task</p>
+                        <p className={cn("font-medium", isAssignedActive && "text-primary")}>My Task</p>
                         <p className="text-sm text-muted-foreground">Sprint assignments</p>
                     </div>
                 </Link>
@@ -172,25 +210,37 @@ function LeftSidebar() {
                 </div>
 
                 {orgsExpanded && (
-                    <ul className="space-y-1 ml-6">
+                    <ul className="space-y-1 ml-2">
                         {profileDetaile.organizations.map((org) => {
                             const isOwner = org.owner_id === profileDetaile.user._id
                                 || org.owner_id?._id === profileDetaile.user._id;
+                            const isActive = activeOrgId === org._id;
 
                             return (
                                 <li key={org._id} className="relative flex items-center">
                                     <Link
                                         to={`/user/profile/org/${org._id}`}
-                                        className="w-[93%] mr-3 flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                                        aria-current={isActive ? 'page' : undefined}
+                                        className={cn(
+                                            "w-[93%] mr-3 flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-colors",
+                                            isActive
+                                                ? "bg-primary/15 text-primary border-primary/40 border-l-2 border-l-primary font-medium"
+                                                : "border-transparent border-l-2 border-l-transparent text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                                        )}
                                     >
-                                        <Building2 className="w-4 h-4 shrink-0" />
-                                        <span className="truncate">{org.name}</span>
-                                        {/* Badge */}
-                                        <span className={`ml-auto shrink-0 text-xs px-1.5 py-0.5 rounded-full font-medium
-                            ${isOwner
-                                                ? 'bg-primary/20 text-primary'
-                                                : 'bg-muted text-muted-foreground'}`}>
-                                            {isOwner ? 'Owner' : 'Member'}
+                                        <Building2 className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} />
+                                        <span className="truncate flex-1">{org.name}</span>
+                                        <span
+                                            className={cn(
+                                                "shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                                                isOwner
+                                                    ? isActive
+                                                        ? "bg-primary/25 text-primary"
+                                                        : "bg-primary/20 text-primary"
+                                                    : "bg-muted text-muted-foreground"
+                                            )}
+                                        >
+                                            {isOwner ? "Owner" : "Member"}
                                         </span>
                                     </Link>
 
