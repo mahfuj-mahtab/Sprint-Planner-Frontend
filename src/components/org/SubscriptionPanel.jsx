@@ -16,8 +16,11 @@ import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
 import { EmptyState } from "@/components/org/EmptyState";
 import { formatMoney, formatDate } from "@/lib/formatMoney";
+import { partitionsForExpense, partitionOptionLabel } from "@/lib/partitionScopes";
 import { categoriesForType } from "@/lib/financeCategories";
 import { CategoryColumn } from "@/components/org/CategoryManager";
+import { SubscriptionDashboard } from "@/components/org/SubscriptionDashboard";
+import { monthlyEquivalent } from "@/lib/subscriptionSchedule";
 import { cn } from "@/lib/utils";
 
 const INTERVALS = [
@@ -59,6 +62,7 @@ export function SubscriptionPanel({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [lastProcessed, setLastProcessed] = useState([]);
+  const [lifecycleFilter, setLifecycleFilter] = useState("all");
 
   const subscriptionCategories = categoriesForType(categories, "subscription");
   const defaultCategory =
@@ -78,6 +82,8 @@ export function SubscriptionPanel({
     next_due_date: today(),
     auto_deduct: true,
     is_active: true,
+    lifecycle: "running",
+    planned_start_date: "",
     notes: "",
   });
 
@@ -123,6 +129,8 @@ export function SubscriptionPanel({
     next_due_date: today(),
     auto_deduct: true,
     is_active: true,
+    lifecycle: "running",
+    planned_start_date: "",
     notes: "",
   });
 
@@ -146,9 +154,27 @@ export function SubscriptionPanel({
       next_due_date: sub.next_due_date ? new Date(sub.next_due_date).toISOString().slice(0, 10) : today(),
       auto_deduct: sub.auto_deduct,
       is_active: sub.is_active,
+      lifecycle: sub.lifecycle || "running",
+      planned_start_date: sub.planned_start_date
+        ? new Date(sub.planned_start_date).toISOString().slice(0, 10)
+        : "",
       notes: sub.notes || "",
     });
     setModalOpen(true);
+  };
+
+  const markRunning = async (sub) => {
+    try {
+      await api.patch(`/api/v1/org/${orgId}/finance/subscriptions/${sub._id}`, {
+        lifecycle: "running",
+        auto_deduct: true,
+        next_due_date: sub.next_due_date || today(),
+      });
+      toast.success("Now running — will auto-charge on due dates", { theme: "dark" });
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -174,8 +200,10 @@ export function SubscriptionPanel({
       billing_interval: form.billing_interval,
       custom_interval_days: form.billing_interval === "custom" ? Number(form.custom_interval_days) : undefined,
       next_due_date: form.next_due_date,
-      auto_deduct: form.auto_deduct,
+      auto_deduct: form.lifecycle === "planned" ? false : form.auto_deduct,
       is_active: form.is_active,
+      lifecycle: form.lifecycle,
+      planned_start_date: form.lifecycle === "planned" ? form.planned_start_date || undefined : undefined,
       notes: form.notes,
     };
 
@@ -239,20 +267,21 @@ export function SubscriptionPanel({
     return Math.round((due - t) / 86400000);
   };
 
-  const monthlyBurn = useMemo(
-    () =>
-      items
-        .filter((s) => s.is_active)
-        .reduce((sum, s) => {
-          const a = Number(s.amount);
-          if (s.billing_interval === "yearly") return sum + a / 12;
-          if (s.billing_interval === "quarterly") return sum + a / 3;
-          if (s.billing_interval === "weekly") return sum + a * 4.33;
-          if (s.billing_interval === "custom") return sum + (a * 30) / (s.custom_interval_days || 30);
-          return sum + a;
-        }, 0),
-    [items]
-  );
+  const { runningBurn, plannedBurn } = useMemo(() => {
+    let running = 0;
+    let planned = 0;
+    for (const s of items.filter((x) => x.is_active)) {
+      const m = monthlyEquivalent(s.amount, s.billing_interval, s.custom_interval_days);
+      if (s.lifecycle === "planned") planned += m;
+      else running += m;
+    }
+    return { runningBurn: running, plannedBurn: planned };
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    if (lifecycleFilter === "all") return items;
+    return items.filter((s) => (s.lifecycle || "running") === lifecycleFilter);
+  }, [items, lifecycleFilter]);
 
   if (!hasAccounts) {
     return (
@@ -266,6 +295,8 @@ export function SubscriptionPanel({
 
   return (
     <div className="space-y-6 text-left">
+      <SubscriptionDashboard orgId={orgId} currency={currency} />
+
       <CategoryColumn
         title="Subscription categories"
         type="subscription"
@@ -283,9 +314,31 @@ export function SubscriptionPanel({
           </p>
           {items.length > 0 ? (
             <p className="text-xs text-muted-foreground mt-1 font-mono">
-              ~{formatMoney(monthlyBurn, currency)}/mo active burn
+              Running ~{formatMoney(runningBurn, currency)}/mo
+              {plannedBurn > 0 ? ` · Planned ~${formatMoney(plannedBurn, currency)}/mo` : ""}
             </p>
           ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          {[
+            { id: "all", label: "All" },
+            { id: "running", label: "Running" },
+            { id: "planned", label: "Planned" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setLifecycleFilter(f.id)}
+              className={cn(
+                "text-xs px-2.5 py-1 rounded-full border transition",
+                lifecycleFilter === f.id
+                  ? "bg-[#a78bfa]/20 border-[#a78bfa]/40 text-[#a78bfa]"
+                  : "border-border text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
         <div className="flex gap-2">
           <button
@@ -330,7 +383,7 @@ export function SubscriptionPanel({
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <EmptyState
           icon={Calendar}
           title="No subscriptions"
@@ -344,26 +397,49 @@ export function SubscriptionPanel({
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {items.map((sub) => {
-            const days = daysUntil(sub.next_due_date);
-            const badge = dueBadge(days);
+          {filteredItems.map((sub) => {
+            const isPlanned = sub.lifecycle === "planned";
+            const days = isPlanned ? null : daysUntil(sub.next_due_date);
+            const badge = days != null ? dueBadge(days) : null;
             return (
               <article
                 key={sub._id}
                 className={cn(
                   "rounded-xl border p-4 bg-card",
                   !sub.is_active && "opacity-60",
-                  days <= 0 && sub.is_active && "border-amber-500/40"
+                  isPlanned && "border-[#a78bfa]/30 bg-[#a78bfa]/5",
+                  !isPlanned && days <= 0 && sub.is_active && "border-amber-500/40"
                 )}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
-                    <h3 className="font-semibold">{sub.name}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold">{sub.name}</h3>
+                      <span
+                        className={cn(
+                          "text-[9px] uppercase px-1.5 py-0.5 rounded border",
+                          isPlanned
+                            ? "border-[#a78bfa]/40 text-[#a78bfa] bg-[#a78bfa]/10"
+                            : "border-primary/30 text-primary bg-primary/10"
+                        )}
+                      >
+                        {isPlanned ? "Planned" : "Running"}
+                      </span>
+                    </div>
                     <p className="text-lg font-mono text-destructive mt-0.5">−{formatMoney(sub.amount, currency)}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      ~{formatMoney(monthlyEquivalent(sub.amount, sub.billing_interval, sub.custom_interval_days), currency)}/mo
+                    </p>
                   </div>
-                  <span className={cn("text-[10px] px-2 py-0.5 rounded-md border uppercase tracking-wide", badge.className)}>
-                    {days <= 7 ? badge.text : formatDate(sub.next_due_date)}
-                  </span>
+                  {isPlanned ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded-md border border-[#a78bfa]/40 text-[#a78bfa] uppercase tracking-wide">
+                      {sub.planned_start_date ? `From ${formatDate(sub.planned_start_date)}` : "Not started"}
+                    </span>
+                  ) : badge ? (
+                    <span className={cn("text-[10px] px-2 py-0.5 rounded-md border uppercase tracking-wide", badge.className)}>
+                      {days <= 7 ? badge.text : formatDate(sub.next_due_date)}
+                    </span>
+                  ) : null}
                 </div>
 
                 <dl className="text-xs text-muted-foreground space-y-1 mb-3">
@@ -386,6 +462,16 @@ export function SubscriptionPanel({
                 </dl>
 
                 <div className="flex flex-wrap gap-1.5">
+                  {isPlanned ? (
+                    <button
+                      type="button"
+                      onClick={() => markRunning(sub)}
+                      className="text-xs px-2.5 py-1.5 rounded-lg bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/30 hover:bg-[#a78bfa]/25 inline-flex items-center gap-1"
+                    >
+                      <Play className="w-3 h-3" />
+                      Start running
+                    </button>
+                  ) : (
                   <button
                     type="button"
                     disabled={submitting || !sub.is_active}
@@ -395,6 +481,7 @@ export function SubscriptionPanel({
                     <Zap className="w-3 h-3" />
                     Charge now
                   </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => toggleActive(sub)}
@@ -418,6 +505,32 @@ export function SubscriptionPanel({
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? "Edit subscription" : "Add subscription"} size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Status">
+            <SelectInput
+              value={form.lifecycle}
+              onChange={(e) => {
+                const lifecycle = e.target.value;
+                setForm({
+                  ...form,
+                  lifecycle,
+                  auto_deduct: lifecycle === "planned" ? false : form.auto_deduct,
+                });
+              }}
+            >
+              <option value="running">Running — live cost, can auto-charge</option>
+              <option value="planned">Planned — expected later, no charges yet</option>
+            </SelectInput>
+          </Field>
+          {form.lifecycle === "planned" ? (
+            <Field label="Planned start (optional)">
+              <input
+                type="date"
+                className="ww-input ww-input-md w-full"
+                value={form.planned_start_date}
+                onChange={(e) => setForm({ ...form, planned_start_date: e.target.value })}
+              />
+            </Field>
+          ) : null}
           <Field label="Name">
             <input
               className="ww-input ww-input-md w-full"
@@ -471,9 +584,13 @@ export function SubscriptionPanel({
                 onChange={(e) => setForm({ ...form, partition_id: e.target.value })}
               >
                 <option value="">Select…</option>
-                {(partitionsForAccount[form.account_id] || []).map((p) => (
+                {partitionsForExpense(partitionsForAccount[form.account_id] || [], false).map((p) => (
                   <option key={p._id} value={p._id}>
-                    {p.name} ({formatMoney(p.balance, currency, true)})
+                    {partitionOptionLabel(p, {
+                      showBalance: true,
+                      currency,
+                      formatMoney,
+                    })}
                   </option>
                 ))}
               </SelectInput>
@@ -535,15 +652,21 @@ export function SubscriptionPanel({
               ))}
             </SelectInput>
           </Field>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.auto_deduct}
-              onChange={(e) => setForm({ ...form, auto_deduct: e.target.checked })}
-              className="rounded border-border"
-            />
-            Auto-deduct on due date (when you open Finance → Subscriptions)
-          </label>
+          {form.lifecycle === "running" ? (
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.auto_deduct}
+                onChange={(e) => setForm({ ...form, auto_deduct: e.target.checked })}
+                className="rounded border-border"
+              />
+              Auto-deduct on due date (when you open Finance → Subscriptions)
+            </label>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Planned subscriptions appear in forecasts but won&apos;t charge until you mark them Running.
+            </p>
+          )}
           {editingId ? (
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input

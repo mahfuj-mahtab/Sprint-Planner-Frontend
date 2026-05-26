@@ -112,8 +112,8 @@ function OrgDashboard() {
             <Link to={`/user/profile/org/${orgId}/finance`} className="text-sm px-3 py-2 rounded-lg border border-border hover:bg-muted inline-flex items-center gap-2">
               <Wallet className="w-4 h-4" /> Finance
             </Link>
-            <Link to={`/user/profile/org/${orgId}/clients`} className="text-sm px-3 py-2 rounded-lg border border-border hover:bg-muted inline-flex items-center gap-2">
-              <Users className="w-4 h-4" /> Clients
+            <Link to={`/user/profile/org/${orgId}/crm`} className="text-sm px-3 py-2 rounded-lg border border-border hover:bg-muted inline-flex items-center gap-2">
+              <Users className="w-4 h-4" /> CRM
             </Link>
           </div>
         </div>
@@ -121,10 +121,10 @@ function OrgDashboard() {
 
       <div className="ww-page-full space-y-6 pb-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          <StatCard label="Month income" value={fmt(finance.monthIncome)} variant="income" />
-          <StatCard label="Month expense" value={fmt(finance.monthExpense)} variant="expense" />
-          <StatCard label="Net profit" value={fmt(finance.netProfit)} variant={finance.netProfit >= 0 ? "income" : "expense"} />
-          <StatCard label="Cash balance" value={fmt(finance.totalBalance)} variant="balance" />
+          <StatCard label="Business revenue" value={fmt(finance.monthIncome)} variant="income" sub="Business partitions" />
+          <StatCard label="Business expense" value={fmt(finance.monthExpense)} variant="expense" />
+          <StatCard label="Business net" value={fmt(finance.netProfit)} variant={finance.netProfit >= 0 ? "income" : "expense"} />
+          <StatCard label="Cash balance" value={fmt(finance.totalBalance)} variant="balance" sub={finance.ownerBalance != null ? `Owner ${fmt(finance.ownerBalance)}` : undefined} />
           <StatCard label="Tasks done" value={`${tasks.completionPct}%`} sub={`${tasks.completed}/${tasks.total} tasks`} variant="neutral" />
           <StatCard label="Active sprints" value={String(counts.activeSprints)} sub={`${counts.totalSprints} total`} variant="neutral" />
         </div>

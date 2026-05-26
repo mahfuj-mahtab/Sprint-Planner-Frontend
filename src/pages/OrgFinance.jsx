@@ -12,6 +12,7 @@ import {
   Plus,
   Repeat,
   Tags,
+  Target,
   TrendingDown,
   TrendingUp,
   Users,
@@ -29,9 +30,12 @@ import { AccountCard } from "@/components/org/AccountCard";
 import { TransactionCrudPanel } from "@/components/org/TransactionCrudPanel";
 import { CategoryManager } from "@/components/org/CategoryManager";
 import { SubscriptionPanel } from "@/components/org/SubscriptionPanel";
+import { IncomeSourcesPanel } from "@/components/org/IncomeSourcesPanel";
 import { Skeleton } from "@/components/ui/Loading";
 import { formatMoney, formatDateTime } from "@/lib/formatMoney";
 import { categoryLabel } from "@/lib/financeCategories";
+import { PARTITION_SCOPES } from "@/lib/partitionScopes";
+import { CurrencySelect } from "@/components/org/CurrencySelect";
 import { cn } from "@/lib/utils";
 
 const PAYMENT_METHODS = [
@@ -53,6 +57,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "sources", label: "Income sources", icon: Target },
   { id: "accounts", label: "Accounts", icon: Landmark },
   { id: "income", label: "Income", icon: TrendingUp },
   { id: "expense", label: "Expense", icon: TrendingDown },
@@ -96,13 +101,14 @@ function OrgFinance() {
   const [profitSummary, setProfitSummary] = useState([]);
   const [unlinkedIncomeTotal, setUnlinkedIncomeTotal] = useState(0);
   const [categories, setCategories] = useState([]);
+  const [incomeSources, setIncomeSources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [accountModal, setAccountModal] = useState(false);
   const [partitionModal, setPartitionModal] = useState(false);
 
   const [accountForm, setAccountForm] = useState({ name: "", type: "bank", currency: "BDT" });
-  const [partitionForm, setPartitionForm] = useState({ accountId: "", name: "" });
+  const [partitionForm, setPartitionForm] = useState({ accountId: "", name: "", scope: "business" });
   const [transferForm, setTransferForm] = useState({
     account_id: "",
     from_partition_id: "",
@@ -121,8 +127,9 @@ function OrgFinance() {
       api.get(`/api/v1/org/${orgId}/projects`),
       api.get(`/api/v1/org/${orgId}/clients`),
       api.get(`/api/v1/org/${orgId}/finance/categories`),
+      api.get(`/api/v1/org/${orgId}/finance/income-sources`),
     ])
-      .then(([ov, tx, profit, proj, cl, cats]) => {
+      .then(([ov, tx, profit, proj, cl, cats, sourcesRes]) => {
         setOverview(ov.data.overview);
         setTransactions({
           incomes: tx.data.incomes || [],
@@ -134,6 +141,7 @@ function OrgFinance() {
         setProjects(proj.data.projects || []);
         setClients(cl.data.clients || []);
         setCategories(cats.data.categories || []);
+        setIncomeSources(sourcesRes.data.sources || []);
       })
       .catch(() => toast.error("Failed to load finance data", { theme: "dark" }))
       .finally(() => setLoading(false));
@@ -221,10 +229,10 @@ function OrgFinance() {
     try {
       const r = await api.post(
         `/api/v1/org/${orgId}/finance/accounts/${partitionForm.accountId}/partitions`,
-        { name: partitionForm.name }
+        { name: partitionForm.name, scope: partitionForm.scope }
       );
       toast.success(r.data.message, { theme: "dark" });
-      setPartitionForm({ accountId: partitionForm.accountId, name: "" });
+      setPartitionForm({ accountId: partitionForm.accountId, name: "", scope: "business" });
       setPartitionModal(false);
       await refresh();
     } catch (err) {
@@ -232,6 +240,30 @@ function OrgFinance() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handlePartitionScopeChange = async (accountId, partitionId, scope) => {
+    try {
+      await api.patch(
+        `/api/v1/org/${orgId}/finance/accounts/${accountId}/partitions/${partitionId}`,
+        { scope }
+      );
+      await refresh();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to update partition", { theme: "dark" });
+    }
+  };
+
+  const handleClientCreated = (client) => {
+    setClients((prev) => [client, ...prev]);
+  };
+
+  const handleProjectCreated = (project) => {
+    setProjects((prev) => [...prev, project]);
+  };
+
+  const handleIncomeSourceCreated = (source) => {
+    setIncomeSources((prev) => [source, ...prev]);
   };
 
   const handleTransfer = async (e) => {
@@ -287,8 +319,8 @@ function OrgFinance() {
             active: false,
           },
           {
-            to: `/user/profile/org/${orgId}/clients`,
-            label: "Clients",
+            to: `/user/profile/org/${orgId}/crm`,
+            label: "CRM",
             icon: Users,
             active: false,
           },
@@ -332,28 +364,28 @@ function OrgFinance() {
               <div className="space-y-6 text-left">
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <StatCard
-                    label="Month income"
-                    value={formatMoney(overview.monthIncome, currency)}
+                    label="Business revenue"
+                    value={formatMoney(overview.businessMonthIncome ?? overview.monthIncome, currency)}
                     variant="income"
-                    sub="This calendar month"
+                    sub="Business partitions only · this month"
                   />
                   <StatCard
-                    label="Month expense"
-                    value={formatMoney(overview.monthExpense, currency)}
+                    label="Business expense"
+                    value={formatMoney(overview.businessMonthExpense ?? overview.monthExpense, currency)}
                     variant="expense"
-                    sub="Including personal"
+                    sub="From business partitions"
                   />
                   <StatCard
-                    label="Net profit"
-                    value={formatMoney(overview.netProfit, currency)}
-                    variant={overview.netProfit >= 0 ? "income" : "expense"}
-                    sub="Income − expense"
+                    label="Business net"
+                    value={formatMoney(overview.businessNetProfit ?? overview.netProfit, currency)}
+                    variant={(overview.businessNetProfit ?? overview.netProfit) >= 0 ? "income" : "expense"}
+                    sub="Revenue − business costs"
                   />
                   <StatCard
-                    label="Total balance"
+                    label="Total cash"
                     value={formatMoney(overview.totalBalance, currency)}
                     variant="balance"
-                    sub={`${accounts.length} account(s)`}
+                    sub={`Business ${formatMoney(overview.businessBalance ?? 0, currency, true)} · Owner ${formatMoney(overview.ownerBalance ?? 0, currency, true)}`}
                   />
                 </div>
 
@@ -385,7 +417,11 @@ function OrgFinance() {
                     ) : (
                       <div className="grid gap-2">
                         {accounts.map((a) => (
-                          <AccountCard key={a._id} account={a} />
+                          <AccountCard
+                            key={a._id}
+                            account={a}
+                            onPartitionScopeChange={handlePartitionScopeChange}
+                          />
                         ))}
                       </div>
                     )}
@@ -472,6 +508,16 @@ function OrgFinance() {
               </div>
             )}
 
+            {tab === "sources" && (
+              <IncomeSourcesPanel
+                orgId={orgId}
+                projects={projects}
+                currency={currency}
+                onProjectCreated={handleProjectCreated}
+                onRefresh={refresh}
+              />
+            )}
+
             {tab === "accounts" && (
               <div className="space-y-4 text-left">
                 <div className="flex flex-wrap gap-2">
@@ -490,7 +536,11 @@ function OrgFinance() {
                 {hasAccounts ? (
                   <div className="grid gap-2 md:grid-cols-2">
                     {accounts.map((a) => (
-                      <AccountCard key={a._id} account={a} />
+                      <AccountCard
+                        key={a._id}
+                        account={a}
+                        onPartitionScopeChange={handlePartitionScopeChange}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -523,6 +573,10 @@ function OrgFinance() {
                 onRefresh={refresh}
                 onManageCategories={() => setTab("categories")}
                 prefillClientId={prefillClient}
+                onClientCreated={handleClientCreated}
+                onProjectCreated={handleProjectCreated}
+                incomeSources={incomeSources}
+                onIncomeSourceCreated={handleIncomeSourceCreated}
               />
             )}
 
@@ -534,12 +588,16 @@ function OrgFinance() {
                 accounts={accounts}
                 projects={projects}
                 clients={clients}
+                incomeSources={incomeSources}
                 categories={categories}
                 currency={currency}
                 hasAccounts={hasAccounts}
                 partitionsForAccount={partitionsForAccount}
                 onRefresh={refresh}
                 onManageCategories={() => setTab("categories")}
+                onClientCreated={handleClientCreated}
+                onProjectCreated={handleProjectCreated}
+                onIncomeSourceCreated={handleIncomeSourceCreated}
               />
             )}
 
@@ -730,10 +788,11 @@ function OrgFinance() {
             </SelectInput>
           </Field>
           <Field label="Currency">
-            <input
-              className="ww-input w-full"
+            <CurrencySelect
               value={accountForm.currency}
-              onChange={(e) => setAccountForm({ ...accountForm, currency: e.target.value })}
+              onChange={(e) =>
+                setAccountForm({ ...accountForm, currency: e.target.value })
+              }
             />
           </Field>
           <button type="submit" disabled={submitting} className="w-full text-xs font-semibold py-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50">
@@ -742,7 +801,7 @@ function OrgFinance() {
         </form>
       </Modal>
 
-      <Modal open={partitionModal} onClose={() => setPartitionModal(false)} title="Add partition" description="Envelopes inside an account — Emergency fund, Operating expense, Project budget, etc.">
+      <Modal open={partitionModal} onClose={() => setPartitionModal(false)} title="Add partition" description="Business = revenue & ops. Owner = your pay. Excluded = outside income (other job).">
         <form onSubmit={handleCreatePartition} className="space-y-4">
           <Field label="Account">
             <SelectInput
@@ -761,11 +820,23 @@ function OrgFinance() {
           <Field label="Partition name">
             <input
               className="ww-input w-full"
-              placeholder="Emergency Fund, Operating…"
+              placeholder="Business, Owner pay, Product ops…"
               required
               value={partitionForm.name}
               onChange={(e) => setPartitionForm({ ...partitionForm, name: e.target.value })}
             />
+          </Field>
+          <Field label="Scope">
+            <SelectInput
+              value={partitionForm.scope}
+              onChange={(e) => setPartitionForm({ ...partitionForm, scope: e.target.value })}
+            >
+              {PARTITION_SCOPES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label} — {s.hint}
+                </option>
+              ))}
+            </SelectInput>
           </Field>
           <button type="submit" disabled={submitting} className="w-full text-xs font-semibold py-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50">
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Add partition"}

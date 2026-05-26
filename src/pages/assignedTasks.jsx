@@ -2,16 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import api from "../ApiInception";
 import { Link } from "react-router";
 import { ExternalLink, Filter, RefreshCw } from "lucide-react";
+import { TaskStatusSelect, patchTaskStatus } from "@/components/TaskStatusSelect";
+import { TaskStatusBadge } from "@/components/TaskStatusBadge";
+import { TASK_STATUSES, normalizeTaskStatus } from "@/lib/taskWorkflow";
+import { toast } from "react-toastify";
 import { Skeleton, Spinner } from "../components/ui/Loading";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-
-const statusPill = (status) => {
-  const s = (status || "").toLowerCase();
-  if (s === "completed") return "bg-emerald-500/15 text-emerald-300 border-emerald-500/20";
-  if (s.includes("progress")) return "bg-yellow-500/15 text-yellow-300 border-yellow-500/20";
-  if (s === "hold" || s === "cancelled") return "bg-muted/60 text-muted-foreground border-border";
-  return "bg-muted/60 text-muted-foreground border-border";
-};
 
 const priorityPill = (priority) => {
   const p = (priority || "").toLowerCase();
@@ -56,7 +52,8 @@ function AssignedTasks() {
         t.sprint_id?.name?.toLowerCase().includes(text) ||
         t.team_id?.name?.toLowerCase().includes(text);
 
-      const matchesStatus = statusFilter === "all" ? true : (t.status || "") === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" ? true : normalizeTaskStatus(t.status) === statusFilter;
       return matchesText && matchesStatus;
     });
   }, [tasks, q, statusFilter]);
@@ -99,11 +96,11 @@ function AssignedTasks() {
                 className="ww-input w-full sm:w-48"
               >
                 <option value="all">All</option>
-                <option value="Pending">Pending</option>
-                <option value="Work In Progress">Work In Progress</option>
-                <option value="Hold">Hold</option>
-                <option value="Cancelled">Cancelled</option>
-                <option value="Completed">Completed</option>
+                {TASK_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -179,7 +176,28 @@ function AssignedTasks() {
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                    <span className={`text-xs px-2 py-0.5 rounded-md border ${statusPill(t.status)}`}>{t.status}</span>
+                    {orgId && sprintId ? (
+                      <TaskStatusSelect
+                        value={t.status}
+                        onChange={async (s) => {
+                          try {
+                            await patchTaskStatus({
+                              orgId,
+                              sprintId,
+                              taskId: t._id,
+                              status: s,
+                              blocked_reason: t.blocked_reason,
+                            });
+                            toast.success("Status updated", { theme: "dark" });
+                            fetchTasks();
+                          } catch (err) {
+                            toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
+                          }
+                        }}
+                      />
+                    ) : (
+                      <TaskStatusBadge status={t.status} />
+                    )}
                     <span className={`text-xs px-2 py-0.5 rounded-md border ${priorityPill(t.priority)}`}>{t.priority}</span>
                     <span className="text-xs px-2 py-0.5 rounded-md border border-border bg-muted/10 text-muted-foreground">
                       {fmtDate(t.startDate)} → {fmtDate(t.endDate)}

@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import api from "../ApiInception";
 import { convertDate } from "../utils/utils";
 import PriorityShow from "./PriorityShow";
-import SHowStatus from "./SHowStatus";
+import { TaskStatusSelect, patchTaskStatus } from "./TaskStatusSelect";
 import { cn } from "@/lib/utils";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -74,6 +74,21 @@ export function SprintTeamTasks({
     featureId: task.feature_id?._id || task.feature_id || "",
   });
 
+  const changeStatus = async (task, newStatus) => {
+    try {
+      await patchTaskStatus({
+        orgId,
+        sprintId,
+        taskId: task._id,
+        status: newStatus,
+        blocked_reason: task.blocked_reason,
+      });
+      onRefresh?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to update status", { theme: "dark" });
+    }
+  };
+
   const saveTitle = async (task) => {
     const trimmed = (titleEdits[task._id] || "").trim();
     if (!trimmed || trimmed === task.title) return;
@@ -97,7 +112,7 @@ export function SprintTeamTasks({
       await api.post(`/api/v1/org/team/add/task/org/${orgId}/sprint/${sprintId}`, {
         name: title,
         description: "",
-        status: "Pending",
+        status: "Backlog",
         priority: "Medium",
         startDate: sprintStart,
         endDate: sprintEnd,
@@ -151,7 +166,11 @@ export function SprintTeamTasks({
                 {convertDate(task.endDate)}
               </td>
               <td className="px-4 py-2.5">
-                <SHowStatus status={task.status} />
+                <TaskStatusSelect
+                  value={task.status}
+                  onChange={(s) => changeStatus(task, s)}
+                  className="max-w-[9rem]"
+                />
               </td>
               <td className="px-4 py-2.5">
                 <PriorityShow status={task.priority} />

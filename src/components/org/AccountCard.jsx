@@ -1,6 +1,8 @@
 import { formatMoney } from "@/lib/formatMoney";
+import { effectiveScope, PARTITION_SCOPES, scopeLabel } from "@/lib/partitionScopes";
 import { cn } from "@/lib/utils";
 import { Landmark, Smartphone, Banknote, Globe } from "lucide-react";
+import { SelectInput } from "@/components/org/Field";
 
 const TYPE_META = {
   bank: { icon: Landmark, label: "Bank" },
@@ -11,19 +13,20 @@ const TYPE_META = {
 
 const PARTITION_COLORS = ["bg-primary", "bg-[#00d4ff]", "bg-[#a78bfa]", "bg-[#ff6b35]", "bg-muted-foreground"];
 
-export function AccountCard({ account, onSelect, selected, compact }) {
+export function AccountCard({ account, onSelect, selected, compact, onPartitionScopeChange }) {
   const meta = TYPE_META[account.type] || TYPE_META.bank;
   const Icon = meta.icon;
   const partitions = account.partitions || [];
   const total = Number(account.totalBalance) || 0;
 
+  const Wrapper = onSelect ? "button" : "div";
+
   return (
-    <button
-      type="button"
-      onClick={() => onSelect?.(account._id)}
-      disabled={!onSelect}
+    <Wrapper
+      type={onSelect ? "button" : undefined}
+      onClick={onSelect ? () => onSelect(account._id) : undefined}
       className={cn(
-        "w-full text-left rounded-xl border bg-card p-4 transition",
+        "w-full text-left rounded-xl border bg-card p-4 transition block",
         onSelect && "hover:border-primary/40 hover:shadow-[0_8px_32px_rgba(0,255,148,0.08)]",
         selected ? "border-primary/50 ring-1 ring-primary/20" : "border-border",
         !onSelect && "cursor-default"
@@ -65,21 +68,41 @@ export function AccountCard({ account, onSelect, selected, compact }) {
         </div>
       ) : null}
 
-      <div className={cn("flex flex-wrap gap-1.5", compact ? "mt-2" : "mt-2.5")}>
+      <div className={cn("flex flex-col gap-1.5", compact ? "mt-2" : "mt-2.5")}>
         {partitions.map((p, i) => (
-          <span
+          <div
             key={p._id}
-            className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border border-border bg-muted/30 font-mono tabular-nums"
+            className="flex flex-wrap items-center gap-2 text-xs px-2.5 py-1.5 rounded-md border border-border bg-muted/30"
           >
-            <span className={cn("w-1.5 h-1.5 rounded-full", PARTITION_COLORS[i % PARTITION_COLORS.length])} />
-            {p.name}
-            <span className="text-foreground/90">{formatMoney(p.balance, account.currency, true)}</span>
+            <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", PARTITION_COLORS[i % PARTITION_COLORS.length])} />
+            <span className="font-medium truncate">{p.name}</span>
+            <span className="font-mono tabular-nums text-foreground/90">
+              {formatMoney(p.balance, account.currency, true)}
+            </span>
             {p.is_default ? (
-              <span className="text-[9px] uppercase text-primary ml-0.5">default</span>
+              <span className="text-[9px] uppercase text-primary">default</span>
             ) : null}
-          </span>
+            {onPartitionScopeChange ? (
+              <SelectInput
+                value={effectiveScope(p)}
+                onChange={(e) => onPartitionScopeChange(account._id, p._id, e.target.value)}
+                className="ml-auto text-[11px] py-0.5 px-1.5 h-7 max-w-[7.5rem]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {PARTITION_SCOPES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </SelectInput>
+            ) : effectiveScope(p) !== "business" ? (
+              <span className="text-[9px] uppercase text-muted-foreground ml-auto">
+                {scopeLabel(effectiveScope(p))}
+              </span>
+            ) : null}
+          </div>
         ))}
       </div>
-    </button>
+    </Wrapper>
   );
 }

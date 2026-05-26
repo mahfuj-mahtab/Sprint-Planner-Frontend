@@ -16,6 +16,7 @@ import MembersShow from './components/MembersShow.jsx';
 import MyTodo from './components/MyTodo.jsx';
 import AssignedTasks from './pages/assignedTasks.jsx';
 import OrgClients from './pages/OrgClients.jsx';
+import OrgCrmDashboard from './pages/OrgCrmDashboard.jsx';
 import OrgFinance from './pages/OrgFinance.jsx';
 import OrgDashboard from './pages/OrgDashboard.jsx';
 import ProjectDashboard from './pages/ProjectDashboard.jsx';
@@ -47,6 +48,10 @@ const router = createBrowserRouter([
   {
     path: "/user/profile/org/:orgId/dashboard",
     element: <OrgDashboard />
+  },
+  {
+    path: "/user/profile/org/:orgId/crm",
+    element: <OrgCrmDashboard />
   },
   {
     path: "/user/profile/org/:orgId/clients",

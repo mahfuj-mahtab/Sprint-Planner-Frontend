@@ -23,8 +23,9 @@ import { cn } from "@/lib/utils";
 import { MemberAvatar } from "./MemberAvatar";
 import SHowStatus from "./SHowStatus";
 import PriorityShow from "./PriorityShow";
+import { KANBAN_COLUMNS, normalizeTaskStatus, isTaskDone, STATUS_META } from "@/lib/taskWorkflow";
 
-const STATUSES = ["Pending", "Work In Progress", "Hold", "Cancelled", "Completed"];
+const DISPLAY_STATUSES = [...KANBAN_COLUMNS, "Cancelled"];
 
 const TEAM_ACCENTS = [
   { bar: "from-[#00d4ff] to-[#00ff94]", border: "border-[#00d4ff]/35", glow: "shadow-[0_0_40px_rgba(0,212,255,0.08)]", chip: "bg-[#00d4ff]/15 text-[#00d4ff]" },
@@ -34,15 +35,16 @@ const TEAM_ACCENTS = [
 ];
 
 function countByStatus(tasks) {
-  const counts = Object.fromEntries(STATUSES.map((s) => [s, 0]));
+  const counts = Object.fromEntries(DISPLAY_STATUSES.map((s) => [s, 0]));
   for (const t of tasks) {
-    if (counts[t.status] !== undefined) counts[t.status]++;
+    const s = normalizeTaskStatus(t.status);
+    if (counts[s] !== undefined) counts[s]++;
   }
   return counts;
 }
 
 function countByPriority(tasks) {
-  const counts = { High: 0, Medium: 0, Low: 0 };
+  const counts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
   for (const t of tasks) {
     if (counts[t.priority] !== undefined) counts[t.priority]++;
   }
@@ -50,12 +52,13 @@ function countByPriority(tasks) {
 }
 
 function bumpMemberStat(stat, status) {
+  const s = normalizeTaskStatus(status);
   stat.total++;
-  if (status === "Completed") stat.completed++;
-  else if (status === "Work In Progress") stat.wip++;
-  else if (status === "Pending") stat.pending++;
-  else if (status === "Hold") stat.hold++;
-  else if (status === "Cancelled") stat.cancelled++;
+  if (s === "Done") stat.completed++;
+  else if (s === "In Progress" || s === "In Review") stat.wip++;
+  else if (s === "Backlog") stat.pending++;
+  else if (s === "Blocked") stat.hold++;
+  else if (s === "Cancelled") stat.cancelled++;
 }
 
 function getMemberTaskStats(team) {
@@ -160,14 +163,14 @@ function sprintTimeMeta(sprint) {
 }
 
 function isOverdue(task) {
-  if (!task.endDate || task.status === "Completed" || task.status === "Cancelled") return false;
+  if (!task.endDate || isTaskDone(task.status) || normalizeTaskStatus(task.status) === "Cancelled") return false;
   const end = new Date(task.endDate);
   end.setHours(23, 59, 59, 999);
   return end < new Date();
 }
 
 function isDueSoon(task, withinDays = 3) {
-  if (!task.endDate || task.status === "Completed" || task.status === "Cancelled") return false;
+  if (!task.endDate || isTaskDone(task.status) || normalizeTaskStatus(task.status) === "Cancelled") return false;
   const end = new Date(task.endDate);
   const now = new Date();
   const limit = new Date();
@@ -256,7 +259,7 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
   const allTasks = safeTeams.flatMap((t) => t.tasks || []);
   const statusCounts = countByStatus(allTasks);
   const priorityCounts = countByPriority(allTasks);
-  const completed = statusCounts.Completed;
+  const completed = statusCounts.Done || 0;
   const total = allTasks.length;
   const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
   const unassigned = allTasks.filter((t) => !t.assignee?.length).length;
@@ -272,28 +275,27 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
   const time = sprintTimeMeta(sprint);
   const globalMemberRows = buildGlobalMemberRows(safeTeams);
 
-  const statusPie = [
-    { name: "Completed", value: statusCounts.Completed, color: "#00ff94" },
-    { name: "In progress", value: statusCounts["Work In Progress"], color: "#00d4ff" },
-    { name: "Pending", value: statusCounts.Pending, color: "#94a3b8" },
-    { name: "Hold", value: statusCounts.Hold, color: "#a78bfa" },
-    { name: "Cancelled", value: statusCounts.Cancelled, color: "#f87171" },
-  ];
+  const statusPie = DISPLAY_STATUSES.map((s) => ({
+    name: STATUS_META[s]?.label || s,
+    value: statusCounts[s] || 0,
+    color: STATUS_META[s]?.dot || "#94a3b8",
+  }));
 
   const priorityPie = [
+    { name: "Critical", value: priorityCounts.Critical },
     { name: "High", value: priorityCounts.High },
     { name: "Medium", value: priorityCounts.Medium },
     { name: "Low", value: priorityCounts.Low },
-  ];
+  ].filter((p) => p.value > 0);
 
   const teamStackData = safeTeams.map((team) => {
     const c = countByStatus(team.tasks || []);
     return {
       name: truncateName(team.name),
-      completed: c.Completed,
-      wip: c["Work In Progress"],
-      pending: c.Pending,
-      hold: c.Hold,
+      completed: c.Done,
+      wip: (c["In Progress"] || 0) + (c["In Review"] || 0),
+      pending: c.Backlog,
+      hold: c.Blocked,
       cancelled: c.Cancelled,
     };
   });
@@ -303,7 +305,7 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
     return {
       name: truncateName(team.name, 12),
       total: tasks.length,
-      completed: tasks.filter((t) => t.status === "Completed").length,
+      completed: tasks.filter((t) => isTaskDone(t.status)).length,
     };
   });
 
@@ -394,8 +396,8 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <StatCard label="In progress" value={statusCounts["Work In Progress"]} variant="balance" />
-        <StatCard label="Pending" value={statusCounts.Pending} variant="neutral" />
+        <StatCard label="In progress" value={(statusCounts["In Progress"] || 0) + (statusCounts["In Review"] || 0)} variant="balance" />
+        <StatCard label="Backlog" value={statusCounts.Backlog} variant="neutral" />
         <StatCard label="On hold" value={statusCounts.Hold} variant="neutral" />
         <StatCard label="Cancelled" value={statusCounts.Cancelled} variant="expense" />
         <StatCard label="Unassigned" value={unassigned} variant="neutral" sub="Tasks with no owner" />
@@ -446,7 +448,7 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
         const tasks = team.tasks || [];
         const c = countByStatus(tasks);
         const teamTotal = tasks.length;
-        const rate = teamTotal > 0 ? Math.round((c.Completed / teamTotal) * 100) : 0;
+        const rate = teamTotal > 0 ? Math.round(((c.Done || 0) / teamTotal) * 100) : 0;
         const members = getMemberTaskStats(team);
         const memberChartData = members
           .filter((m) => m.total > 0)
@@ -483,9 +485,9 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
                 </div>
                 <div className="grid grid-cols-4 gap-3 shrink-0">
                   {[
-                    { label: "Done", val: c.Completed, color: "text-[#00ff94]" },
-                    { label: "WIP", val: c["Work In Progress"], color: "text-[#00d4ff]" },
-                    { label: "Pending", val: c.Pending, color: "text-slate-400" },
+                    { label: "Done", val: c.Done, color: "text-[#00ff94]" },
+                    { label: "WIP", val: (c["In Progress"] || 0) + (c["In Review"] || 0), color: "text-[#00d4ff]" },
+                    { label: "Backlog", val: c.Backlog, color: "text-slate-400" },
                     { label: "Hold", val: c.Hold, color: "text-[#a78bfa]" },
                   ].map((box) => (
                     <div key={box.label} className="rounded-xl bg-muted/25 border border-border/60 px-4 py-3 text-center min-w-[72px]">
@@ -628,9 +630,9 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
               <thead>
                 <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
                   <th className="text-left px-4 py-3 font-medium">Team</th>
-                  {STATUSES.map((s) => (
+                  {DISPLAY_STATUSES.map((s) => (
                     <th key={s} className="px-3 py-3 font-medium text-center whitespace-nowrap">
-                      {s === "Work In Progress" ? "WIP" : s}
+                      {STATUS_META[s]?.label || s}
                     </th>
                   ))}
                   <th className="px-4 py-3 font-medium text-center">Total</th>
@@ -641,7 +643,7 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
                 {safeTeams.map((team, i) => {
                   const c = countByStatus(team.tasks || []);
                   const teamTotal = (team.tasks || []).length;
-                  const teamRate = teamTotal > 0 ? Math.round((c.Completed / teamTotal) * 100) : 0;
+                  const teamRate = teamTotal > 0 ? Math.round(((c.Done || 0) / teamTotal) * 100) : 0;
                   return (
                     <tr key={team._id} className="border-b border-border/50 hover:bg-[#00d4ff]/5">
                       <td className="px-4 py-3 font-medium">
@@ -651,7 +653,7 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
                         />
                         {team.name}
                       </td>
-                      {STATUSES.map((s) => (
+                      {DISPLAY_STATUSES.map((s) => (
                         <td key={s} className="px-3 py-3 text-center font-mono tabular-nums">
                           {c[s] || "—"}
                         </td>

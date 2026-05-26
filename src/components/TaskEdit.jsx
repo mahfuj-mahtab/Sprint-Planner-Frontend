@@ -82,6 +82,9 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
                 endDate: response.data.task.endDate.split('T')[0],
                 status: response.data.task.status,
                 priority: response.data.task.priority,
+                task_type: response.data.task.task_type || "feature",
+                blocked_reason: response.data.task.blocked_reason || "",
+                acceptance_criteria: response.data.task.acceptance_criteria || "",
                 team: response.data.task.team_id._id,
                 featureId: response.data.task?.feature_id?._id || ""
             });
@@ -165,24 +168,41 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
                         </div>
 
                         <div className="w-full">
+                            <label htmlFor="task_type" className="ww-label">Type</label>
+                            <select name="task_type" id="task_type" className="ww-input" {...register("task_type")}>
+                                <option value="feature">Feature</option>
+                                <option value="bug">Bug</option>
+                                <option value="chore">Chore</option>
+                                <option value="spike">Spike</option>
+                            </select>
+                        </div>
+                        <div className="w-full">
                             <label htmlFor="status" className="ww-label">Status</label>
                             <select name="status" id="status" className="ww-input" required="" {...register("status", { required: true })}>
-                                <option value="">Select Status</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Work In Progress">Work In Progress</option>
-                                <option value="Hold">Hold</option>
+                                <option value="Backlog">Backlog</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="In Review">In Review</option>
+                                <option value="Blocked">Blocked</option>
+                                <option value="Done">Done</option>
                                 <option value="Cancelled">Cancelled</option>
-                                <option value="Completed">Completed</option>
                             </select>
                         </div>
                         <div className="w-full">
                             <label htmlFor="priority" className="ww-label">Priority</label>
                             <select name="priority" id="priority" className="ww-input" required="" {...register("priority", { required: true })}>
-                                <option value="">Select Priority</option>
                                 <option value="Low">Low</option>
                                 <option value="Medium">Medium</option>
                                 <option value="High">High</option>
+                                <option value="Critical">Critical</option>
                             </select>
+                        </div>
+                        <div className="sm:col-span-2">
+                            <label htmlFor="blocked_reason" className="ww-label">Blocked reason</label>
+                            <input type="text" className="ww-input" placeholder="If status is Blocked" {...register("blocked_reason")} />
+                        </div>
+                        <div className="sm:col-span-2">
+                            <label htmlFor="acceptance_criteria" className="ww-label">Acceptance criteria</label>
+                            <textarea className="w-full rounded-xl border border-border bg-card px-4 py-3 text-[14px] min-h-[80px]" {...register("acceptance_criteria")} />
                         </div>
 
                         <div className="sm:col-span-2">

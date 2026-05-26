@@ -341,15 +341,15 @@ function ShowOrgDetails() {
                   </div>
                 </Link>
                 <Link
-                  to={`/user/profile/org/${orgId}/clients`}
+                  to={`/user/profile/org/${orgId}/crm`}
                   className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#00d4ff]/30 transition"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#00d4ff]/30 bg-[#00d4ff]/10">
                     <Users className="w-4 h-4 text-[#00d4ff]" />
                   </div>
                   <div>
-                    <h3 className="text-[15px] font-semibold group-hover:text-[#00d4ff]">Clients</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">CRM, budgets, payments</p>
+                    <h3 className="text-[15px] font-semibold group-hover:text-[#00d4ff]">CRM</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">Pipeline, follow-ups, clients</p>
                   </div>
                 </Link>
                 <Link

@@ -11,6 +11,8 @@ import { ToastContainer, toast } from 'react-toastify';
 
 import TaskCreate from '../components/TaskCreate'
 import SprintTeamTasks from '../components/SprintTeamTasks'
+import SprintKanban from '../components/SprintKanban'
+import { LayoutGrid, List } from 'lucide-react'
 import TeamCard from '../components/TeamCard'
 import TeamCreate from '../components/TeamCreate'
 import TaskEdit from '../components/TaskEdit'
@@ -19,7 +21,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Skeleton, Spinner } from '../components/ui/Loading'
 import DashboardLayout from "@/components/layout/DashboardLayout";
 function SprintDetails({ fetchOrg }) {
-    const [activeTab, setActiveTab] = useState('sprint')
+    const [activeTab, setActiveTab] = useState('board')
     const [showTaskCreate, setShowCreateTask] = useState(false)
     const [createTaskTeamId, setCreateTaskTeamId] = useState(null)
     const [showTeamCreate, setShowCreateTeam] = useState(false)
@@ -29,10 +31,10 @@ function SprintDetails({ fetchOrg }) {
     const navigate = useNavigate();
     const [sprintDetails, setSprintDetails] = useState()
     const tabs = [
-        { id: 'sprint', label: 'Sprint' },
+        { id: 'board', label: 'Board', icon: LayoutGrid },
+        { id: 'list', label: 'List', icon: List },
         { id: 'analytics', label: 'Analytics' },
         { id: 'team', label: 'Team' },
-        // { id: 'tasks', label: 'Tasks' }
     ]
     const fetchSprintDetails = () => {
         api.get(`/api/v1/org/sprint/details/${sprintId}`).then((response) => {
@@ -125,11 +127,12 @@ function SprintDetails({ fetchOrg }) {
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
+                                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${activeTab === tab.id
                                             ? 'bg-muted text-foreground'
                                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                                             }`}
                                     >
+                                        {tab.icon ? <tab.icon className="w-3.5 h-3.5" /> : null}
                                         {tab.label}
                                     </button>
                                 ))}
@@ -161,8 +164,31 @@ function SprintDetails({ fetchOrg }) {
             {activeTab === 'analytics' ? (
                 <TeamWiseAnalytics teams={sprintDetails?.teams} sprint={sprintDetails?.sprint} />
             ) : (
-            <div className="p-4 sm:p-6">
-                    {activeTab === 'sprint' && (
+            <div className="p-4 sm:p-6 ww-page-full max-w-none">
+                    {activeTab === 'board' && (
+                        <div className="space-y-4">
+                            <div>
+                              <h2 className="text-2xl font-bold ww-heading">{sprintDetails?.sprint?.name}</h2>
+                              <p className="text-sm text-muted-foreground mt-1">Drag cards across columns to advance work toward shipped.</p>
+                            </div>
+                            {sprintDetails?.teams?.length > 0 ? (
+                              <SprintKanban
+                                teams={sprintDetails.teams}
+                                orgId={orgId}
+                                sprintId={sprintId}
+                                onRefresh={fetchSprintDetails}
+                                onEditTask={(task) => {
+                                  setEditingTaskId(task._id);
+                                  setShowTaskEdit(true);
+                                }}
+                              />
+                            ) : (
+                              <p className="text-muted-foreground text-sm">Create a team to add tasks to the board.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'list' && (
                         <div>
                             <h2 className="text-2xl font-bold mb-4 ww-heading">{sprintDetails?.sprint?.name}</h2>
                             {sprintDetails?.teams?.length > 0 ? (

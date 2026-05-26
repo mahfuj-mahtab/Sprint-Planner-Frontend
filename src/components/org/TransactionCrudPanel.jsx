@@ -5,7 +5,13 @@ import api from "@/ApiInception";
 import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
 import { EmptyState } from "@/components/org/EmptyState";
+import { LinkedEntityField } from "@/components/org/LinkedEntityField";
 import { categoryLabel, categoriesForType } from "@/lib/financeCategories";
+import {
+  effectiveScope,
+  partitionOptionLabel,
+  partitionsForExpense,
+} from "@/lib/partitionScopes";
 import { formatMoney, formatDate } from "@/lib/formatMoney";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +40,10 @@ export function TransactionCrudPanel({
   onRefresh,
   onManageCategories,
   prefillClientId,
+  onClientCreated,
+  onProjectCreated,
+  incomeSources = [],
+  onIncomeSourceCreated,
 }) {
   const isIncome = type === "income";
   const typeCategories = categoriesForType(categories, type);
@@ -49,6 +59,7 @@ export function TransactionCrudPanel({
     partition_id: "",
     project_id: "",
     client_id: "",
+    income_source_id: "",
     payment_method: "bank",
     payment_date: today(),
     expense_date: today(),
@@ -64,7 +75,17 @@ export function TransactionCrudPanel({
     return map;
   }, [accounts]);
 
-  const expenseBalance = Number(partitionLookup[form.partition_id]?.balance) || 0;
+  const accountPartitions = partitionsForAccount[form.account_id] || [];
+  const eligiblePartitions = useMemo(() => {
+    if (isIncome) return accountPartitions;
+    return partitionsForExpense(accountPartitions, form.is_personal);
+  }, [isIncome, accountPartitions, form.is_personal]);
+
+  const selectedPartition = partitionLookup[form.partition_id];
+  const incomeNonBusiness =
+    isIncome && selectedPartition && effectiveScope(selectedPartition) !== "business";
+
+  const expenseBalance = Number(selectedPartition?.balance) || 0;
   const expenseAmount = Number(form.amount) || 0;
   const expenseOverBalance = !isIncome && form.partition_id && expenseAmount > expenseBalance;
 
@@ -75,6 +96,7 @@ export function TransactionCrudPanel({
     partition_id: "",
     project_id: "",
     client_id: isIncome && prefillClientId ? prefillClientId : "",
+    income_source_id: "",
     payment_method: "bank",
     payment_date: today(),
     expense_date: today(),
@@ -94,9 +116,15 @@ export function TransactionCrudPanel({
       amount: String(item.amount),
       category: item.category || defaultCategory,
       account_id: item.account_id?._id || item.account_id || "",
-      partition_id: item.allocations?.[0]?.partition_id?._id || item.allocations?.[0]?.partition_id || item.partition_id?._id || item.partition_id || "",
+      partition_id:
+        item.allocations?.[0]?.partition_id?._id ||
+        item.allocations?.[0]?.partition_id ||
+        item.partition_id?._id ||
+        item.partition_id ||
+        "",
       project_id: item.project_id?._id || item.project_id || "",
       client_id: item.client_id?._id || item.client_id || "",
+      income_source_id: item.income_source_id?._id || item.income_source_id || "",
       payment_method: item.payment_method || "bank",
       payment_date: item.payment_date ? new Date(item.payment_date).toISOString().slice(0, 10) : today(),
       expense_date: item.expense_date ? new Date(item.expense_date).toISOString().slice(0, 10) : today(),
@@ -118,6 +146,19 @@ export function TransactionCrudPanel({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const setPersonal = (isPersonal) => {
+    const nextPartitions = partitionsForExpense(
+      partitionsForAccount[form.account_id] || [],
+      isPersonal
+    );
+    const stillValid = nextPartitions.some((p) => p._id === form.partition_id);
+    setForm({
+      ...form,
+      is_personal: isPersonal,
+      partition_id: stillValid ? form.partition_id : "",
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -154,6 +195,7 @@ export function TransactionCrudPanel({
           partition_id: form.partition_id || undefined,
           project_id: form.project_id || undefined,
           client_id: form.client_id || undefined,
+          income_source_id: form.income_source_id || undefined,
           payment_method: form.payment_method,
           payment_date: form.payment_date,
           notes: form.notes,
@@ -170,6 +212,7 @@ export function TransactionCrudPanel({
           account_id: form.account_id,
           partition_id: form.partition_id,
           project_id: form.project_id || undefined,
+          income_source_id: form.income_source_id || undefined,
           expense_date: form.expense_date,
           is_personal: form.is_personal,
           notes: form.notes,
@@ -196,7 +239,9 @@ export function TransactionCrudPanel({
         <div>
           <h2 className="text-base font-semibold text-foreground capitalize">{type}</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isIncome ? "Money in — pick a category you created" : "Money out — from a partition"}
+            {isIncome
+              ? "Business partitions count toward revenue. Owner/Excluded do not."
+              : "Business expenses use Business partitions; personal uses Owner/Excluded."}
           </p>
         </div>
         <div className="flex gap-2">
@@ -363,22 +408,39 @@ export function TransactionCrudPanel({
                 ))}
               </SelectInput>
             </Field>
-            <Field label="Partition" hint={isIncome ? "Default if empty" : undefined}>
+            <Field
+              label="Partition"
+              hint={
+                isIncome
+                  ? "Default = account default (usually Business)"
+                  : form.is_personal
+                    ? "Owner or Excluded only"
+                    : "Business partitions only"
+              }
+            >
               <SelectInput
                 required={!isIncome}
                 value={form.partition_id}
                 onChange={(e) => setForm({ ...form, partition_id: e.target.value })}
               >
                 <option value="">{isIncome ? "Default" : "Select…"}</option>
-                {(partitionsForAccount[form.account_id] || []).map((p) => (
+                {eligiblePartitions.map((p) => (
                   <option key={p._id} value={p._id}>
-                    {p.name}
-                    {!isIncome ? ` (${formatMoney(p.balance, currency, true)})` : ""}
+                    {partitionOptionLabel(p, {
+                      showBalance: !isIncome,
+                      currency,
+                      formatMoney,
+                    })}
                   </option>
                 ))}
               </SelectInput>
             </Field>
           </div>
+          {incomeNonBusiness ? (
+            <p className="text-xs text-amber-500/90 -mt-2">
+              This partition does not count toward business revenue on Overview.
+            </p>
+          ) : null}
           {isIncome ? (
             <Field label="Payment method">
               <SelectInput
@@ -394,38 +456,34 @@ export function TransactionCrudPanel({
             </Field>
           ) : null}
           <div className="grid grid-cols-2 gap-4">
-            <Field
+            <LinkedEntityField
               label="Project"
               hint={
                 isIncome
-                  ? "Pick the build this money belongs to — required for project revenue on Overview"
+                  ? "Links revenue to a build on Overview"
                   : "Optional — links cost to a project"
               }
-            >
-              <SelectInput
-                value={form.project_id}
-                onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-                className={cn(isIncome && !form.project_id && "ring-1 ring-amber-500/40")}
-              >
-                <option value="">{isIncome ? "— Select project —" : "None"}</option>
-                {projects.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.name}
-                  </option>
-                ))}
-              </SelectInput>
-            </Field>
+              value={form.project_id}
+              onChange={(project_id) => setForm({ ...form, project_id })}
+              items={projects}
+              clients={clients}
+              placeholder={isIncome ? "— Select project —" : "None"}
+              orgId={orgId}
+              entityType="project"
+              onEntityCreated={onProjectCreated}
+              className={cn(isIncome && !form.project_id && "ring-1 ring-amber-500/40")}
+            />
             {isIncome ? (
-              <Field label="Client">
-                <SelectInput value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })}>
-                  <option value="">None</option>
-                  {clients.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </SelectInput>
-              </Field>
+              <LinkedEntityField
+                label="Client"
+                value={form.client_id}
+                onChange={(client_id) => setForm({ ...form, client_id })}
+                items={clients}
+                placeholder="None"
+                orgId={orgId}
+                entityType="client"
+                onEntityCreated={onClientCreated}
+              />
             ) : (
               <Field label="Date">
                 <input
@@ -437,6 +495,17 @@ export function TransactionCrudPanel({
               </Field>
             )}
           </div>
+          <LinkedEntityField
+            label="Income source"
+            hint="Links cash to a venture — tracks investment vs earnings"
+            value={form.income_source_id}
+            onChange={(income_source_id) => setForm({ ...form, income_source_id })}
+            items={incomeSources}
+            placeholder="None"
+            orgId={orgId}
+            entityType="income_source"
+            onEntityCreated={onIncomeSourceCreated}
+          />
           {isIncome ? (
             <Field label="Date">
               <input
@@ -451,9 +520,9 @@ export function TransactionCrudPanel({
               <input
                 type="checkbox"
                 checked={form.is_personal}
-                onChange={(e) => setForm({ ...form, is_personal: e.target.checked })}
+                onChange={(e) => setPersonal(e.target.checked)}
               />
-              Personal expense
+              Personal expense (Owner / Excluded partition)
             </label>
           )}
           <Field label="Notes">
