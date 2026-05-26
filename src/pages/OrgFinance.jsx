@@ -106,9 +106,17 @@ function OrgFinance() {
   const [submitting, setSubmitting] = useState(false);
   const [accountModal, setAccountModal] = useState(false);
   const [partitionModal, setPartitionModal] = useState(false);
+  const [partitionEditModal, setPartitionEditModal] = useState(false);
+  const [editingAccountId, setEditingAccountId] = useState(null);
 
   const [accountForm, setAccountForm] = useState({ name: "", type: "bank", currency: "BDT" });
   const [partitionForm, setPartitionForm] = useState({ accountId: "", name: "", scope: "business" });
+  const [partitionEditForm, setPartitionEditForm] = useState({
+    accountId: "",
+    partitionId: "",
+    name: "",
+    scope: "business",
+  });
   const [transferForm, setTransferForm] = useState({
     account_id: "",
     from_partition_id: "",
@@ -205,16 +213,59 @@ function OrgFinance() {
     return items.sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [transactions, categories]);
 
-  const handleCreateAccount = async (e) => {
+  const openAccountModal = (account = null) => {
+    if (account) {
+      setEditingAccountId(account._id);
+      setAccountForm({
+        name: account.name,
+        type: account.type || "bank",
+        currency: account.currency || "BDT",
+      });
+    } else {
+      setEditingAccountId(null);
+      setAccountForm({ name: "", type: "bank", currency: "BDT" });
+    }
+    setAccountModal(true);
+  };
+
+  const openPartitionModal = (accountId = "") => {
+    setPartitionForm({ accountId: accountId || accounts[0]?._id || "", name: "", scope: "business" });
+    setPartitionModal(true);
+  };
+
+  const handleSaveAccount = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const r = await api.post(`/api/v1/org/${orgId}/finance/accounts`, accountForm);
+      const r = editingAccountId
+        ? await api.patch(`/api/v1/org/${orgId}/finance/accounts/${editingAccountId}`, accountForm)
+        : await api.post(`/api/v1/org/${orgId}/finance/accounts`, accountForm);
       toast.success(r.data.message, { theme: "dark" });
       setAccountForm({ name: "", type: "bank", currency: "BDT" });
+      setEditingAccountId(null);
       setAccountModal(false);
       await refresh();
-      setTab("overview");
+      if (!editingAccountId) setTab("overview");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteAccount = async (account) => {
+    if (
+      !window.confirm(
+        `Delete "${account.name}" and all its partitions? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const r = await api.delete(`/api/v1/org/${orgId}/finance/accounts/${account._id}`);
+      toast.success(r.data.message, { theme: "dark" });
+      await refresh();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
     } finally {
@@ -251,6 +302,50 @@ function OrgFinance() {
       await refresh();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to update partition", { theme: "dark" });
+    }
+  };
+
+  const openEditPartition = (accountId, partition) => {
+    setPartitionEditForm({
+      accountId,
+      partitionId: partition._id,
+      name: partition.name,
+      scope: partition.scope || "business",
+    });
+    setPartitionEditModal(true);
+  };
+
+  const handleUpdatePartition = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const r = await api.patch(
+        `/api/v1/org/${orgId}/finance/accounts/${partitionEditForm.accountId}/partitions/${partitionEditForm.partitionId}`,
+        { name: partitionEditForm.name, scope: partitionEditForm.scope }
+      );
+      toast.success(r.data.message, { theme: "dark" });
+      setPartitionEditModal(false);
+      await refresh();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeletePartition = async (accountId, partition) => {
+    if (!window.confirm(`Delete partition "${partition.name}"?`)) return;
+    setSubmitting(true);
+    try {
+      const r = await api.delete(
+        `/api/v1/org/${orgId}/finance/accounts/${accountId}/partitions/${partition._id}`
+      );
+      toast.success(r.data.message, { theme: "dark" });
+      await refresh();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -296,7 +391,7 @@ function OrgFinance() {
         </div>
         <button
           type="button"
-          onClick={() => setAccountModal(true)}
+          onClick={() => openAccountModal()}
           className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground inline-flex items-center gap-1"
         >
           <Plus className="w-3.5 h-3.5" /> Add account
@@ -353,8 +448,8 @@ function OrgFinance() {
         onTabChange={setTab}
       />
 
-      <div className="ww-page">
-        <SetupBanner />
+      <div className={cn(tab === "sources" ? "ww-page-full max-w-none w-full" : "ww-page")}>
+        {tab !== "sources" ? <SetupBanner /> : null}
 
         {loading ? (
           <FinanceSkeleton />
@@ -362,45 +457,81 @@ function OrgFinance() {
           <>
             {tab === "overview" && overview && (
               <div className="space-y-6 text-left">
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <StatCard
-                    label="Business revenue"
-                    value={formatMoney(overview.businessMonthIncome ?? overview.monthIncome, currency)}
-                    variant="income"
-                    sub="Business partitions only · this month"
-                  />
-                  <StatCard
-                    label="Business expense"
-                    value={formatMoney(overview.businessMonthExpense ?? overview.monthExpense, currency)}
-                    variant="expense"
-                    sub="From business partitions"
-                  />
-                  <StatCard
-                    label="Business net"
-                    value={formatMoney(overview.businessNetProfit ?? overview.netProfit, currency)}
-                    variant={(overview.businessNetProfit ?? overview.netProfit) >= 0 ? "income" : "expense"}
-                    sub="Revenue − business costs"
-                  />
-                  <StatCard
-                    label="Total cash"
-                    value={formatMoney(overview.totalBalance, currency)}
-                    variant="balance"
-                    sub={`Business ${formatMoney(overview.businessBalance ?? 0, currency, true)} · Owner ${formatMoney(overview.ownerBalance ?? 0, currency, true)}`}
-                  />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Business P&amp;L — current calendar month only</p>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <StatCard
+                      label="Business revenue"
+                      value={formatMoney(overview.businessMonthIncome ?? overview.monthIncome, currency)}
+                      variant="income"
+                      sub="Income into business-scoped partitions"
+                    />
+                    <StatCard
+                      label="Business expense"
+                      value={formatMoney(overview.businessMonthExpense ?? overview.monthExpense, currency)}
+                      variant="expense"
+                      sub="Expenses from business partitions"
+                    />
+                    <StatCard
+                      label="Business net"
+                      value={formatMoney(overview.businessNetProfit ?? overview.netProfit, currency)}
+                      variant={(overview.businessNetProfit ?? overview.netProfit) >= 0 ? "income" : "expense"}
+                      sub="This month revenue − expenses"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Cash by partition scope — all time balances</p>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <StatCard
+                      label="Business cash"
+                      value={formatMoney(overview.businessBalance ?? 0, currency)}
+                      variant="income"
+                      sub="Revenue & ops envelopes"
+                    />
+                    <StatCard
+                      label="Owner cash"
+                      value={formatMoney(overview.ownerBalance ?? 0, currency)}
+                      variant="balance"
+                      sub="Your pay / drawings"
+                    />
+                    <StatCard
+                      label="Excluded cash"
+                      value={formatMoney(overview.excludedBalance ?? 0, currency)}
+                      variant="neutral"
+                      sub="Outside business (e.g. day job)"
+                    />
+                    <StatCard
+                      label="Total cash"
+                      value={formatMoney(overview.totalBalance, currency)}
+                      variant="balance"
+                      sub="Sum of all accounts"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-6">
                   <section>
-                    <div className="flex items-center justify-between mb-2">
-                      <h2 className="text-sm font-semibold">Accounts & envelopes</h2>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <h2 className="text-sm font-semibold">Accounts & partitions</h2>
                       {hasAccounts ? (
-                        <button
-                          type="button"
-                          onClick={() => setTab("accounts")}
-                          className="text-sm text-primary hover:underline"
-                        >
-                          Manage
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openAccountModal()}
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-primary text-primary-foreground inline-flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" /> Account
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openPartitionModal()}
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-border hover:bg-muted inline-flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" /> Partition
+                          </button>
+                        </div>
                       ) : null}
                     </div>
                     {!hasAccounts ? (
@@ -409,7 +540,7 @@ function OrgFinance() {
                         title="No accounts yet"
                         description="Create a bank or mobile wallet account. Each account gets partitions — virtual buckets for Free balance, Emergency fund, project budget, and more."
                         action={
-                          <button type="button" onClick={() => setAccountModal(true)} className="ww-btn-primary text-sm">
+                          <button type="button" onClick={() => openAccountModal()} className="ww-btn-primary text-sm">
                             Create first account
                           </button>
                         }
@@ -421,6 +552,11 @@ function OrgFinance() {
                             key={a._id}
                             account={a}
                             onPartitionScopeChange={handlePartitionScopeChange}
+                            onEditAccount={openAccountModal}
+                            onDeleteAccount={handleDeleteAccount}
+                            onAddPartition={openPartitionModal}
+                            onEditPartition={openEditPartition}
+                            onDeletePartition={handleDeletePartition}
                           />
                         ))}
                       </div>
@@ -521,12 +657,12 @@ function OrgFinance() {
             {tab === "accounts" && (
               <div className="space-y-4 text-left">
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => setAccountModal(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground inline-flex items-center gap-1">
+                  <button type="button" onClick={() => openAccountModal()} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground inline-flex items-center gap-1">
                     <Plus className="w-3.5 h-3.5" /> New account
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPartitionModal(true)}
+                    onClick={() => openPartitionModal()}
                     disabled={!hasAccounts}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40 inline-flex items-center gap-1"
                   >
@@ -540,6 +676,11 @@ function OrgFinance() {
                         key={a._id}
                         account={a}
                         onPartitionScopeChange={handlePartitionScopeChange}
+                        onEditAccount={openAccountModal}
+                        onDeleteAccount={handleDeleteAccount}
+                        onAddPartition={openPartitionModal}
+                        onEditPartition={openEditPartition}
+                        onDeletePartition={handleDeletePartition}
                       />
                     ))}
                   </div>
@@ -549,7 +690,7 @@ function OrgFinance() {
                     title="Accounts & partitions"
                     description="Each real-world account (bank, bKash, cash) holds virtual partitions. Money flows between partitions without leaving the account."
                     action={
-                      <button type="button" onClick={() => setAccountModal(true)} className="ww-btn-primary text-sm">
+                      <button type="button" onClick={() => openAccountModal()} className="ww-btn-primary text-sm">
                         Add account
                       </button>
                     }
@@ -767,8 +908,20 @@ function OrgFinance() {
         )}
       </div>
 
-      <Modal open={accountModal} onClose={() => setAccountModal(false)} title="New financial account" description="A default Free Balance partition is created automatically.">
-        <form onSubmit={handleCreateAccount} className="space-y-4">
+      <Modal
+        open={accountModal}
+        onClose={() => {
+          setAccountModal(false);
+          setEditingAccountId(null);
+        }}
+        title={editingAccountId ? "Edit account" : "New financial account"}
+        description={
+          editingAccountId
+            ? "Update name, type, or currency."
+            : "A default Free Balance partition is created automatically."
+        }
+      >
+        <form onSubmit={handleSaveAccount} className="space-y-4">
           <Field label="Account name">
             <input
               className="ww-input w-full"
@@ -796,7 +949,50 @@ function OrgFinance() {
             />
           </Field>
           <button type="submit" disabled={submitting} className="w-full text-xs font-semibold py-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50">
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Create account"}
+            {submitting ? (
+              <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+            ) : editingAccountId ? (
+              "Save account"
+            ) : (
+              "Create account"
+            )}
+          </button>
+        </form>
+      </Modal>
+
+      <Modal
+        open={partitionEditModal}
+        onClose={() => setPartitionEditModal(false)}
+        title="Edit partition"
+        description="Rename or change scope."
+      >
+        <form onSubmit={handleUpdatePartition} className="space-y-4">
+          <Field label="Partition name">
+            <input
+              className="ww-input w-full"
+              required
+              value={partitionEditForm.name}
+              onChange={(e) => setPartitionEditForm({ ...partitionEditForm, name: e.target.value })}
+            />
+          </Field>
+          <Field label="Scope">
+            <SelectInput
+              value={partitionEditForm.scope}
+              onChange={(e) => setPartitionEditForm({ ...partitionEditForm, scope: e.target.value })}
+            >
+              {PARTITION_SCOPES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label} — {s.hint}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full text-xs font-semibold py-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Save partition"}
           </button>
         </form>
       </Modal>

@@ -1,7 +1,7 @@
 import { formatMoney } from "@/lib/formatMoney";
 import { effectiveScope, PARTITION_SCOPES, scopeLabel } from "@/lib/partitionScopes";
 import { cn } from "@/lib/utils";
-import { Landmark, Smartphone, Banknote, Globe } from "lucide-react";
+import { Landmark, Smartphone, Banknote, Globe, Pencil, Plus, Trash2 } from "lucide-react";
 import { SelectInput } from "@/components/org/Field";
 
 const TYPE_META = {
@@ -13,7 +13,18 @@ const TYPE_META = {
 
 const PARTITION_COLORS = ["bg-primary", "bg-[#00d4ff]", "bg-[#a78bfa]", "bg-[#ff6b35]", "bg-muted-foreground"];
 
-export function AccountCard({ account, onSelect, selected, compact, onPartitionScopeChange }) {
+export function AccountCard({
+  account,
+  onSelect,
+  selected,
+  compact,
+  onPartitionScopeChange,
+  onEditAccount,
+  onDeleteAccount,
+  onAddPartition,
+  onEditPartition,
+  onDeletePartition,
+}) {
   const meta = TYPE_META[account.type] || TYPE_META.bank;
   const Icon = meta.icon;
   const partitions = account.partitions || [];
@@ -44,11 +55,47 @@ export function AccountCard({ account, onSelect, selected, compact, onPartitionS
             </div>
           </div>
         </div>
-        <div className="text-left sm:text-right shrink-0">
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-mono">Total</div>
-          <div className="font-mono text-lg text-primary tabular-nums">
-            {formatMoney(total, account.currency, compact)}
+        <div className="flex items-start gap-2 shrink-0">
+          <div className="text-left sm:text-right">
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-mono">Total</div>
+            <div className="font-mono text-lg text-primary tabular-nums">
+              {formatMoney(total, account.currency, compact)}
+            </div>
           </div>
+          {(onEditAccount || onDeleteAccount || onAddPartition) && !onSelect ? (
+            <div className="flex flex-col gap-0.5">
+              {onEditAccount ? (
+                <button
+                  type="button"
+                  onClick={() => onEditAccount(account)}
+                  className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"
+                  title="Edit account"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              ) : null}
+              {onAddPartition ? (
+                <button
+                  type="button"
+                  onClick={() => onAddPartition(account._id)}
+                  className="p-1.5 rounded-md hover:bg-muted text-primary"
+                  title="Add partition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              ) : null}
+              {onDeleteAccount ? (
+                <button
+                  type="button"
+                  onClick={() => onDeleteAccount(account)}
+                  className="p-1.5 rounded-md hover:bg-muted text-destructive"
+                  title="Delete account"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -82,11 +129,38 @@ export function AccountCard({ account, onSelect, selected, compact, onPartitionS
             {p.is_default ? (
               <span className="text-[9px] uppercase text-primary">default</span>
             ) : null}
+            {(onEditPartition || onDeletePartition) && !onSelect ? (
+              <span className="ml-auto flex gap-0.5">
+                {onEditPartition ? (
+                  <button
+                    type="button"
+                    onClick={() => onEditPartition(account._id, p)}
+                    className="p-1 rounded hover:bg-muted text-muted-foreground"
+                    title="Edit partition"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                ) : null}
+                {onDeletePartition && !p.is_default ? (
+                  <button
+                    type="button"
+                    onClick={() => onDeletePartition(account._id, p)}
+                    className="p-1 rounded hover:bg-muted text-destructive"
+                    title="Delete partition"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                ) : null}
+              </span>
+            ) : null}
             {onPartitionScopeChange ? (
               <SelectInput
                 value={effectiveScope(p)}
                 onChange={(e) => onPartitionScopeChange(account._id, p._id, e.target.value)}
-                className="ml-auto text-[11px] py-0.5 px-1.5 h-7 max-w-[7.5rem]"
+                className={cn(
+                  "text-[11px] py-0.5 px-1.5 h-7 max-w-[7.5rem]",
+                  (onEditPartition || onDeletePartition) && !onSelect ? "" : "ml-auto"
+                )}
                 onClick={(e) => e.stopPropagation()}
               >
                 {PARTITION_SCOPES.map((s) => (

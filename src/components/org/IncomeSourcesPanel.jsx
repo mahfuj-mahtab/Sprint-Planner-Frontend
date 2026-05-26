@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Loader2,
   Pencil,
@@ -15,7 +17,6 @@ import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
 import { CurrencySelect } from "@/components/org/CurrencySelect";
 import { defaultFinanceCurrency } from "@/lib/financeCurrencies";
-import { StatCard } from "@/components/org/StatCard";
 import { EmptyState } from "@/components/org/EmptyState";
 import { LinkedEntityField } from "@/components/org/LinkedEntityField";
 import { formatMoney, formatDate } from "@/lib/formatMoney";
@@ -115,6 +116,375 @@ function ForecastEditor({ periods, onChange, currency }) {
   );
 }
 
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const STICKY_SOURCE =
+  "sticky left-0 z-[2] border-r border-border bg-inherit shadow-[6px_0_16px_rgba(0,0,0,0.12)]";
+const STICKY_SOURCE_HEAD =
+  "sticky left-0 z-[3] border-r border-border bg-muted shadow-[6px_0_16px_rgba(0,0,0,0.12)]";
+
+function defaultForecastYear(years, matrix) {
+  if (!years.length) return new Date().getFullYear();
+  const now = new Date().getFullYear();
+  if (years.includes(now)) return now;
+  const withData = years.find((y) => (matrix?.yearTotals?.[y] ?? matrix?.yearTotals?.[String(y)] ?? 0) > 0);
+  return withData ?? years[0];
+}
+
+function monthsInCalendarYear(year) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const monthNum = i + 1;
+    return {
+      key: `${year}-${String(monthNum).padStart(2, "0")}`,
+      monthNum,
+      label: MONTH_NAMES[i],
+    };
+  });
+}
+
+function sumYearForRow(row, year) {
+  return row.yearTotals?.[year] ?? row.yearTotals?.[String(year)] ?? 0;
+}
+
+/** Year-filtered monthly grid + compact yearly overview. */
+function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
+  const rows = matrix?.rows || [];
+  const years = useMemo(() => matrix?.years || [], [matrix]);
+
+  const defaultYear = useMemo(() => defaultForecastYear(years, matrix), [years, matrix]);
+  const [selectedYear, setSelectedYear] = useState(defaultYear);
+  const [view, setView] = useState("monthly");
+  const [hideEmpty, setHideEmpty] = useState(false);
+
+  useEffect(() => {
+    if (years.length && !years.includes(selectedYear)) {
+      setSelectedYear(defaultYear);
+    }
+  }, [years, defaultYear, selectedYear]);
+
+  const rowById = useMemo(
+    () => Object.fromEntries(items.map((s) => [String(s._id), s])),
+    [items]
+  );
+
+  const currencies = useMemo(
+    () => [...new Set(rows.map((r) => r.currency || "BDT"))],
+    [rows]
+  );
+  const mixedCurrency = currencies.length > 1;
+  const primaryCurrency = currencies[0] || "BDT";
+
+  const yearIndex = years.indexOf(selectedYear);
+  const goPrevYear = () => yearIndex > 0 && setSelectedYear(years[yearIndex - 1]);
+  const goNextYear = () => yearIndex < years.length - 1 && setSelectedYear(years[yearIndex + 1]);
+
+  const months = useMemo(() => monthsInCalendarYear(selectedYear), [selectedYear]);
+
+  const visibleRows = useMemo(() => {
+    if (!hideEmpty || view !== "monthly") return rows;
+    return rows.filter((row) => {
+      const hasMonth = months.some(({ key }) => (row.months?.[key] || 0) > 0);
+      return hasMonth || sumYearForRow(row, selectedYear) > 0;
+    });
+  }, [rows, hideEmpty, view, months, selectedYear]);
+
+  const yearStats = useMemo(() => {
+    const earning = rows.filter((r) => sumYearForRow(r, selectedYear) > 0).length;
+    const total = rows.reduce((s, r) => s + sumYearForRow(r, selectedYear), 0);
+    return { earning, total };
+  }, [rows, selectedYear]);
+
+  if (!rows.length || !years.length) return null;
+
+  const shellClass = cn(
+    "rounded-xl border border-border bg-card overflow-hidden flex flex-col min-h-0",
+    fillViewport && "flex-1 min-h-[calc(100dvh-12rem)]"
+  );
+
+  const scrollClass = cn("overflow-auto flex-1 min-h-0", !fillViewport && "max-h-[min(70vh,720px)]");
+
+  return (
+    <div className={shellClass}>
+      <div className="shrink-0 border-b border-border bg-muted/30 px-3 py-3 sm:px-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex rounded-lg border border-border p-0.5 bg-background">
+            <button
+              type="button"
+              onClick={() => setView("monthly")}
+              className={cn(
+                "text-xs font-medium px-3 py-1.5 rounded-md transition",
+                view === "monthly"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Month view
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("yearly")}
+              className={cn(
+                "text-xs font-medium px-3 py-1.5 rounded-md transition",
+                view === "yearly"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Year overview
+            </button>
+          </div>
+
+          {view === "monthly" ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={goPrevYear}
+                disabled={yearIndex <= 0}
+                className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-30"
+                aria-label="Previous year"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <SelectInput
+                value={String(selectedYear)}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="text-sm font-semibold min-w-[5.5rem] py-2"
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </SelectInput>
+              <button
+                type="button"
+                onClick={goNextYear}
+                disabled={yearIndex >= years.length - 1}
+                className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-30"
+                aria-label="Next year"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          ) : null}
+
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hideEmpty}
+              onChange={(e) => setHideEmpty(e.target.checked)}
+              className="rounded border-border"
+            />
+            Hide rows with no forecast
+          </label>
+        </div>
+
+        {view === "monthly" ? (
+          <p className="text-sm text-muted-foreground">
+            <span className="text-foreground font-medium">{selectedYear}</span>
+            {" · "}
+            {yearStats.earning} of {rows.length} source{rows.length !== 1 ? "s" : ""} earning
+            {!mixedCurrency && yearStats.total > 0 ? (
+              <>
+                {" · "}
+                <span className="font-mono text-primary">{formatMoney(yearStats.total, primaryCurrency)}</span>{" "}
+                combined
+              </>
+            ) : null}
+            {mixedCurrency ? (
+              <span className="block text-xs mt-0.5">Multiple currencies — amounts use each row&apos;s currency.</span>
+            ) : null}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            One column per calendar year — good for comparing sources without scrolling months.
+          </p>
+        )}
+      </div>
+
+      <div className={scrollClass}>
+        {view === "monthly" ? (
+          <table className="w-full text-sm border-collapse">
+            <thead className="sticky top-0 z-[4]">
+              <tr className="bg-muted text-muted-foreground">
+                <th
+                  className={cn(
+                    STICKY_SOURCE_HEAD,
+                    "text-left px-4 py-3 font-medium min-w-[11rem] max-w-[14rem]"
+                  )}
+                >
+                  Income source
+                </th>
+                {months.map(({ label }) => (
+                  <th
+                    key={label}
+                    className="px-2 py-3 text-right font-medium min-w-[4.5rem] whitespace-nowrap"
+                  >
+                    {label}
+                  </th>
+                ))}
+                <th className="px-3 py-3 text-right font-semibold text-foreground min-w-[5.5rem] bg-muted/90">
+                  {selectedYear} total
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.length === 0 ? (
+                <tr>
+                  <td colSpan={14} className="px-4 py-12 text-center text-muted-foreground">
+                    No forecast for {selectedYear}. Try another year or turn off &quot;Hide rows with no
+                    forecast&quot;.
+                  </td>
+                </tr>
+              ) : (
+                visibleRows.map((row, idx) => {
+                  const cur = row.currency || rowById[row.sourceId]?.currency || "BDT";
+                  const yearTotal = sumYearForRow(row, selectedYear);
+                  return (
+                    <tr
+                      key={row.sourceId}
+                      className={cn(
+                        "border-t border-border/60",
+                        idx % 2 === 0 ? "bg-card" : "bg-muted/15",
+                        "hover:bg-primary/[0.06]"
+                      )}
+                    >
+                      <td className={cn(STICKY_SOURCE, "px-4 py-2.5 align-top")}>
+                        <div className="font-medium text-foreground leading-snug">{row.name}</div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          <span
+                            className={cn(
+                              "text-[10px] uppercase px-1.5 py-0.5 rounded border",
+                              statusBadgeClass(row.status)
+                            )}
+                          >
+                            {statusLabel(row.status)}
+                          </span>
+                          <span className="text-[10px] font-mono text-muted-foreground">{cur}</span>
+                        </div>
+                        {row.revenueStartsAt ? (
+                          <div className="text-[11px] text-muted-foreground mt-1">
+                            Revenue from {formatDate(row.revenueStartsAt)}
+                          </div>
+                        ) : null}
+                      </td>
+                      {months.map(({ key }) => {
+                        const amt = row.months?.[key] || 0;
+                        return (
+                          <td
+                            key={key}
+                            className={cn(
+                              "px-2 py-2.5 text-right font-mono tabular-nums text-[13px]",
+                              amt > 0 ? "text-primary font-medium" : "text-muted-foreground/25"
+                            )}
+                          >
+                            {amt > 0 ? formatMoney(amt, cur, true) : "—"}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold tabular-nums text-[13px] bg-muted/20">
+                        {yearTotal > 0 ? formatMoney(yearTotal, cur) : "—"}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+              <tr className="border-t-2 border-[#00d4ff]/40 bg-[#00d4ff]/10 font-semibold sticky bottom-0">
+                <td className={cn(STICKY_SOURCE, "px-4 py-3 bg-[#00d4ff]/10")}>Combined</td>
+                {months.map(({ key }) => {
+                  const amt = matrix.columnTotals?.[key] || 0;
+                  return (
+                    <td key={key} className="px-2 py-3 text-right font-mono tabular-nums text-primary">
+                      {amt > 0 && !mixedCurrency ? formatMoney(amt, primaryCurrency, true) : mixedCurrency && amt > 0 ? "·" : "—"}
+                    </td>
+                  );
+                })}
+                <td className="px-3 py-3 text-right font-mono text-primary bg-[#00d4ff]/15">
+                  {!mixedCurrency && yearStats.total > 0
+                    ? formatMoney(yearStats.total, primaryCurrency)
+                    : "—"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        ) : (
+          <table className="w-full text-sm border-collapse min-w-[32rem]">
+            <thead className="sticky top-0 z-[4]">
+              <tr className="bg-muted text-muted-foreground">
+                <th className={cn(STICKY_SOURCE_HEAD, "text-left px-4 py-3 font-medium min-w-[11rem]")}>
+                  Income source
+                </th>
+                {years.map((y) => (
+                  <th key={y} className="px-3 py-3 text-right font-medium min-w-[5rem]">
+                    {y}
+                  </th>
+                ))}
+                <th className="px-3 py-3 text-right font-semibold text-foreground">All years</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map((row, idx) => {
+                const cur = row.currency || rowById[row.sourceId]?.currency || "BDT";
+                return (
+                  <tr
+                    key={row.sourceId}
+                    className={cn(
+                      "border-t border-border/60",
+                      idx % 2 === 0 ? "bg-card" : "bg-muted/15",
+                      "hover:bg-primary/[0.06]"
+                    )}
+                  >
+                    <td className={cn(STICKY_SOURCE, "px-4 py-2.5 font-medium")}>{row.name}</td>
+                    {years.map((y) => {
+                      const amt = sumYearForRow(row, y);
+                      return (
+                        <td
+                          key={y}
+                          className={cn(
+                            "px-3 py-2.5 text-right font-mono tabular-nums",
+                            amt > 0 ? "text-primary font-medium" : "text-muted-foreground/25",
+                            y === selectedYear && "bg-primary/[0.08]"
+                          )}
+                        >
+                          {amt > 0 ? formatMoney(amt, cur, true) : "—"}
+                        </td>
+                      );
+                    })}
+                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-primary">
+                      {formatMoney(row.totalForecast || 0, cur, true)}
+                    </td>
+                  </tr>
+                );
+              })}
+              <tr className="border-t-2 border-[#00d4ff]/40 bg-[#00d4ff]/10 font-semibold">
+                <td className={cn(STICKY_SOURCE, "px-4 py-3")}>Combined</td>
+                {years.map((y) => {
+                  const amt =
+                    matrix.yearTotals?.[y] ?? matrix.yearTotals?.[String(y)] ?? 0;
+                  return (
+                    <td key={y} className="px-3 py-3 text-right font-mono text-primary">
+                      {amt > 0 && !mixedCurrency ? formatMoney(amt, primaryCurrency, true) : "—"}
+                    </td>
+                  );
+                })}
+                <td className="px-3 py-3 text-right font-mono text-primary">
+                  {!mixedCurrency
+                    ? formatMoney(
+                        rows.reduce((s, r) => s + (r.totalForecast || 0), 0),
+                        primaryCurrency,
+                        true
+                      )
+                    : "—"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SourceDetail({ source, currency }) {
   const [open, setOpen] = useState(false);
   const timeline = source.timeline;
@@ -171,25 +541,29 @@ function SourceDetail({ source, currency }) {
                   <tr className="bg-muted/40 border-b border-border">
                     <th className="px-3 py-2 font-normal text-muted-foreground">Earning year</th>
                     <th className="px-3 py-2 font-normal text-muted-foreground">Calendar</th>
-                    <th className="px-3 py-2 font-normal text-muted-foreground text-right">Forecast</th>
-                    <th className="px-3 py-2 font-normal text-muted-foreground text-right">Cumulative</th>
+                    <th className="px-3 py-2 font-normal text-muted-foreground text-right">Monthly</th>
+                    <th className="px-3 py-2 font-normal text-muted-foreground text-right">Year total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {timeline.periods.map((p, i) => (
-                    <tr key={p.period_index} className="border-b border-border/50 last:border-0">
-                      <td className="px-3 py-2">Year {p.period_index}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{p.calendar_label}</td>
-                      <td className="px-3 py-2 text-right font-mono text-primary">
-                        {p.monthly_income > 0
-                          ? `${formatMoney(p.monthly_income, currency, true)}/mo`
-                          : formatMoney(p.yearly_total, currency)}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-muted-foreground">
-                        {formatMoney(timeline.cumulative_forecast[i]?.cumulative || 0, currency)}
-                      </td>
-                    </tr>
-                  ))}
+                  {timeline.periods.map((p) => {
+                    const monthly =
+                      p.monthly_income != null && p.monthly_income > 0
+                        ? p.monthly_income
+                        : p.yearly_total / 12;
+                    return (
+                      <tr key={p.period_index} className="border-b border-border/50 last:border-0">
+                        <td className="px-3 py-2">Year {p.period_index}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{p.calendar_label}</td>
+                        <td className="px-3 py-2 text-right font-mono text-primary">
+                          {formatMoney(monthly, currency, true)}/mo
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono">
+                          {formatMoney(p.yearly_total, currency)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -220,6 +594,7 @@ export function IncomeSourcesPanel({ orgId, projects, onProjectCreated, onRefres
   const orgCurrency = defaultFinanceCurrency(currency);
   const [items, setItems] = useState([]);
   const [expectedTotals, setExpectedTotals] = useState(null);
+  const [forecastMatrix, setForecastMatrix] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -233,6 +608,7 @@ export function IncomeSourcesPanel({ orgId, projects, onProjectCreated, onRefres
       .then((r) => {
         setItems(r.data.sources || []);
         setExpectedTotals(r.data.expectedTotals || null);
+        setForecastMatrix(r.data.forecastMatrix || null);
       })
       .catch(() => toast.error("Failed to load income sources", { theme: "dark" }))
       .finally(() => setLoading(false));
@@ -355,81 +731,63 @@ export function IncomeSourcesPanel({ orgId, projects, onProjectCreated, onRefres
     );
   }
 
-  return (
-    <div className="max-w-4xl text-left space-y-4">
-      {items.length > 0 && expectedTotals ? (
-        <section className="rounded-xl border border-border bg-card/50 p-4 space-y-3">
-          <div>
-            <h3 className="text-sm font-semibold">Total expected — all income sources</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Sum of <strong>Expected earning</strong> on each source.{" "}
-              {expectedTotals.includedSourceCount} of {expectedTotals.totalSourceCount} source
-              {expectedTotals.totalSourceCount !== 1 ? "s" : ""} counted
-              {expectedTotals.missingCount > 0
-                ? ` · ${expectedTotals.missingCount} not set yet`
-                : ""}
-              .
-            </p>
-          </div>
-          {expectedTotals.buckets?.length > 0 ? (
-            <div className="space-y-4">
-              {expectedTotals.buckets.map((bucket) => (
-                <div key={bucket.currency}>
-                  {expectedTotals.buckets.length > 1 ? (
-                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-mono mb-2">
-                      {bucket.currency} · {bucket.sourceCount} source
-                      {bucket.sourceCount !== 1 ? "s" : ""}
-                    </div>
-                  ) : null}
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <StatCard
-                      label="Per month"
-                      value={formatMoney(bucket.monthlyTotal, bucket.currency)}
-                      variant="income"
-                      sub={
-                        expectedTotals.buckets.length === 1
-                          ? `All ${bucket.sourceCount} source(s)`
-                          : `${bucket.currency} subtotal`
-                      }
-                    />
-                    <StatCard
-                      label="Per year"
-                      value={formatMoney(bucket.yearlyTotal, bucket.currency)}
-                      variant="income"
-                      sub="Combined yearly equivalent"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Set <strong>Expected earning</strong> on each income source to see the combined total
-              here.
-            </p>
-          )}
-        </section>
-      ) : null}
+  const hasSnapshot = items.length > 0 && forecastMatrix?.monthKeys?.length;
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold flex items-center gap-2">
-            <Target className="w-4 h-4 text-primary" />
+  return (
+    <div className="w-full min-h-[calc(100dvh-9rem)] flex flex-col gap-4 pb-10 text-left">
+      <div className="flex flex-wrap items-start justify-between gap-3 shrink-0">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold ww-heading flex items-center gap-2">
+            <Target className="w-5 h-5 text-primary shrink-0" />
             Income sources
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Ventures you are building — investment plan, when revenue starts, and yearly forecasts.
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            Pick a year to see Jan–Dec for every source, or switch to year overview. Manage sources below.
           </p>
         </div>
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg bg-primary text-primary-foreground"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg bg-primary text-primary-foreground shrink-0"
         >
           <Plus className="w-4 h-4" /> Add source
         </button>
       </div>
 
+      {expectedTotals?.buckets?.length > 0 ? (
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {expectedTotals.buckets.map((bucket) => (
+            <div
+              key={bucket.currency}
+              className="rounded-lg border border-border bg-card/60 px-3 py-2 text-xs"
+            >
+              <span className="text-muted-foreground">Expected ({bucket.currency}): </span>
+              <span className="font-mono text-primary font-medium">
+                {formatMoney(bucket.monthlyTotal, bucket.currency, true)}/mo
+              </span>
+              <span className="text-muted-foreground"> · </span>
+              <span className="font-mono text-primary">
+                {formatMoney(bucket.yearlyTotal, bucket.currency, true)}/yr
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {hasSnapshot ? (
+        <section className="flex-1 min-h-0 flex flex-col rounded-2xl border border-[#00d4ff]/25 bg-gradient-to-br from-[#00d4ff]/[0.06] via-card to-card p-3 sm:p-4 gap-2 min-h-[calc(100dvh-13rem)]">
+          <ForecastMonthlySnapshot matrix={forecastMatrix} items={items} fillViewport />
+        </section>
+      ) : null}
+
+      <details className="shrink-0 rounded-xl border border-border bg-card/40 group">
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold flex items-center justify-between gap-2 hover:bg-muted/20 rounded-xl [&::-webkit-details-marker]:hidden">
+          <span>
+            Manage sources ({items.length})
+          </span>
+          <ChevronDown className="w-4 h-4 text-muted-foreground transition group-open:rotate-180" />
+        </summary>
+        <div className="px-4 pb-4 pt-1 space-y-3 border-t border-border/60">
       {items.length === 0 ? (
         <EmptyState
           icon={Target}
@@ -532,6 +890,8 @@ export function IncomeSourcesPanel({ orgId, projects, onProjectCreated, onRefres
           })}
         </ul>
       )}
+        </div>
+      </details>
 
       <Modal
         open={modalOpen}

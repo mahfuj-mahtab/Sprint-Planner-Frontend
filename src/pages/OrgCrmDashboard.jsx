@@ -98,9 +98,19 @@ function OrgCrmDashboard() {
   const primary = data?.primaryCurrency || "BDT";
   const fmt = (v, cur = primary) => formatMoney(v, cur);
 
-  const revenueTotal = data?.revenueByCurrency?.[primary] ?? 0;
-  const pipelineTotal = data?.pipelineByCurrency?.[primary] ?? 0;
+  const clientRevenueAllTime =
+    data?.clientRevenueAllTimeByCurrency?.[primary] ??
+    data?.revenueByCurrency?.[primary] ??
+    data?.incomeStats?.clientAllTime ??
+    0;
+  const allIncomeAllTime =
+    data?.allIncomeAllTimeByCurrency?.[primary] ??
+    data?.incomeStats?.allAllTime ??
+    clientRevenueAllTime;
   const revenueMonth = data?.revenueThisMonthByCurrency?.[primary] ?? 0;
+  const clientRevenueMonth = data?.clientRevenueThisMonthByCurrency?.[primary] ?? 0;
+  const pipelineTotal = data?.pipelineByCurrency?.[primary] ?? 0;
+  const unlinkedIncome = data?.incomeStats?.unlinkedAllTime ?? 0;
 
   const currencyBuckets = useMemo(() => {
     if (!data?.revenueByCurrency) return [];
@@ -199,7 +209,7 @@ function OrgCrmDashboard() {
           </div>
         </section>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-3 sm:gap-4">
           <StatCard label="Total clients" value={String(summary.totalClients)} variant="balance" />
           <StatCard label="Leads" value={String(summary.leads)} variant="neutral" sub="Top of funnel" />
           <StatCard
@@ -209,16 +219,26 @@ function OrgCrmDashboard() {
             sub="Active + negotiation"
           />
           <StatCard
-            label="Revenue"
-            value={fmt(revenueTotal)}
+            label="All income"
+            value={fmt(allIncomeAllTime)}
             variant="income"
-            sub={`All time · ${primary}`}
+            sub={`Recorded in Finance · ${primary}`}
+          />
+          <StatCard
+            label="Client revenue"
+            value={fmt(clientRevenueAllTime)}
+            variant="income"
+            sub="Payments linked to a client"
           />
           <StatCard
             label="This month"
             value={fmt(revenueMonth)}
             variant="income"
-            sub="Client payments"
+            sub={
+              clientRevenueMonth < revenueMonth
+                ? `All income · client ${fmt(clientRevenueMonth, primary)}`
+                : "All income in Finance"
+            }
           />
           <StatCard
             label="Pipeline"
@@ -228,6 +248,13 @@ function OrgCrmDashboard() {
           />
         </div>
 
+        {unlinkedIncome > 0 ? (
+          <p className="text-xs text-amber-200/90 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+            {fmt(unlinkedIncome)} of all-time income is not linked to a client. Link the client on each
+            income entry in Finance so it counts toward client revenue.
+          </p>
+        ) : null}
+
         {currencyBuckets.length > 1 ? (
           <div className="flex flex-wrap gap-2 text-xs">
             {currencyBuckets.map((cur) => (
@@ -235,7 +262,8 @@ function OrgCrmDashboard() {
                 key={cur}
                 className="px-2.5 py-1 rounded-full border border-border bg-muted/30 font-mono"
               >
-                {cur}: {fmt(data.revenueByCurrency[cur] || 0, cur)} rev ·{" "}
+                {cur}: {fmt(data.allIncomeAllTimeByCurrency?.[cur] || 0, cur)} all ·{" "}
+                {fmt(data.clientRevenueAllTimeByCurrency?.[cur] || data.revenueByCurrency?.[cur] || 0, cur)} client ·{" "}
                 {fmt(data.pipelineByCurrency[cur] || 0, cur)} pipe
               </span>
             ))}
@@ -244,8 +272,8 @@ function OrgCrmDashboard() {
 
         <div className="grid xl:grid-cols-12 gap-4">
           <ChartPanel
-            title="Client revenue"
-            subtitle={`Last 6 months · ${primary}`}
+            title="Income trend"
+            subtitle={`All Finance income · last 6 months · ${primary}`}
             className="xl:col-span-8 min-h-[360px] flex flex-col"
           >
             <div className="flex-1 min-h-[300px]">
