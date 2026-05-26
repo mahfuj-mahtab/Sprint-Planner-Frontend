@@ -13,20 +13,35 @@ import SprintCreate from "../components/SprintCreate";
 import SprintEdit from "../components/SprintEdit";
 import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
-import { ArrowLeft, BarChart3, Pencil, Trash2, Users, Wallet } from "lucide-react";
+import { ArrowLeft, BarChart3, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
 import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { ListPagination } from "@/components/org/ListPagination";
+import { Field, SelectInput } from "@/components/org/Field";
+import { ReadOnlyBanner } from "@/components/org/ReadOnlyBanner";
 
 function ShowOrgDetails() {
   const { orgId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [view, setView] = useState("projects"); // "projects" | "details"
+  const [view, setView] = useState("projects"); // "projects" | "details" | "members"
   const [activeTab, setActiveTab] = useState("sprints");
 
   const [orgDetails, setOrgDetails] = useState(null);
   const [projects, setProjects] = useState([]);
+  const [projectPagination, setProjectPagination] = useState(null);
+  const [projectPage, setProjectPage] = useState(1);
+  const [projectFilters, setProjectFilters] = useState({
+    search: "",
+    status: "",
+    project_type: "",
+    archived: "false",
+  });
+  const [sprintDetails, setSprintDetails] = useState([]);
+  const [sprintPagination, setSprintPagination] = useState(null);
+  const [sprintPage, setSprintPage] = useState(1);
+  const [sprintFilters, setSprintFilters] = useState({ search: "", active: "" });
   const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   const [showCreateSprint, setShowCreateSprint] = useState(false);
@@ -44,17 +59,59 @@ function ShowOrgDetails() {
       { id: "versions", label: "Versions" },
       { id: "docs", label: "Docs" },
       { id: "team", label: "Team" },
-      { id: "member", label: "Members" },
     ],
     []
   );
+
+  const orgLevelTabs = useMemo(
+    () => [
+      { id: "projects", label: "Projects" },
+      { id: "members", label: "Members" },
+    ],
+    []
+  );
+
+  const loadProjects = (page = projectPage) => {
+    const params = { page, limit: 12, archived: projectFilters.archived || "false" };
+    if (projectFilters.search.trim()) params.search = projectFilters.search.trim();
+    if (projectFilters.status) params.status = projectFilters.status;
+    if (projectFilters.project_type) params.project_type = projectFilters.project_type;
+
+    return api
+      .get(`/api/v1/org/${orgId}/projects`, { params })
+      .then((response) => {
+        setProjects(response.data.projects || []);
+        setProjectPagination(response.data.pagination || null);
+        setProjectPage(page);
+      })
+      .catch((error) => {
+        console.error("There was an error!", error);
+      });
+  };
+
+  const loadSprints = (projectId, page = sprintPage) => {
+    if (!projectId) return Promise.resolve();
+    const params = { page, limit: 10 };
+    if (sprintFilters.search.trim()) params.search = sprintFilters.search.trim();
+    if (sprintFilters.active) params.active = sprintFilters.active;
+
+    return api
+      .get(`/api/v1/org/${orgId}/projects/${projectId}/sprints`, { params })
+      .then((response) => {
+        setSprintDetails(response.data.sprintDetails || []);
+        setSprintPagination(response.data.pagination || null);
+        setSprintPage(page);
+      })
+      .catch((error) => {
+        console.error("There was an error!", error);
+      });
+  };
 
   const orgFetch = (projectId) => {
     api
       .get(`/api/v1/org/fetch/${orgId}`, { params: projectId ? { projectId } : undefined })
       .then((response) => {
         setOrgDetails(response.data);
-        setProjects(response.data.projects || []);
         setSelectedProjectId(response.data.selectedProjectId || projectId || null);
       })
       .catch((error) => {
@@ -75,33 +132,68 @@ function ShowOrgDetails() {
     setEditingProject(null);
     setSelectedProjectId(null);
     setProjects([]);
+    setProjectPagination(null);
+    setProjectPage(1);
+    setSprintDetails([]);
+    setSprintPagination(null);
     setOrgDetails(null);
     const sp = new URLSearchParams(location.search);
     const qView = sp.get("view");
     const qProjectId = sp.get("projectId");
     const qTab = sp.get("tab");
+    const membersRoute = location.pathname.replace(/\/$/, "").endsWith("/members");
 
-    if (qView === "details" && qProjectId) {
+    if (membersRoute || qView === "members") {
+      setView("members");
+      orgFetch();
+      if (membersRoute && qView !== "members") {
+        navigate(`/user/profile/org/${orgId}?view=members`, { replace: true });
+      }
+    } else if (qView === "details" && qProjectId) {
       setView("details");
       setActiveTab(qTab || "sprints");
       orgFetch(qProjectId);
     } else {
+      setView("projects");
+      loadProjects(1);
       orgFetch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId]);
 
   useEffect(() => {
+    if (view === "projects") loadProjects(projectPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectFilters]);
+
+  useEffect(() => {
+    if (view === "details" && activeTab === "sprints" && selectedProjectId) {
+      loadSprints(selectedProjectId, sprintPage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sprintFilters, activeTab, selectedProjectId, view]);
+
+  useEffect(() => {
+    if (view === "details" && activeTab === "sprints" && selectedProjectId) {
+      loadSprints(selectedProjectId, 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProjectId]);
+
+  useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const qView = sp.get("view");
     const qProjectId = sp.get("projectId");
     const qTab = sp.get("tab");
+    const membersRoute = location.pathname.replace(/\/$/, "").endsWith("/members");
 
-    if (qView === "details" && qProjectId) {
+    if (membersRoute || qView === "members") {
+      setView("members");
+    } else if (qView === "details" && qProjectId) {
       setView("details");
       if (qTab) setActiveTab(qTab);
       if (qProjectId !== selectedProjectId) handleSelectProject(qProjectId);
-    } else if (!qView && view !== "projects") {
+    } else if (!qView && view !== "projects" && view !== "members") {
       setView("projects");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,7 +207,9 @@ function ShowOrgDetails() {
   const handleSelectProject = (projectId) => {
     setSelectedProjectId(projectId);
     setActiveTab("sprints");
+    setSprintPage(1);
     orgFetch(projectId);
+    loadSprints(projectId, 1);
   };
 
   const handleOpenProjectDetails = (projectId) => {
@@ -135,6 +229,17 @@ function ShowOrgDetails() {
     navigate(`/user/profile/org/${orgId}`);
   };
 
+  const handleOpenOrgMembers = () => {
+    setView("members");
+    navigate(`/user/profile/org/${orgId}?view=members`);
+  };
+
+  const handleOpenOrgProjects = () => {
+    setView("projects");
+    navigate(`/user/profile/org/${orgId}`);
+    loadProjects(projectPage);
+  };
+
   const handleDeleteProject = (projectId) => {
     if (!window.confirm("Delete this project? This will also delete its sprints, teams, and tasks.")) return;
     api
@@ -143,7 +248,7 @@ function ShowOrgDetails() {
         toast.success(response.data.message || "Project deleted", { position: "top-right", autoClose: 4000, theme: "dark" });
         if (selectedProjectId === projectId) setSelectedProjectId(null);
         if (view === "details" && selectedProjectId === projectId) setView("projects");
-        orgFetch();
+        loadProjects(projectPage);
       })
       .catch((error) => {
         const message = error?.response?.data?.message || "Failed to delete project";
@@ -154,7 +259,7 @@ function ShowOrgDetails() {
   const handleDeleteSprint = (sprintId) => {
     api
       .delete(`/api/v1/org/delete/sprint/${orgId}/${sprintId}`)
-      .then(() => orgFetch())
+      .then(() => loadSprints(selectedProjectId, sprintPage))
       .catch((error) => console.error("There was an error!", error));
   };
 
@@ -203,6 +308,11 @@ function ShowOrgDetails() {
   }
 
   const orgName = orgDetails?.organization?.name || "Organization";
+  const orgMemberCount = orgDetails?.organization?.members?.length ?? 0;
+  const canManageMembers = orgDetails?.access?.canManageMembers ?? false;
+  const canWriteDelivery = orgDetails?.deliveryAccess?.canWrite ?? true;
+  const deliveryReadOnlyReason = orgDetails?.deliveryAccess?.reason;
+  const needsTeamInvite = canManageMembers && orgMemberCount === 0;
 
   return (
     <DashboardLayout>
@@ -242,6 +352,14 @@ function ShowOrgDetails() {
             </div>
 
             <div className="flex flex-wrap gap-2 items-center">
+              <button
+                type="button"
+                onClick={handleOpenOrgMembers}
+                className="border border-border hover:bg-muted text-foreground text-sm font-medium py-1.5 px-3 rounded-md transition-colors inline-flex items-center gap-2"
+              >
+                <Users className="w-4 h-4" />
+                Members
+              </button>
               <div className="hidden lg:block text-sm text-muted-foreground mr-2">
                 {selectedProject ? (
                   <span className="inline-flex items-center gap-2 flex-wrap">
@@ -287,47 +405,135 @@ function ShowOrgDetails() {
                 </>
               ) : null}
 
-              <button
-                onClick={() => setShowTeamCreate(true)}
-                disabled={!selectedProjectId}
-                className="bg-primary hover:brightness-95 disabled:opacity-40 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
-              >
-                + Team
-              </button>
-              <button
-                onClick={() => setShowCreateSprint(true)}
-                disabled={!selectedProjectId}
-                className="bg-primary hover:brightness-95 disabled:opacity-40 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
-              >
-                + Sprint
-              </button>
+              {canWriteDelivery ? (
+                <>
+                  <button
+                    onClick={() => setShowTeamCreate(true)}
+                    disabled={!selectedProjectId}
+                    className="bg-primary hover:brightness-95 disabled:opacity-40 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
+                  >
+                    + Team
+                  </button>
+                  <button
+                    onClick={() => setShowCreateSprint(true)}
+                    disabled={!selectedProjectId}
+                    className="bg-primary hover:brightness-95 disabled:opacity-40 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
+                  >
+                    + Sprint
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
       ) : (
         <div className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30">
-          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
-            <div>
+          <div className="px-4 sm:px-6 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <div className="text-sm text-muted-foreground">Organization</div>
               <div className="text-base font-semibold tracking-tight">{orgName}</div>
             </div>
 
-            <div className="flex flex-wrap gap-2 items-center">
-              <button
-                onClick={() => setShowProjectCreate(true)}
-                className="bg-primary hover:brightness-95 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
-              >
-                + Project
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
+                {orgLevelTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => (tab.id === "members" ? handleOpenOrgMembers() : handleOpenOrgProjects())}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      view === tab.id ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tab.label}
+                    {tab.id === "members" && orgMemberCount > 0 ? (
+                      <span className="ml-1.5 text-[10px] font-mono text-muted-foreground">({orgMemberCount})</span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+
+              {view === "projects" ? (
+                <button
+                  onClick={() => setShowProjectCreate(true)}
+                  className="bg-primary hover:brightness-95 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
+                >
+                  + Project
+                </button>
+              ) : canManageMembers ? (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("org-members-add-btn")?.click()}
+                  className="bg-primary hover:brightness-95 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors inline-flex items-center gap-1.5"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Invite
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
       )}
 
       <div className="lg:p-6 p-2">
+          {view === "members" ? (
+            <div className="space-y-4 max-w-5xl" id="org-members-invite">
+              <div>
+                <h2 className="text-xl font-semibold ww-heading">Organization members</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Invite people here first — they need an account and must be added before they can work on projects, sprints, or finance.
+                </p>
+              </div>
+              <MembersShow
+                members={orgDetails.organization?.members}
+                orgId={orgId}
+                ownerId={orgDetails.organization?.owner_id}
+                access={orgDetails.access}
+                onRefresh={() => orgFetch()}
+              />
+            </div>
+          ) : null}
+
           {view === "projects" ? (
             <div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 text-left">
+              {needsTeamInvite ? (
+                <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <UserPlus className="w-4 h-4 text-primary" />
+                      Invite your team before creating projects
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Only you have access right now. Add members by email so they can join sprints, tasks, CRM, and finance.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenOrgMembers}
+                    className="shrink-0 ww-btn-primary text-sm inline-flex items-center gap-2"
+                  >
+                    <Users className="w-4 h-4" />
+                    Add members
+                  </button>
+                </div>
+              ) : null}
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 text-left">
+                <button
+                  type="button"
+                  onClick={handleOpenOrgMembers}
+                  className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 text-left hover:border-primary/40 transition w-full"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
+                    <Users className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-semibold group-hover:text-primary">Members</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {orgMemberCount > 0 ? `${orgMemberCount} invited · manage access` : "Invite team — start here"}
+                    </p>
+                  </div>
+                </button>
                 <Link
                   to={`/user/profile/org/${orgId}/dashboard`}
                   className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#a78bfa]/40 transition"
@@ -367,6 +573,52 @@ function ShowOrgDetails() {
               </div>
 
               <h2 className="lg:text-2xl text-lg font-semibold mb-4">Projects</h2>
+
+              <div className="mb-4 flex flex-wrap gap-3 items-end text-left">
+                <Field label="Search" className="min-w-[10rem] flex-1">
+                  <input
+                    className="ww-input ww-input-sm w-full"
+                    placeholder="Project name…"
+                    value={projectFilters.search}
+                    onChange={(e) => setProjectFilters((f) => ({ ...f, search: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Status">
+                  <SelectInput
+                    value={projectFilters.status}
+                    onChange={(e) => setProjectFilters((f) => ({ ...f, status: e.target.value }))}
+                    className="min-w-[7rem]"
+                  >
+                    <option value="">All</option>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="completed">Completed</option>
+                  </SelectInput>
+                </Field>
+                <Field label="Type">
+                  <SelectInput
+                    value={projectFilters.project_type}
+                    onChange={(e) => setProjectFilters((f) => ({ ...f, project_type: e.target.value }))}
+                    className="min-w-[8rem]"
+                  >
+                    <option value="">All types</option>
+                    <option value="product">Product</option>
+                    <option value="client_work">Client work</option>
+                    <option value="internal">Internal</option>
+                  </SelectInput>
+                </Field>
+                <Field label="Archived">
+                  <SelectInput
+                    value={projectFilters.archived}
+                    onChange={(e) => setProjectFilters((f) => ({ ...f, archived: e.target.value }))}
+                    className="min-w-[7rem]"
+                  >
+                    <option value="false">Hidden</option>
+                    <option value="true">Only archived</option>
+                    <option value="all">Include archived</option>
+                  </SelectInput>
+                </Field>
+              </div>
 
               {projects.length > 0 ? (
                 <div className="grid gap-3">
@@ -423,10 +675,18 @@ function ShowOrgDetails() {
                 </div>
               ) : (
                 <div className="border border-dashed border-border rounded-lg p-6 bg-card">
-                  <div className="text-sm text-muted-foreground">No projects yet.</div>
+                  <div className="text-sm text-muted-foreground">No projects match your filters.</div>
                 </div>
               )}
+              <ListPagination
+                pagination={projectPagination}
+                onPageChange={(p) => loadProjects(p)}
+              />
             </div>
+          ) : null}
+
+          {view === "details" && !canWriteDelivery && deliveryReadOnlyReason ? (
+            <ReadOnlyBanner reason={deliveryReadOnlyReason} />
           ) : null}
 
           {view === "details" && activeTab === "sprints" && (
@@ -440,26 +700,56 @@ function ShowOrgDetails() {
                 ) : null}
               </h2>
 
-              {orgDetails?.sprintDetails?.length > 0 ? (
-                orgDetails.sprintDetails.map((sprint) => (
+              <div className="mb-4 flex flex-wrap gap-3 items-end text-left">
+                <Field label="Search" className="min-w-[10rem] flex-1">
+                  <input
+                    className="ww-input ww-input-sm w-full"
+                    placeholder="Sprint name…"
+                    value={sprintFilters.search}
+                    onChange={(e) => setSprintFilters((f) => ({ ...f, search: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Status">
+                  <SelectInput
+                    value={sprintFilters.active}
+                    onChange={(e) => setSprintFilters((f) => ({ ...f, active: e.target.value }))}
+                    className="min-w-[7rem]"
+                  >
+                    <option value="">All</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </SelectInput>
+                </Field>
+              </div>
+
+              {sprintDetails.length > 0 ? (
+                sprintDetails.map((sprint) => (
                   <SprintBlock
                     key={sprint.sprint._id}
                     sprint={sprint.sprint}
-                    onEdit={() => {
-                      setEditingSprintId(sprint.sprint._id);
-                      setShowSprintEdit(true);
-                    }}
+                    onEdit={
+                      canWriteDelivery
+                        ? () => {
+                            setEditingSprintId(sprint.sprint._id);
+                            setShowSprintEdit(true);
+                          }
+                        : undefined
+                    }
                     onView={() => handleViewSprint(sprint.sprint._id)}
-                    onDelete={() => handleDeleteSprint(sprint.sprint._id)}
+                    onDelete={canWriteDelivery ? () => handleDeleteSprint(sprint.sprint._id) : undefined}
                     total_task={sprint?.total_tasks}
                     completed_task={sprint?.completed_tasks}
                   />
                 ))
               ) : (
                 <div className="border border-dashed border-border rounded-lg p-6 bg-card">
-                  <div className="text-sm text-muted-foreground">No sprints in this project yet.</div>
+                  <div className="text-sm text-muted-foreground">No sprints match your filters.</div>
                 </div>
               )}
+              <ListPagination
+                pagination={sprintPagination}
+                onPageChange={(p) => loadSprints(selectedProjectId, p)}
+              />
             </div>
           )}
 
@@ -485,6 +775,7 @@ function ShowOrgDetails() {
                       key={team._id}
                       members={team.members}
                       teamName={team.name}
+                      canWrite={canWriteDelivery}
                       onAddMember={() => orgFetch()}
                       orgId={orgId}
                       teamId={team._id}
@@ -501,7 +792,7 @@ function ShowOrgDetails() {
           )}
 
           {view === "details" && activeTab === "features" && (
-            <FeatureAnalysis orgId={orgId} projectId={selectedProjectId} />
+            <FeatureAnalysis orgId={orgId} projectId={selectedProjectId} canWrite={canWriteDelivery} />
           )}
 
           {view === "details" && activeTab === "versions" && (
@@ -512,22 +803,6 @@ function ShowOrgDetails() {
             <ProjectDocs orgId={orgId} projectId={selectedProjectId} />
           )}
 
-          {view === "details" && activeTab === "member" && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-xl font-semibold ww-heading">Organization members</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Everyone with access to this org. Owners cannot be removed.
-                </p>
-              </div>
-              <MembersShow
-                members={orgDetails.organization?.members}
-                orgId={orgId}
-                ownerId={orgDetails.organization?.owner_id}
-                onRefresh={() => orgFetch(selectedProjectId)}
-              />
-            </div>
-          )}
       </div>
 
         {showCreateSprint && (
@@ -539,7 +814,14 @@ function ShowOrgDetails() {
               >
                 &times;
               </button>
-              <SprintCreate onClose={() => { setShowCreateSprint(false); orgFetch(); }} orgId={orgId} projectId={selectedProjectId} />
+              <SprintCreate
+                onClose={() => {
+                  setShowCreateSprint(false);
+                  loadSprints(selectedProjectId, 1);
+                }}
+                orgId={orgId}
+                projectId={selectedProjectId}
+              />
             </div>
           </div>
         )}
@@ -572,6 +854,7 @@ function ShowOrgDetails() {
                 orgId={orgId}
                 onCreated={(project) => {
                   setShowProjectCreate(false);
+                  loadProjects(1);
                   if (project?._id) handleOpenProjectDetails(project._id);
                   else orgFetch();
                 }}
@@ -593,7 +876,10 @@ function ShowOrgDetails() {
                 onClose={() => { setShowProjectEdit(false); setEditingProject(null); }}
                 orgId={orgId}
                 project={editingProject}
-                onUpdated={() => orgFetch(selectedProjectId)}
+                onUpdated={() => {
+                  loadProjects(projectPage);
+                  orgFetch(selectedProjectId);
+                }}
               />
             </div>
           </div>

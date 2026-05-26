@@ -32,7 +32,7 @@ import { CategoryManager } from "@/components/org/CategoryManager";
 import { SubscriptionPanel } from "@/components/org/SubscriptionPanel";
 import { IncomeSourcesPanel } from "@/components/org/IncomeSourcesPanel";
 import { Skeleton } from "@/components/ui/Loading";
-import { formatMoney, formatDateTime } from "@/lib/formatMoney";
+import { formatMoneySensitive, formatDateTime } from "@/lib/formatMoney";
 import { categoryLabel } from "@/lib/financeCategories";
 import { PARTITION_SCOPES } from "@/lib/partitionScopes";
 import { CurrencySelect } from "@/components/org/CurrencySelect";
@@ -132,7 +132,7 @@ function OrgFinance() {
       api.get(`/api/v1/org/${orgId}/finance/overview`),
       api.get(`/api/v1/org/${orgId}/finance/transactions`),
       api.get(`/api/v1/org/${orgId}/finance/project-profit`),
-      api.get(`/api/v1/org/${orgId}/projects`),
+      api.get(`/api/v1/org/${orgId}/projects`, { params: { limit: 200, archived: "all" } }),
       api.get(`/api/v1/org/${orgId}/clients`),
       api.get(`/api/v1/org/${orgId}/finance/categories`),
       api.get(`/api/v1/org/${orgId}/finance/income-sources`),
@@ -167,6 +167,9 @@ function OrgFinance() {
   const accounts = overview?.accounts || [];
   const currency = accounts[0]?.currency || "BDT";
   const hasAccounts = accounts.length > 0;
+  const canSee = overview?.access?.canSeeExactAmounts ?? true;
+  const canWrite = overview?.access?.canWrite ?? true;
+  const fmt = (v, cur = currency) => formatMoneySensitive(v, cur, canSee);
 
   const partitionsForAccount = useMemo(() => {
     const map = {};
@@ -462,19 +465,19 @@ function OrgFinance() {
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <StatCard
                       label="Business revenue"
-                      value={formatMoney(overview.businessMonthIncome ?? overview.monthIncome, currency)}
+                      value={fmt(overview.businessMonthIncome ?? overview.monthIncome, currency)}
                       variant="income"
                       sub="Income into business-scoped partitions"
                     />
                     <StatCard
                       label="Business expense"
-                      value={formatMoney(overview.businessMonthExpense ?? overview.monthExpense, currency)}
+                      value={fmt(overview.businessMonthExpense ?? overview.monthExpense, currency)}
                       variant="expense"
                       sub="Expenses from business partitions"
                     />
                     <StatCard
                       label="Business net"
-                      value={formatMoney(overview.businessNetProfit ?? overview.netProfit, currency)}
+                      value={fmt(overview.businessNetProfit ?? overview.netProfit, currency)}
                       variant={(overview.businessNetProfit ?? overview.netProfit) >= 0 ? "income" : "expense"}
                       sub="This month revenue − expenses"
                     />
@@ -486,25 +489,25 @@ function OrgFinance() {
                   <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <StatCard
                       label="Business cash"
-                      value={formatMoney(overview.businessBalance ?? 0, currency)}
+                      value={fmt(overview.businessBalance ?? 0, currency)}
                       variant="income"
                       sub="Revenue & ops envelopes"
                     />
                     <StatCard
                       label="Owner cash"
-                      value={formatMoney(overview.ownerBalance ?? 0, currency)}
+                      value={fmt(overview.ownerBalance ?? 0, currency)}
                       variant="balance"
                       sub="Your pay / drawings"
                     />
                     <StatCard
                       label="Excluded cash"
-                      value={formatMoney(overview.excludedBalance ?? 0, currency)}
+                      value={fmt(overview.excludedBalance ?? 0, currency)}
                       variant="neutral"
                       sub="Outside business (e.g. day job)"
                     />
                     <StatCard
                       label="Total cash"
-                      value={formatMoney(overview.totalBalance, currency)}
+                      value={fmt(overview.totalBalance, currency)}
                       variant="balance"
                       sub="Sum of all accounts"
                     />
@@ -551,12 +554,14 @@ function OrgFinance() {
                           <AccountCard
                             key={a._id}
                             account={a}
-                            onPartitionScopeChange={handlePartitionScopeChange}
-                            onEditAccount={openAccountModal}
-                            onDeleteAccount={handleDeleteAccount}
-                            onAddPartition={openPartitionModal}
-                            onEditPartition={openEditPartition}
-                            onDeletePartition={handleDeletePartition}
+                            canSeeExactAmounts={canSee}
+                            canWrite={canWrite}
+                            onPartitionScopeChange={canWrite ? handlePartitionScopeChange : undefined}
+                            onEditAccount={canWrite ? openAccountModal : undefined}
+                            onDeleteAccount={canWrite ? handleDeleteAccount : undefined}
+                            onAddPartition={canWrite ? openPartitionModal : undefined}
+                            onEditPartition={canWrite ? openEditPartition : undefined}
+                            onDeletePartition={canWrite ? handleDeletePartition : undefined}
                           />
                         ))}
                       </div>
@@ -580,7 +585,7 @@ function OrgFinance() {
                           onClick={() => setTab("income")}
                           className="text-[11px] rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-200 px-2.5 py-1.5 hover:bg-amber-500/15"
                         >
-                          {formatMoney(unlinkedIncomeTotal, currency)} income not linked to a project — fix in Income tab
+                          {fmt(unlinkedIncomeTotal, currency)} income not linked to a project — fix in Income tab
                         </button>
                       ) : null}
                     </div>
@@ -618,10 +623,10 @@ function OrgFinance() {
                               >
                                 <td className="px-3 py-2 font-medium">{row.project.name}</td>
                                 <td className="px-3 py-2 text-right font-mono text-primary tabular-nums">
-                                  {row.revenue > 0 ? formatMoney(row.revenue, currency) : "—"}
+                                  {row.revenue > 0 ? fmt(row.revenue, currency) : "—"}
                                 </td>
                                 <td className="px-3 py-2 text-right font-mono tabular-nums">
-                                  {row.cost > 0 ? formatMoney(row.cost, currency) : "—"}
+                                  {row.cost > 0 ? fmt(row.cost, currency) : "—"}
                                 </td>
                                 <td
                                   className={cn(
@@ -631,7 +636,7 @@ function OrgFinance() {
                                     row.profit === 0 && "text-muted-foreground"
                                   )}
                                 >
-                                  {row.revenue || row.cost ? formatMoney(row.profit, currency) : "—"}
+                                  {row.revenue || row.cost ? fmt(row.profit, currency) : "—"}
                                 </td>
                               </tr>
                             ))}
@@ -649,6 +654,8 @@ function OrgFinance() {
                 orgId={orgId}
                 projects={projects}
                 currency={currency}
+                canSeeExactAmounts={canSee}
+                canWrite={canWrite}
                 onProjectCreated={handleProjectCreated}
                 onRefresh={refresh}
               />
@@ -675,12 +682,14 @@ function OrgFinance() {
                       <AccountCard
                         key={a._id}
                         account={a}
-                        onPartitionScopeChange={handlePartitionScopeChange}
-                        onEditAccount={openAccountModal}
-                        onDeleteAccount={handleDeleteAccount}
-                        onAddPartition={openPartitionModal}
-                        onEditPartition={openEditPartition}
-                        onDeletePartition={handleDeletePartition}
+                        canSeeExactAmounts={canSee}
+                        canWrite={canWrite}
+                        onPartitionScopeChange={canWrite ? handlePartitionScopeChange : undefined}
+                        onEditAccount={canWrite ? openAccountModal : undefined}
+                        onDeleteAccount={canWrite ? handleDeleteAccount : undefined}
+                        onAddPartition={canWrite ? openPartitionModal : undefined}
+                        onEditPartition={canWrite ? openEditPartition : undefined}
+                        onDeletePartition={canWrite ? handleDeletePartition : undefined}
                       />
                     ))}
                   </div>
@@ -711,6 +720,8 @@ function OrgFinance() {
                 currency={currency}
                 hasAccounts={hasAccounts}
                 partitionsForAccount={partitionsForAccount}
+                canSeeExactAmounts={canSee}
+                canWrite={canWrite}
                 onRefresh={refresh}
                 onManageCategories={() => setTab("categories")}
                 prefillClientId={prefillClient}
@@ -734,6 +745,8 @@ function OrgFinance() {
                 currency={currency}
                 hasAccounts={hasAccounts}
                 partitionsForAccount={partitionsForAccount}
+                canSeeExactAmounts={canSee}
+                canWrite={canWrite}
                 onRefresh={refresh}
                 onManageCategories={() => setTab("categories")}
                 onClientCreated={handleClientCreated}
@@ -751,12 +764,14 @@ function OrgFinance() {
                 currency={currency}
                 hasAccounts={hasAccounts}
                 partitionsForAccount={partitionsForAccount}
+                canSeeExactAmounts={canSee}
+                canWrite={canWrite}
                 onRefresh={refresh}
               />
             )}
 
             {tab === "categories" && (
-              <CategoryManager orgId={orgId} categories={categories} onRefresh={refresh} />
+              <CategoryManager orgId={orgId} categories={categories} canWrite={canWrite} onRefresh={refresh} />
             )}
 
             {tab === "transfer" && (
@@ -799,7 +814,7 @@ function OrgFinance() {
                       <option value="">Select…</option>
                       {(partitionsForAccount[transferForm.account_id] || []).map((p) => (
                         <option key={p._id} value={p._id}>
-                          {p.name} ({formatMoney(p.balance, currency)})
+                          {p.name} ({fmt(p.balance, currency)})
                         </option>
                       ))}
                     </SelectInput>
@@ -896,7 +911,7 @@ function OrgFinance() {
                           )}
                         >
                           {item.type === "expense" ? "−" : item.type === "income" ? "+" : ""}
-                          {formatMoney(item.amount, currency)}
+                          {fmt(item.amount, currency)}
                         </div>
                       </li>
                     ))}

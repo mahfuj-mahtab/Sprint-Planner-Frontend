@@ -28,7 +28,8 @@ import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
 import { CurrencySelect } from "@/components/org/CurrencySelect";
 import { Skeleton } from "@/components/ui/Loading";
-import { formatMoney, formatDate } from "@/lib/formatMoney";
+import { formatMoneySensitive, formatDate } from "@/lib/formatMoney";
+import { useOrgAccess } from "@/hooks/useOrgAccess";
 import {
   CLIENT_STATUSES,
   CLIENT_TYPES,
@@ -84,6 +85,11 @@ function OrgClients() {
   const [submitting, setSubmitting] = useState(false);
 
   const defaultCurrency = "BDT";
+  const { access } = useOrgAccess(orgId);
+  const canSee = access?.canSeeExactAmounts ?? true;
+  const canWrite = access?.canWrite ?? true;
+  const fmt = (v, cur = defaultCurrency, compact = false) =>
+    formatMoneySensitive(v, cur, canSee, compact);
 
   const fetchOverview = useCallback(() => {
     return api
@@ -425,7 +431,7 @@ function OrgClients() {
                               <span>{c.paymentCount} pay</span>
                             ) : null}
                             {c.totalPaid > 0 ? (
-                              <span className="text-primary">{formatMoney(c.totalPaid, c.currency || defaultCurrency, true)}</span>
+                              <span className="text-primary">{fmt(c.totalPaid, c.currency || defaultCurrency, true)}</span>
                             ) : null}
                             {c.lastContactAt ? (
                               <span className="inline-flex items-center gap-0.5">
@@ -605,7 +611,7 @@ function OrgClients() {
                     <div className="rounded-lg border border-primary/25 bg-primary/5 p-2.5">
                       <div className="text-muted-foreground uppercase tracking-wide text-[9px]">Paid</div>
                       <div className="font-mono text-base text-primary mt-0.5">
-                        {formatMoney(detail.summary?.totalPaid ?? 0, clientCurrency)}
+                        {fmt(detail.summary?.totalPaid ?? 0, clientCurrency)}
                       </div>
                       {detail.summary?.lastPayment ? (
                         <div className="text-[10px] text-muted-foreground mt-0.5">
@@ -617,7 +623,7 @@ function OrgClients() {
                       <div className="text-muted-foreground uppercase tracking-wide text-[9px]">Expected</div>
                       <div className="font-mono text-base mt-0.5">
                         {detail.summary?.expectedValue
-                          ? formatMoney(detail.summary.expectedValue, clientCurrency)
+                          ? fmt(detail.summary.expectedValue, clientCurrency)
                           : "—"}
                       </div>
                     </div>
@@ -625,7 +631,7 @@ function OrgClients() {
                       <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-2.5">
                         <div className="text-muted-foreground uppercase tracking-wide text-[9px]">Outstanding</div>
                         <div className="font-mono text-base text-amber-200 mt-0.5">
-                          {formatMoney(detail.summary.outstanding, clientCurrency)}
+                          {fmt(detail.summary.outstanding, clientCurrency)}
                         </div>
                         <div className="text-[10px] text-muted-foreground mt-0.5">vs project budgets</div>
                       </div>
@@ -633,7 +639,7 @@ function OrgClients() {
                       <div className="rounded-lg border border-[#00d4ff]/25 bg-[#00d4ff]/5 p-2.5">
                         <div className="text-muted-foreground uppercase tracking-wide text-[9px]">To collect</div>
                         <div className="font-mono text-base text-[#00d4ff] mt-0.5">
-                          {formatMoney(detail.summary.pipelineGap, clientCurrency)}
+                          {fmt(detail.summary.pipelineGap, clientCurrency)}
                         </div>
                         <div className="text-[10px] text-muted-foreground mt-0.5">vs expected</div>
                       </div>
@@ -647,7 +653,7 @@ function OrgClients() {
                       <div className="text-muted-foreground uppercase tracking-wide text-[9px]">Rate</div>
                       <div className="font-mono text-base mt-0.5">
                         {detail.client.hourly_rate != null
-                          ? `${formatMoney(detail.client.hourly_rate, clientCurrency, true)}/hr`
+                          ? `${fmt(detail.client.hourly_rate, clientCurrency, true)}/hr`
                           : "—"}
                       </div>
                     </div>
@@ -690,7 +696,7 @@ function OrgClients() {
                               <span className="text-muted-foreground">{formatDate(inc.payment_date)}</span>
                               <span className="ml-2">{inc.category}</span>
                             </span>
-                            <span className="font-mono text-primary">+{formatMoney(inc.amount, clientCurrency)}</span>
+                            <span className="font-mono text-primary">+{fmt(inc.amount, clientCurrency)}</span>
                           </li>
                         ))}
                       </ul>
@@ -716,7 +722,7 @@ function OrgClients() {
                             >
                               <span className="font-medium">{p.name}</span>
                               <span className="font-mono text-muted-foreground text-xs">
-                                {p.budget != null ? formatMoney(p.budget, clientCurrency) : "—"}
+                                {p.budget != null ? fmt(p.budget, clientCurrency) : "—"}
                               </span>
                             </Link>
                           </li>

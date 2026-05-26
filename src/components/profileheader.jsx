@@ -76,7 +76,7 @@ function Profileheader({ onMenuClick }) {
               className="hidden sm:block text-sm text-muted-foreground truncate"
               style={{ fontFamily: "DM Mono, monospace" }}
             >
-              Sprint Planner
+              WeekWins
             </div>
           )}
         </div>

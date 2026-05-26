@@ -56,7 +56,7 @@ function InlineNameInput({ value, onChange, onCommit, placeholder, className }) 
   );
 }
 
-function FeatureAnalysis({ orgId, projectId }) {
+function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
   const [loading, setLoading] = useState(true);
   const [modules, setModules] = useState([]);
   const [error, setError] = useState(null);
@@ -104,6 +104,7 @@ function FeatureAnalysis({ orgId, projectId }) {
   }, [modules]);
 
   const createModule = () => {
+    if (!canWrite) return;
     if (!moduleName.trim()) return;
     api
       .post(`/api/v1/org/${orgId}/projects/${projectId}/feature-modules`, { name: moduleName.trim() })
@@ -122,6 +123,7 @@ function FeatureAnalysis({ orgId, projectId }) {
   };
 
   const saveModuleName = (m) => {
+    if (!canWrite) return;
     const trimmed = (moduleEdits[m._id] || "").trim();
     if (!trimmed || trimmed === m.name) return;
     api
@@ -137,6 +139,7 @@ function FeatureAnalysis({ orgId, projectId }) {
   };
 
   const deleteModule = (m) => {
+    if (!canWrite) return;
     if (!window.confirm(`Delete module "${m.name}"? This will remove all its features and unassign them from tasks.`))
       return;
     api
@@ -155,6 +158,7 @@ function FeatureAnalysis({ orgId, projectId }) {
   };
 
   const createFeature = (moduleId) => {
+    if (!canWrite) return;
     const name = (featureDrafts[moduleId] || "").trim();
     if (!name) return;
     api
@@ -174,6 +178,7 @@ function FeatureAnalysis({ orgId, projectId }) {
   };
 
   const saveFeatureName = (f) => {
+    if (!canWrite) return;
     const trimmed = (featureEdits[f._id] || "").trim();
     if (!trimmed || trimmed === f.name) return;
     api
@@ -189,6 +194,7 @@ function FeatureAnalysis({ orgId, projectId }) {
   };
 
   const deleteFeature = (f) => {
+    if (!canWrite) return;
     if (!window.confirm(`Delete feature "${f.name}"? It will be unassigned from tasks.`)) return;
     api
       .delete(`/api/v1/org/${orgId}/projects/${projectId}/features/${f._id}`)
@@ -252,19 +258,23 @@ function FeatureAnalysis({ orgId, projectId }) {
         </button>
       </div>
 
-      <div className="flex gap-2 mb-5">
-        <input
-          value={moduleName}
-          onChange={(e) => setModuleName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && createModule()}
-          placeholder="New module name…"
-          className="ww-input flex-1 max-w-md"
-        />
-        <button onClick={createModule} className="ww-btn-primary inline-flex items-center gap-2 shrink-0">
-          <Plus className="w-4 h-4" />
-          Add module
-        </button>
-      </div>
+      {canWrite ? (
+        <div className="flex gap-2 mb-5">
+          <input
+            value={moduleName}
+            onChange={(e) => setModuleName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && createModule()}
+            placeholder="New module name…"
+            className="ww-input flex-1 max-w-md"
+          />
+          <button onClick={createModule} className="ww-btn-primary inline-flex items-center gap-2 shrink-0">
+            <Plus className="w-4 h-4" />
+            Add module
+          </button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground mb-5">Read-only — join a project team with editor access to manage features.</p>
+      )}
 
       {modules.length === 0 ? (
         <div className="border border-dashed border-border rounded-xl p-8 bg-card text-center text-sm text-muted-foreground">
@@ -282,12 +292,16 @@ function FeatureAnalysis({ orgId, projectId }) {
                     <div className="text-[10px] font-mono uppercase tracking-wider text-primary/90 mb-0.5 font-semibold">
                       Module
                     </div>
-                    <InlineNameInput
-                      value={moduleEdits[m._id] ?? m.name}
-                      onChange={(v) => setModuleEdits((p) => ({ ...p, [m._id]: v }))}
-                      onCommit={() => saveModuleName(m)}
-                      className="text-lg font-bold text-foreground"
-                    />
+                    {canWrite ? (
+                      <InlineNameInput
+                        value={moduleEdits[m._id] ?? m.name}
+                        onChange={(v) => setModuleEdits((p) => ({ ...p, [m._id]: v }))}
+                        onCommit={() => saveModuleName(m)}
+                        className="text-lg font-bold text-foreground"
+                      />
+                    ) : (
+                      <span className="text-lg font-bold text-foreground">{m.name}</span>
+                    )}
                   </div>
                   <StatusBadge status={m.status} size="lg" />
                   <span className="text-xs text-foreground/80 font-mono">
@@ -296,14 +310,16 @@ function FeatureAnalysis({ orgId, projectId }) {
                   <div className="w-28 h-2 bg-background/60 rounded-full overflow-hidden hidden sm:block border border-primary/20">
                     <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => deleteModule(m)}
-                    className="p-2 rounded-lg border border-border bg-background/50 hover:bg-destructive/10 text-destructive ml-auto"
-                    title="Delete module"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {canWrite ? (
+                    <button
+                      type="button"
+                      onClick={() => deleteModule(m)}
+                      className="p-2 rounded-lg border border-border bg-background/50 hover:bg-destructive/10 text-destructive ml-auto"
+                      title="Delete module"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  ) : null}
                 </header>
 
                 <div className="bg-[#0a0f14]/80 border-t border-border/40">
@@ -324,12 +340,16 @@ function FeatureAnalysis({ orgId, projectId }) {
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#00d4ff]/70 shrink-0" aria-hidden />
-                          <InlineNameInput
-                            value={featureEdits[f._id] ?? f.name}
-                            onChange={(v) => setFeatureEdits((p) => ({ ...p, [f._id]: v }))}
-                            onCommit={() => saveFeatureName(f)}
-                            className="text-xs font-normal text-muted-foreground hover:text-foreground focus:text-foreground"
-                          />
+                          {canWrite ? (
+                            <InlineNameInput
+                              value={featureEdits[f._id] ?? f.name}
+                              onChange={(v) => setFeatureEdits((p) => ({ ...p, [f._id]: v }))}
+                              onCommit={() => saveFeatureName(f)}
+                              className="text-xs font-normal text-muted-foreground hover:text-foreground focus:text-foreground"
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{f.name}</span>
+                          )}
                         </div>
                         <div className="w-24 flex justify-center scale-90 origin-center">
                           <StatusBadge status={f.status} />
@@ -337,16 +357,21 @@ function FeatureAnalysis({ orgId, projectId }) {
                         <span className="w-16 text-center text-[10px] font-mono text-muted-foreground/80">
                           {f.completedTasks}/{f.totalTasks}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => deleteFeature(f)}
-                          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground/60 hover:text-destructive"
-                          title="Delete feature"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        {canWrite ? (
+                          <button
+                            type="button"
+                            onClick={() => deleteFeature(f)}
+                            className="p-1 rounded hover:bg-destructive/10 text-muted-foreground/60 hover:text-destructive"
+                            title="Delete feature"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        ) : (
+                          <span />
+                        )}
                       </li>
                     ))}
+                    {canWrite ? (
                     <li className="grid grid-cols-[1fr_auto_auto_32px] gap-2 items-center pl-5 pr-4 py-2 bg-[#00d4ff]/[0.04] border-t border-dashed border-border/40">
                       <div className="flex items-center gap-2 min-w-0">
                         <Plus className="w-3 h-3 text-[#00d4ff]/70 shrink-0" />
@@ -370,6 +395,7 @@ function FeatureAnalysis({ orgId, projectId }) {
                         <Plus className="w-3.5 h-3.5" />
                       </button>
                     </li>
+                    ) : null}
                   </ul>
                 </div>
               </section>

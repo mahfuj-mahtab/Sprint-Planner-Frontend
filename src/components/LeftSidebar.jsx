@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import OrgCreate from './OrgCreate'
 import api from '../ApiInception'
-import { Link, useLocation } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { Plus, Building2, User, ChevronDown, ChevronRight, CheckSquare, ListChecks } from 'lucide-react'
 import { ToastContainer, toast } from 'react-toastify';
 import OrgEdit from './OrgEdit'
@@ -296,7 +296,14 @@ function LeftSidebar() {
                             >
                                 &times;
                             </button>
-                            <OrgCreate onClose={() => setShowCreateOrg(false)} fetchOrg={() => fetchOrg()} />
+                            <OrgCreate
+                                onClose={() => setShowCreateOrg(false)}
+                                fetchOrg={() => fetchOrg()}
+                                onCreated={(org) => {
+                                    const id = org._id || org.id;
+                                    if (id) navigate(`/user/profile/org/${id}?view=members`);
+                                }}
+                            />
                         </div>
                     </div>
                 )

@@ -20,6 +20,8 @@ import TeamWiseAnalytics from '../components/TeamWiseAnalytics'
 import { ArrowLeft } from 'lucide-react'
 import { Skeleton, Spinner } from '../components/ui/Loading'
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { ReadOnlyBanner } from "@/components/org/ReadOnlyBanner";
+
 function SprintDetails({ fetchOrg }) {
     const [activeTab, setActiveTab] = useState('board')
     const [showTaskCreate, setShowCreateTask] = useState(false)
@@ -82,6 +84,9 @@ function SprintDetails({ fetchOrg }) {
         fetchSprintDetails();
     }, [sprintId, orgId]);
     const effectiveProjectId = sprintDetails?.sprint?.project_id || projectId;
+    const canWrite = sprintDetails?.deliveryAccess?.canWrite ?? true;
+    const readOnlyReason = sprintDetails?.deliveryAccess?.reason;
+
     if (!sprintDetails) {
         return (
             <DashboardLayout>
@@ -140,23 +145,25 @@ function SprintDetails({ fetchOrg }) {
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                        <button
-                            onClick={() => setShowCreateTeam(true)}
-                            className="border border-border hover:bg-muted text-foreground font-medium text-sm py-1.5 px-4 rounded-md transition-colors"
-                        >
-                            + Create Team
-                        </button>
-                        <button
-                            onClick={() => {
-                              setCreateTaskTeamId(null);
-                              setShowCreateTask(true);
-                            }}
-                            className="bg-primary hover:brightness-95 text-sm text-primary-foreground font-semibold py-2 px-4 rounded-md transition-colors"
-                        >
-                            + Task (full form)
-                        </button>
-                    </div>
+                    {canWrite ? (
+                      <div className="flex flex-wrap gap-2">
+                          <button
+                              onClick={() => setShowCreateTeam(true)}
+                              className="border border-border hover:bg-muted text-foreground font-medium text-sm py-1.5 px-4 rounded-md transition-colors"
+                          >
+                              + Create Team
+                          </button>
+                          <button
+                              onClick={() => {
+                                setCreateTaskTeamId(null);
+                                setShowCreateTask(true);
+                              }}
+                              className="bg-primary hover:brightness-95 text-sm text-primary-foreground font-semibold py-2 px-4 rounded-md transition-colors"
+                          >
+                              + Task (full form)
+                          </button>
+                      </div>
+                    ) : null}
                 </div>
             </div>
 
@@ -165,6 +172,7 @@ function SprintDetails({ fetchOrg }) {
                 <TeamWiseAnalytics teams={sprintDetails?.teams} sprint={sprintDetails?.sprint} />
             ) : (
             <div className="p-4 sm:p-6 ww-page-full max-w-none">
+                    {!canWrite && readOnlyReason ? <ReadOnlyBanner reason={readOnlyReason} /> : null}
                     {activeTab === 'board' && (
                         <div className="space-y-4">
                             <div>
@@ -176,6 +184,7 @@ function SprintDetails({ fetchOrg }) {
                                 teams={sprintDetails.teams}
                                 orgId={orgId}
                                 sprintId={sprintId}
+                                readOnly={!canWrite}
                                 onRefresh={fetchSprintDetails}
                                 onEditTask={(task) => {
                                   setEditingTaskId(task._id);
@@ -213,6 +222,7 @@ function SprintDetails({ fetchOrg }) {
                                           orgId={orgId}
                                           sprintId={sprintId}
                                           sprint={sprintDetails.sprint}
+                                          canWrite={canWrite}
                                           onRefresh={fetchSprintDetails}
                                           onEditTask={(task) => {
                                             setEditingTaskId(task._id);
@@ -247,13 +257,15 @@ function SprintDetails({ fetchOrg }) {
                                   {sprintDetails?.teams?.length || 0} team{(sprintDetails?.teams?.length || 0) !== 1 ? "s" : ""} on this project
                                 </p>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => setShowCreateTeam(true)}
-                                className="text-sm font-semibold px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:brightness-95"
-                              >
-                                + Create team
-                              </button>
+                              {canWrite ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowCreateTeam(true)}
+                                  className="text-sm font-semibold px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:brightness-95"
+                                >
+                                  + Create team
+                                </button>
+                              ) : null}
                             </div>
                             {sprintDetails?.teams?.length > 0 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -262,6 +274,7 @@ function SprintDetails({ fetchOrg }) {
                                           key={team._id}
                                           members={team.members}
                                           teamName={team.name}
+                                          canWrite={canWrite}
                                           onAddMember={() => fetchSprintDetails()}
                                           onRemoveMember={() => fetchSprintDetails()}
                                           orgId={orgId}

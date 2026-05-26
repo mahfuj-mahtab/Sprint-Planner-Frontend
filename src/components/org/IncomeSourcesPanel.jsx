@@ -19,7 +19,12 @@ import { CurrencySelect } from "@/components/org/CurrencySelect";
 import { defaultFinanceCurrency } from "@/lib/financeCurrencies";
 import { EmptyState } from "@/components/org/EmptyState";
 import { LinkedEntityField } from "@/components/org/LinkedEntityField";
-import { formatMoney, formatDate } from "@/lib/formatMoney";
+import { formatMoneySensitive, formatDate } from "@/lib/formatMoney";
+
+let moneyCanSee = true;
+function mfmt(value, currency = "BDT", compact = false) {
+  return formatMoneySensitive(value, currency, moneyCanSee, compact);
+}
 import {
   INCOME_SOURCE_STATUSES,
   INCOME_SOURCE_TYPES,
@@ -99,7 +104,7 @@ function ForecastEditor({ periods, onChange, currency }) {
               />
             </Field>
             <div className="text-xs font-mono text-primary pb-2 whitespace-nowrap">
-              = {formatMoney(yearly, currency, true)}/yr
+              = {mfmt(yearly, currency, true)}/yr
             </div>
             <button
               type="button"
@@ -287,7 +292,7 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
             {!mixedCurrency && yearStats.total > 0 ? (
               <>
                 {" · "}
-                <span className="font-mono text-primary">{formatMoney(yearStats.total, primaryCurrency)}</span>{" "}
+                <span className="font-mono text-primary">{mfmt(yearStats.total, primaryCurrency)}</span>{" "}
                 combined
               </>
             ) : null}
@@ -378,12 +383,12 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
                               amt > 0 ? "text-primary font-medium" : "text-muted-foreground/25"
                             )}
                           >
-                            {amt > 0 ? formatMoney(amt, cur, true) : "—"}
+                            {amt > 0 ? mfmt(amt, cur, true) : "—"}
                           </td>
                         );
                       })}
                       <td className="px-3 py-2.5 text-right font-mono font-semibold tabular-nums text-[13px] bg-muted/20">
-                        {yearTotal > 0 ? formatMoney(yearTotal, cur) : "—"}
+                        {yearTotal > 0 ? mfmt(yearTotal, cur) : "—"}
                       </td>
                     </tr>
                   );
@@ -395,13 +400,13 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
                   const amt = matrix.columnTotals?.[key] || 0;
                   return (
                     <td key={key} className="px-2 py-3 text-right font-mono tabular-nums text-primary">
-                      {amt > 0 && !mixedCurrency ? formatMoney(amt, primaryCurrency, true) : mixedCurrency && amt > 0 ? "·" : "—"}
+                      {amt > 0 && !mixedCurrency ? mfmt(amt, primaryCurrency, true) : mixedCurrency && amt > 0 ? "·" : "—"}
                     </td>
                   );
                 })}
                 <td className="px-3 py-3 text-right font-mono text-primary bg-[#00d4ff]/15">
                   {!mixedCurrency && yearStats.total > 0
-                    ? formatMoney(yearStats.total, primaryCurrency)
+                    ? mfmt(yearStats.total, primaryCurrency)
                     : "—"}
                 </td>
               </tr>
@@ -446,12 +451,12 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
                             y === selectedYear && "bg-primary/[0.08]"
                           )}
                         >
-                          {amt > 0 ? formatMoney(amt, cur, true) : "—"}
+                          {amt > 0 ? mfmt(amt, cur, true) : "—"}
                         </td>
                       );
                     })}
                     <td className="px-3 py-2.5 text-right font-mono font-semibold text-primary">
-                      {formatMoney(row.totalForecast || 0, cur, true)}
+                      {mfmt(row.totalForecast || 0, cur, true)}
                     </td>
                   </tr>
                 );
@@ -463,13 +468,13 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
                     matrix.yearTotals?.[y] ?? matrix.yearTotals?.[String(y)] ?? 0;
                   return (
                     <td key={y} className="px-3 py-3 text-right font-mono text-primary">
-                      {amt > 0 && !mixedCurrency ? formatMoney(amt, primaryCurrency, true) : "—"}
+                      {amt > 0 && !mixedCurrency ? mfmt(amt, primaryCurrency, true) : "—"}
                     </td>
                   );
                 })}
                 <td className="px-3 py-3 text-right font-mono text-primary">
                   {!mixedCurrency
-                    ? formatMoney(
+                    ? mfmt(
                         rows.reduce((s, r) => s + (r.totalForecast || 0), 0),
                         primaryCurrency,
                         true
@@ -523,11 +528,11 @@ function SourceDetail({ source, currency }) {
             <div className="text-xs rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
               <span className="text-muted-foreground">Expected run rate: </span>
               <span className="font-mono text-primary font-medium">
-                {formatMoney(source.expected_earning.monthly, currency, true)}/mo
+                {mfmt(source.expected_earning.monthly, currency, true)}/mo
               </span>
               <span className="text-muted-foreground"> · </span>
               <span className="font-mono text-primary">
-                {formatMoney(source.expected_earning.yearly, currency, true)}/yr
+                {mfmt(source.expected_earning.yearly, currency, true)}/yr
               </span>
               {source.expected_earning.basis === "forecast" ? (
                 <span className="text-muted-foreground"> (from forecast)</span>
@@ -556,10 +561,10 @@ function SourceDetail({ source, currency }) {
                         <td className="px-3 py-2">Year {p.period_index}</td>
                         <td className="px-3 py-2 text-muted-foreground">{p.calendar_label}</td>
                         <td className="px-3 py-2 text-right font-mono text-primary">
-                          {formatMoney(monthly, currency, true)}/mo
+                          {mfmt(monthly, currency, true)}/mo
                         </td>
                         <td className="px-3 py-2 text-right font-mono">
-                          {formatMoney(p.yearly_total, currency)}
+                          {mfmt(p.yearly_total, currency)}
                         </td>
                       </tr>
                     );
@@ -572,15 +577,15 @@ function SourceDetail({ source, currency }) {
           )}
           <div className="flex flex-wrap gap-3 text-xs">
             <span>
-              Invested: <strong className="font-mono">{formatMoney(actuals.total_invested, currency)}</strong>
+              Invested: <strong className="font-mono">{mfmt(actuals.total_invested, currency)}</strong>
             </span>
             <span>
-              Earned: <strong className="font-mono text-primary">{formatMoney(actuals.total_revenue, currency)}</strong>
+              Earned: <strong className="font-mono text-primary">{mfmt(actuals.total_revenue, currency)}</strong>
             </span>
             <span>
               Net:{" "}
               <strong className={cn("font-mono", actuals.net >= 0 ? "text-primary" : "text-destructive")}>
-                {formatMoney(actuals.net, currency)}
+                {mfmt(actuals.net, currency)}
               </strong>
             </span>
           </div>
@@ -590,7 +595,16 @@ function SourceDetail({ source, currency }) {
   );
 }
 
-export function IncomeSourcesPanel({ orgId, projects, onProjectCreated, onRefresh, currency = "BDT" }) {
+export function IncomeSourcesPanel({
+  orgId,
+  projects,
+  onProjectCreated,
+  onRefresh,
+  currency = "BDT",
+  canSeeExactAmounts = true,
+  canWrite = true,
+}) {
+  moneyCanSee = canSeeExactAmounts;
   const orgCurrency = defaultFinanceCurrency(currency);
   const [items, setItems] = useState([]);
   const [expectedTotals, setExpectedTotals] = useState(null);
@@ -763,11 +777,11 @@ export function IncomeSourcesPanel({ orgId, projects, onProjectCreated, onRefres
             >
               <span className="text-muted-foreground">Expected ({bucket.currency}): </span>
               <span className="font-mono text-primary font-medium">
-                {formatMoney(bucket.monthlyTotal, bucket.currency, true)}/mo
+                {mfmt(bucket.monthlyTotal, bucket.currency, true)}/mo
               </span>
               <span className="text-muted-foreground"> · </span>
               <span className="font-mono text-primary">
-                {formatMoney(bucket.yearlyTotal, bucket.currency, true)}/yr
+                {mfmt(bucket.yearlyTotal, bucket.currency, true)}/yr
               </span>
             </div>
           ))}
@@ -851,25 +865,25 @@ export function IncomeSourcesPanel({ orgId, projects, onProjectCreated, onRefres
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-xs">
                   <div className="rounded-md bg-muted/25 px-2.5 py-2">
                     <div className="text-muted-foreground">Planned investment</div>
-                    <div className="font-mono font-medium mt-0.5">{formatMoney(planned, cur)}</div>
+                    <div className="font-mono font-medium mt-0.5">{mfmt(planned, cur)}</div>
                     {planned > 0 ? (
                       <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
                         <div className="h-full bg-amber-500/80" style={{ width: `${investPct}%` }} />
                       </div>
                     ) : null}
                     <div className="text-[10px] text-muted-foreground mt-0.5">
-                      Spent {formatMoney(invested, cur, true)}
+                      Spent {mfmt(invested, cur, true)}
                     </div>
                   </div>
                   <div className="rounded-md bg-muted/25 px-2.5 py-2">
                     <div className="text-muted-foreground">Actual revenue</div>
-                    <div className="font-mono font-medium text-primary mt-0.5">{formatMoney(earned, cur)}</div>
+                    <div className="font-mono font-medium text-primary mt-0.5">{mfmt(earned, cur)}</div>
                   </div>
                   <div className="rounded-md bg-muted/25 px-2.5 py-2">
                     <div className="text-muted-foreground flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" /> Forecast (all years)
                     </div>
-                    <div className="font-mono font-medium mt-0.5">{formatMoney(forecastTotal, cur)}</div>
+                    <div className="font-mono font-medium mt-0.5">{mfmt(forecastTotal, cur)}</div>
                   </div>
                   <div className="rounded-md bg-muted/25 px-2.5 py-2">
                     <div className="text-muted-foreground">Revenue starts</div>
@@ -970,8 +984,8 @@ export function IncomeSourcesPanel({ orgId, projects, onProjectCreated, onRefres
             </div>
             {formExpected.monthly > 0 ? (
               <p className="text-xs font-mono text-primary">
-                ≈ {formatMoney(formExpected.monthly, form.currency || orgCurrency, true)}/month ·{" "}
-                {formatMoney(formExpected.yearly, form.currency || orgCurrency, true)}/year
+                ≈ {mfmt(formExpected.monthly, form.currency || orgCurrency, true)}/month ·{" "}
+                {mfmt(formExpected.yearly, form.currency || orgCurrency, true)}/year
               </p>
             ) : null}
           </div>

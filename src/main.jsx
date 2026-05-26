@@ -12,7 +12,6 @@ import Login from './pages/login.jsx';
 import Profile from './pages/profile.jsx';
 import ShowOrgDetails from './pages/ShowOrgDetails.jsx';
 import SprintDetails from './pages/sprintDetails.jsx';
-import MembersShow from './components/MembersShow.jsx';
 import MyTodo from './components/MyTodo.jsx';
 import AssignedTasks from './pages/assignedTasks.jsx';
 import OrgClients from './pages/OrgClients.jsx';
@@ -71,8 +70,8 @@ const router = createBrowserRouter([
   }
   ,
   {
-    path: "/user/profile/org/:orgId/members/",
-    element: <MembersShow />
+    path: "/user/profile/org/:orgId/members",
+    element: <ShowOrgDetails />
   },
   {
     path: "/user/todos",

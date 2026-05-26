@@ -16,7 +16,7 @@ import api from "../ApiInception";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/org/StatCard";
 import { Skeleton } from "@/components/ui/Loading";
-import { formatMoney } from "@/lib/formatMoney";
+import { formatMoneySensitive } from "@/lib/formatMoney";
 import {
   MonthlyTrendChart,
   ProfitLineChart,
@@ -41,7 +41,8 @@ function OrgDashboard() {
       .finally(() => setLoading(false));
   }, [orgId]);
 
-  const fmt = (v) => formatMoney(v, "BDT");
+  const canSee = data?.access?.canSeeExactAmounts ?? true;
+  const fmt = (v) => formatMoneySensitive(v, "BDT", canSee);
 
   const taskPie = data
     ? [
@@ -120,13 +121,47 @@ function OrgDashboard() {
       </div>
 
       <div className="ww-page-full space-y-6 pb-10">
-        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          <StatCard label="Business revenue" value={fmt(finance.monthIncome)} variant="income" sub="Business partitions" />
-          <StatCard label="Business expense" value={fmt(finance.monthExpense)} variant="expense" />
-          <StatCard label="Business net" value={fmt(finance.netProfit)} variant={finance.netProfit >= 0 ? "income" : "expense"} />
-          <StatCard label="Cash balance" value={fmt(finance.totalBalance)} variant="balance" sub={finance.ownerBalance != null ? `Owner ${fmt(finance.ownerBalance)}` : undefined} />
-          <StatCard label="Tasks done" value={`${tasks.completionPct}%`} sub={`${tasks.completed}/${tasks.total} tasks`} variant="neutral" />
-          <StatCard label="Active sprints" value={String(counts.activeSprints)} sub={`${counts.totalSprints} total`} variant="neutral" />
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <StatCard
+            label="Business revenue"
+            value={fmt(finance.monthIncome)}
+            variant="income"
+            sub={finance.periodLabel ? `This month · ${finance.periodLabel}` : "This calendar month"}
+          />
+          <StatCard
+            label="Business expense"
+            value={fmt(finance.monthExpense)}
+            variant="expense"
+            sub="This month · business partitions"
+          />
+          <StatCard
+            label="Business net"
+            value={fmt(finance.netProfit)}
+            variant={finance.netProfit >= 0 ? "income" : "expense"}
+            sub="This month · revenue − expense"
+          />
+          <StatCard
+            label="Cash balance"
+            value={fmt(finance.totalBalance)}
+            variant="balance"
+            sub={
+              finance.ownerBalance != null
+                ? `All time · Owner ${fmt(finance.ownerBalance)}`
+                : "All time · all partitions"
+            }
+          />
+          <StatCard
+            label="Tasks done"
+            value={`${tasks.completionPct}%`}
+            sub={`All time · ${tasks.completed}/${tasks.total} tasks`}
+            variant="neutral"
+          />
+          <StatCard
+            label="Active sprints"
+            value={String(counts.activeSprints)}
+            sub={`Now · ${counts.totalSprints} total sprints`}
+            variant="neutral"
+          />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">

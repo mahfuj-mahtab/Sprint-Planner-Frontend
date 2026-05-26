@@ -36,15 +36,16 @@ export default function Register() {
     return (
         <>
             <AuthShell
-                title="Create your account"
-                subtitle="Create an org, plan sprints, assign tasks — and ship what you planned."
+                title="Create your workspace."
+                subtitle="Set up your org, connect delivery with clients and cash — built for indie founders and tiny studios."
                 kicker="Start free"
-                sideTitle="One structure."
-                sideSubtitle="Zero chaos."
+                sideTitle="One connected workspace."
+                sideSubtitle="Not five tabs."
+                footerQuote="Run your software business in one place."
                 features={[
-                    { icon: "⚡", label: "Sprint Planning", desc: "Build focused sprint plans in minutes." },
-                    { icon: "🧑‍💻", label: "Team Assignment", desc: "Every task has a clear owner." },
-                    { icon: "📊", label: "Priority & Status", desc: "Track work from Pending to Done." },
+                    { icon: "◎", label: "Plan & ship", desc: "Features, versions, sprints, and Kanban for the work you build." },
+                    { icon: "◈", label: "Operate", desc: "CRM, follow-ups, and subscriptions beside your projects." },
+                    { icon: "▣", label: "Understand", desc: "Founder finance with partitions, income, and burn in context." },
                 ]}
             >
                 <form onSubmit={handleSubmit(onSubmit)} method="POST" className="space-y-5">

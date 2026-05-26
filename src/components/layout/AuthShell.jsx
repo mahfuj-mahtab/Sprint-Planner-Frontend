@@ -1,7 +1,16 @@
 import Logo from "@/components/branding/Logo"
 import { cn } from "@/lib/utils"
 
-export default function AuthShell({ children, title, subtitle, kicker = "Welcome back", sideTitle, sideSubtitle, features = [] }) {
+export default function AuthShell({
+  children,
+  title,
+  subtitle,
+  kicker = "WeekWins",
+  sideTitle,
+  sideSubtitle,
+  features = [],
+  footerQuote = "Built for founders who run software businesses.",
+}) {
   return (
     <div className="min-h-screen grid md:grid-cols-2 bg-background text-foreground">
       <aside className="relative hidden md:flex flex-col justify-between overflow-hidden border-r border-border bg-secondary p-12">
@@ -41,7 +50,7 @@ export default function AuthShell({ children, title, subtitle, kicker = "Welcome
         </div>
 
         <div className="relative z-10 border-t border-border pt-6 text-[13px] italic text-muted-foreground">
-          “Focus on outcomes, not busywork.”
+          “{footerQuote}”
         </div>
       </aside>
 

@@ -19,6 +19,12 @@ export function formatMoney(value, currency = "BDT", compact = false) {
   }
 }
 
+/** Hide exact figures for editor/viewer; owner and admin see real amounts. */
+export function formatMoneySensitive(value, currency = "BDT", canSeeExact = true, compact = false) {
+  if (!canSeeExact) return "—";
+  return formatMoney(value, currency, compact);
+}
+
 export function formatDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString(undefined, {

@@ -41,6 +41,7 @@ export function SprintTeamTasks({
   orgId,
   sprintId,
   sprint,
+  canWrite = true,
   onRefresh,
   onEditTask,
   onDeleteTask,
@@ -147,12 +148,16 @@ export function SprintTeamTasks({
           {tasks.map((task) => (
             <tr key={task._id} className="border-b border-border/60 hover:bg-muted/15 group">
               <td className="px-4 py-2.5 font-medium">
-                <InlineTitleInput
-                  value={titleEdits[task._id] ?? task.title}
-                  onChange={(v) => setTitleEdits((p) => ({ ...p, [task._id]: v }))}
-                  onCommit={() => saveTitle(task)}
-                  className="text-sm"
-                />
+                {canWrite ? (
+                  <InlineTitleInput
+                    value={titleEdits[task._id] ?? task.title}
+                    onChange={(v) => setTitleEdits((p) => ({ ...p, [task._id]: v }))}
+                    onCommit={() => saveTitle(task)}
+                    className="text-sm"
+                  />
+                ) : (
+                  <span className="text-sm">{task.title}</span>
+                )}
               </td>
               <td className="px-4 py-2.5 text-muted-foreground text-xs">
                 {task.assignee?.length > 0
@@ -166,37 +171,44 @@ export function SprintTeamTasks({
                 {convertDate(task.endDate)}
               </td>
               <td className="px-4 py-2.5">
-                <TaskStatusSelect
-                  value={task.status}
-                  onChange={(s) => changeStatus(task, s)}
-                  className="max-w-[9rem]"
-                />
+                {canWrite ? (
+                  <TaskStatusSelect
+                    value={task.status}
+                    onChange={(s) => changeStatus(task, s)}
+                    className="max-w-[9rem]"
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground">{task.status}</span>
+                )}
               </td>
               <td className="px-4 py-2.5">
                 <PriorityShow status={task.priority} />
               </td>
               <td className="px-4 py-2.5">
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    type="button"
-                    onClick={() => onEditTask?.(task)}
-                    className="p-1.5 rounded-md border border-border hover:bg-muted text-[#00d4ff]"
-                    title="Full edit"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteTask?.(task._id, team._id)}
-                    className="p-1.5 rounded-md border border-border hover:bg-destructive/10 text-destructive"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                {canWrite ? (
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => onEditTask?.(task)}
+                      className="p-1.5 rounded-md border border-border hover:bg-muted text-[#00d4ff]"
+                      title="Full edit"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteTask?.(task._id, team._id)}
+                      className="p-1.5 rounded-md border border-border hover:bg-destructive/10 text-destructive"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : null}
               </td>
             </tr>
           ))}
+          {canWrite ? (
           <tr className="bg-primary/[0.04] border-t border-dashed border-primary/30">
             <td className="px-4 py-2.5" colSpan={5}>
               <div className="flex items-center gap-2">
@@ -221,9 +233,10 @@ export function SprintTeamTasks({
               </button>
             </td>
           </tr>
+          ) : null}
         </tbody>
       </table>
-      {tasks.length === 0 ? (
+      {canWrite && tasks.length === 0 ? (
         <p className="text-xs text-muted-foreground px-4 py-2 border-t border-border/40">
           Click the row above to add your first task for this team.
         </p>

@@ -2,7 +2,7 @@ import React from 'react'
 import { useForm } from "react-hook-form"
 import { ToastContainer, toast } from 'react-toastify';
 import api from '../ApiInception';
-function OrgCreate({ onClose,fetchOrg }) {
+function OrgCreate({ onClose, fetchOrg, onCreated }) {
   const {
     register,
     handleSubmit,
@@ -11,6 +11,9 @@ function OrgCreate({ onClose,fetchOrg }) {
     api.post(`/api/v1/users/org/create`, data).then((response) => {
       console.log(response.data.message)
       onClose();
+      if (onCreated && response.data.organization) {
+        onCreated(response.data.organization);
+      }
       toast.success(response.data.message, {
         position: "top-right",
         autoClose: 5000,

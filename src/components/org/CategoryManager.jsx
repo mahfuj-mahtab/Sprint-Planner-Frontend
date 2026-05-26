@@ -5,7 +5,7 @@ import api from "@/ApiInception";
 import { categoriesForType } from "@/lib/financeCategories";
 import { cn } from "@/lib/utils";
 
-export function CategoryColumn({ title, type, items, orgId, onRefresh, accent }) {
+export function CategoryColumn({ title, type, items, orgId, onRefresh, accent, canWrite = true }) {
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
@@ -59,21 +59,23 @@ export function CategoryColumn({ title, type, items, orgId, onRefresh, accent })
   return (
     <div className="rounded-xl border border-border bg-card p-4 text-left">
       <h3 className={cn("text-sm font-semibold mb-3", accent)}>{title}</h3>
-      <form onSubmit={handleCreate} className="flex gap-2 mb-3">
-        <input
-          className="ww-input ww-input-md flex-1"
-          placeholder="New category name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="shrink-0 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
-        >
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-        </button>
-      </form>
+      {canWrite ? (
+        <form onSubmit={handleCreate} className="flex gap-2 mb-3">
+          <input
+            className="ww-input ww-input-md flex-1"
+            placeholder="New category name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <button
+            type="submit"
+            disabled={submitting}
+            className="shrink-0 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          </button>
+        </form>
+      ) : null}
       <ul className="space-y-1.5 max-h-64 overflow-y-auto">
         {items.map((c) => (
           <li
@@ -106,24 +108,28 @@ export function CategoryColumn({ title, type, items, orgId, onRefresh, accent })
                 {c.is_default ? (
                   <span className="text-[10px] text-muted-foreground font-mono uppercase">default</span>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingId(c._id);
-                    setEditName(c.name);
-                  }}
-                  className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(c._id)}
-                  disabled={submitting}
-                  className="p-1.5 rounded-md hover:bg-muted text-destructive"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {canWrite ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(c._id);
+                        setEditName(c.name);
+                      }}
+                      className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c._id)}
+                      disabled={submitting}
+                      className="p-1.5 rounded-md hover:bg-muted text-destructive"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : null}
               </>
             )}
           </li>
@@ -133,7 +139,7 @@ export function CategoryColumn({ title, type, items, orgId, onRefresh, accent })
   );
 }
 
-export function CategoryManager({ orgId, categories, onRefresh }) {
+export function CategoryManager({ orgId, categories, onRefresh, canWrite = true }) {
   const income = categoriesForType(categories, "income");
   const expense = categoriesForType(categories, "expense");
   const subscription = categoriesForType(categories, "subscription");
@@ -157,6 +163,7 @@ export function CategoryManager({ orgId, categories, onRefresh }) {
           orgId={orgId}
           onRefresh={onRefresh}
           accent="text-primary"
+          canWrite={canWrite}
         />
         <CategoryColumn
           title="Expense categories"
@@ -165,6 +172,7 @@ export function CategoryManager({ orgId, categories, onRefresh }) {
           orgId={orgId}
           onRefresh={onRefresh}
           accent="text-destructive"
+          canWrite={canWrite}
         />
         <CategoryColumn
           title="Subscription categories"
@@ -173,6 +181,7 @@ export function CategoryManager({ orgId, categories, onRefresh }) {
           orgId={orgId}
           onRefresh={onRefresh}
           accent="text-[#a78bfa]"
+          canWrite={canWrite}
         />
       </div>
     </div>

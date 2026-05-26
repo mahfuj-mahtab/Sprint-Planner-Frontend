@@ -1,103 +1,359 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom';
-import Logo from '@/components/branding/Logo'
-import { cn } from '@/lib/utils'
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import Logo from "@/components/branding/Logo";
+import { cn } from "@/lib/utils";
+import {
+  ArrowRight,
+  Banknote,
+  CalendarClock,
+  ChevronRight,
+  CircleDollarSign,
+  GitBranch,
+  Kanban,
+  Layers,
+  LineChart,
+  Receipt,
+  Repeat,
+  Sparkles,
+  Target,
+  Users,
+  Wallet,
+  Workflow,
+} from "lucide-react";
 
 function useInView(threshold = 0.12) {
-  const ref = useRef(null)
-  const [inView, setInView] = useState(false)
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
   useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true) }, { threshold })
-    if (ref.current) obs.observe(ref.current)
-    return () => obs.disconnect()
-  }, [])
-  return [ref, inView]
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) setInView(true);
+    }, { threshold });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, inView];
 }
 
-function FadeIn({ children, delay = 0 }) {
-  const [ref, inView] = useInView()
+function FadeIn({ children, delay = 0, className }) {
+  const [ref, inView] = useInView();
   return (
-    <div ref={ref} style={{
-      opacity: inView ? 1 : 0,
-      transform: inView ? 'translateY(0)' : 'translateY(24px)',
-      transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms`,
-    }}>
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: inView ? 1 : 0,
+        transform: inView ? "translateY(0)" : "translateY(20px)",
+        transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms`,
+      }}
+    >
       {children}
     </div>
-  )
+  );
 }
 
-const FLOW = [
-  { step: '01', label: 'Organisation', icon: '⬡', desc: 'Create your org — the top-level workspace that houses all your projects and teams.', color: '#00ff94' },
-  { step: '02', label: 'Projects',      icon: '◈', desc: 'Break work into projects. Each project owns its own teams, backlogs, and sprint cycles.', color: '#00d4ff' },
-  { step: '03', label: 'Sprints',       icon: '◎', desc: 'Plan weekly or bi-weekly sprints. Time-box your goals and hold the team accountable.', color: '#ff6b35' },
-  { step: '04', label: 'Tasks',         icon: '▣', desc: 'Assign tasks to team members with priority, status, and deadlines baked in.', color: '#a78bfa' },
-]
+const NAV = [
+  { label: "The problem", href: "#problem" },
+  { label: "Workflow", href: "#workflow" },
+  { label: "Built for", href: "#built-for" },
+  { label: "Outcomes", href: "#outcomes" },
+];
 
-const FEATURES = [
-  { icon: '⚡', title: 'Sprint Planning',    desc: 'Build focused sprint plans in minutes. Move fast, ship fast, win the week.' },
-  { icon: '🧑‍💻', title: 'Team Assignment',  desc: 'Assign tasks to specific members inside every project. Full ownership, no confusion.' },
-  { icon: '📊', title: 'Priority & Status',  desc: 'Mark tasks Low / Medium / High. Track status from Pending to Completed in real time.' },
-  { icon: '🗂️', title: 'Multi-Project Org', desc: 'Run multiple projects under one org. Keep cross-functional teams perfectly aligned.' },
-  { icon: '🔔', title: 'Real-time Updates',  desc: 'Every edit, reassignment, and sprint change shows up instantly across your team.' },
-  { icon: '🚀', title: 'Built for Velocity', desc: 'Lightweight and opinionated. Designed for dev teams that actually ship.' },
-]
+const FRAGMENTED_TOOLS = [
+  { problem: "Tasks", tool: "Trello / Jira" },
+  { problem: "Docs & specs", tool: "Notion" },
+  { problem: "Money", tool: "Spreadsheets" },
+  { problem: "Clients", tool: "Random CRM" },
+  { problem: "Subscriptions", tool: "Another app" },
+];
 
-const BOARD_COLS = [
-  { label: 'To Do',       color: '#64748b', tasks: [['Auth flow','High'],['DB schema','Medium']] },
-  { label: 'In Progress', color: '#00d4ff', tasks: [['API routes','High']] },
-  { label: 'Done',        color: '#00ff94', tasks: [['UI setup','Low'],['CI pipeline','Medium']] },
-]
-const PRI = { High: '#f87171', Medium: '#fb923c', Low: '#94a3b8' }
-const AVS = ['JK','AS','MR','PR','TN','YL']
-let avi = 0
+const WORKFLOW_PHASES = [
+  {
+    phase: "Plan",
+    color: "#00d4ff",
+    icon: GitBranch,
+    items: ["Features", "Versions", "Sprints"],
+    line: "Shape what you’re building before the week starts.",
+  },
+  {
+    phase: "Ship",
+    color: "#00ff94",
+    icon: Target,
+    items: ["Tasks", "Reviews", "Releases"],
+    line: "Move work across the board with a team that knows who owns what.",
+  },
+  {
+    phase: "Operate",
+    color: "#ff6b35",
+    icon: Users,
+    items: ["Clients", "Payments", "Subscriptions"],
+    line: "Follow up, log activity, and see who owes you — next to the work.",
+  },
+  {
+    phase: "Understand",
+    color: "#a78bfa",
+    icon: LineChart,
+    items: ["Cashflow", "Burn", "Profitability"],
+    line: "Founder finance tied to projects, not a disconnected sheet.",
+  },
+];
+
+const BUILT_FOR = [
+  "Solo developers",
+  "Indie hackers",
+  "Freelancers",
+  "Tiny software studios",
+  "Technical founders",
+];
+
+const OUTCOME_GROUPS = [
+  {
+    title: "Delivery",
+    color: "#00d4ff",
+    items: ["Sprints & Kanban", "Roadmap & versions", "Project dashboards"],
+  },
+  {
+    title: "Operations",
+    color: "#ff6b35",
+    items: ["CRM & follow-ups", "Client activity logs", "Pipeline visibility"],
+  },
+  {
+    title: "Finance",
+    color: "#00ff94",
+    items: ["Partitioned accounts", "Subscriptions & burn", "Income & expenses"],
+  },
+  {
+    title: "Execution",
+    color: "#a78bfa",
+    items: ["Personal todos", "Team capacity", "Org-wide clarity"],
+  },
+];
+
+const FOUNDER_PAINS = [
+  {
+    q: "Where is my money going?",
+    a: "Subscription forecasting and founder finance — partitions, burn, and cash by scope.",
+    icon: Wallet,
+  },
+  {
+    q: "Which clients haven’t paid?",
+    a: "CRM linked to payment history and projects, not a spreadsheet on the side.",
+    icon: CircleDollarSign,
+  },
+  {
+    q: "What’s actually shipping?",
+    a: "Sprint workflow, versions, and analytics on the same work your team touches daily.",
+    icon: Kanban,
+  },
+  {
+    q: "Am I overloaded this week?",
+    a: "See sprint load, assignments, and personal todos in one operational picture.",
+    icon: CalendarClock,
+  },
+];
+
+const DEMO_PANELS = [
+  {
+    caption: "Track founder burn and cash by partition.",
+    title: "Finance overview",
+    accent: "#00ff94",
+    body: (
+      <div className="space-y-2 font-mono text-[11px]">
+        <div className="flex justify-between text-muted-foreground">
+          <span>Business cash</span>
+          <span className="text-primary">৳ 842k</span>
+        </div>
+        <div className="flex justify-between text-muted-foreground">
+          <span>Subscriptions / mo</span>
+          <span className="text-destructive">−৳ 38k</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div className="h-full w-[68%] rounded-full bg-primary" />
+        </div>
+        <p className="text-[10px] text-muted-foreground pt-1">This month · business partitions</p>
+      </div>
+    ),
+  },
+  {
+    caption: "Plan releases visually.",
+    title: "Version → Sprint",
+    accent: "#00d4ff",
+    body: (
+      <div className="flex gap-2">
+        {["v1.2 Ship", "Sprint 14", "Auth refactor"].map((t, i) => (
+          <div
+            key={t}
+            className={cn(
+              "flex-1 rounded-lg border px-2 py-2 text-[10px]",
+              i === 1 ? "border-primary/40 bg-primary/10 text-primary" : "border-border text-muted-foreground"
+            )}
+          >
+            {t}
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    caption: "See project profitability.",
+    title: "Project P&L",
+    accent: "#a78bfa",
+    body: (
+      <div className="space-y-1.5 font-mono text-[11px]">
+        {[
+          ["Client app", "+৳ 120k", "text-primary"],
+          ["Internal tool", "−৳ 18k", "text-destructive"],
+          ["SaaS core", "+৳ 64k", "text-primary"],
+        ].map(([name, amt, cls]) => (
+          <div key={name} className="flex justify-between">
+            <span className="text-muted-foreground">{name}</span>
+            <span className={cls}>{amt}</span>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    caption: "Manage work and money together.",
+    title: "Connected workspace",
+    accent: "#ff6b35",
+    body: (
+      <div className="grid grid-cols-2 gap-2 text-[10px]">
+        <div className="rounded-lg border border-border bg-muted/40 p-2">
+          <div className="text-primary font-medium">In progress</div>
+          <div className="mt-1 text-muted-foreground">API billing hook</div>
+        </div>
+        <div className="rounded-lg border border-border bg-muted/40 p-2">
+          <div className="text-[#00d4ff] font-medium">Client</div>
+          <div className="mt-1 text-muted-foreground">Acme · follow-up Fri</div>
+        </div>
+      </div>
+    ),
+  },
+];
+
+function HeroConnectedVisual() {
+  return (
+    <div className="relative">
+      <div className="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 lg:flex h-12 w-12 items-center justify-center rounded-full border border-primary/40 bg-background shadow-[0_0_24px_rgba(0,255,148,0.2)]">
+        <Layers className="h-5 w-5 text-primary" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+          <div className="flex items-center gap-2 border-b border-border bg-secondary/80 px-4 py-2.5">
+            <Target className="h-3.5 w-3.5 text-[#00d4ff]" />
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[#00d4ff]">Delivery</span>
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium">Sprint 14 · Ship week</span>
+              <span className="font-mono text-primary">7/9 done</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted">
+              <div className="h-full w-[78%] rounded-full bg-primary" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ["Backlog", "2", "#64748b"],
+                ["Building", "API routes", "#00d4ff"],
+                ["Done", "UI polish", "#00ff94"],
+              ].map(([col, task, c]) => (
+                <div key={col} className="rounded-lg border border-border bg-muted/30 p-2">
+                  <div className="font-mono text-[9px] uppercase mb-1.5" style={{ color: c }}>
+                    {col}
+                  </div>
+                  <div className="text-[11px] text-foreground/90 leading-snug">{task}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+          <div className="flex items-center gap-2 border-b border-border bg-secondary/80 px-4 py-2.5">
+            <Banknote className="h-3.5 w-3.5 text-primary" />
+            <span className="font-mono text-[10px] uppercase tracking-wider text-primary">Operations</span>
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">MRR</div>
+                <div className="mt-1 font-mono text-lg text-primary">৳ 186k</div>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Due</div>
+                <div className="mt-1 font-mono text-lg text-[#00d4ff]">2 clients</div>
+              </div>
+            </div>
+            <div className="rounded-lg border border-dashed border-border/80 p-3 space-y-2">
+              {[
+                ["Stripe infra", "−৳ 4.2k/mo"],
+                ["Figma", "−৳ 800/mo"],
+              ].map(([n, amt]) => (
+                <div key={n} className="flex justify-between text-[11px]">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Repeat className="h-3 w-3" /> {n}
+                  </span>
+                  <span className="font-mono text-destructive/90">{amt}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
+              <Receipt className="h-3 w-3" />
+              Linked to projects & clients
+            </div>
+          </div>
+        </div>
+      </div>
+      <p className="mt-4 text-center text-xs text-muted-foreground lg:hidden">
+        Delivery and operations in one connected workspace.
+      </p>
+    </div>
+  );
+}
 
 export default function App() {
-  const [open, setOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', h)
-    return () => window.removeEventListener('scroll', h)
-  }, [])
+    const h = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", h);
+    return () => window.removeEventListener("scroll", h);
+  }, []);
 
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
-  }, [open])
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-
-      {/* ── NAV ── */}
       <header
         className={cn(
           "ww-glass fixed inset-x-0 top-0 z-50 border-b transition-all",
           scrolled ? "border-border bg-background/90" : "border-transparent bg-transparent"
         )}
       >
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
+        <div className="mx-auto flex h-16 max-w-[1140px] items-center justify-between px-6">
           <Logo to="/" />
-
-          <nav className="hidden items-center gap-8 md:flex">
-            {["Features", "How it Works", "Team", "Contact"].map((l) => (
+          <nav className="hidden items-center gap-7 md:flex">
+            {NAV.map((l) => (
               <a
-                key={l}
-                href={`#${l.toLowerCase().replace(/ /g, "-")}`}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                key={l.href}
+                href={l.href}
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                {l}
+                {l.label}
               </a>
             ))}
           </nav>
-
           <div className="flex items-center gap-2">
             <div className="hidden items-center gap-2 sm:flex">
               <Link
                 to="/user/login"
-                className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-[13px] font-semibold text-foreground transition hover:border-primary/40 hover:text-primary"
+                className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-[13px] font-semibold text-foreground transition hover:border-primary/40"
               >
                 Log in
               </Link>
@@ -105,25 +361,25 @@ export default function App() {
                 to="/user/register"
                 className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-[13px] font-bold text-primary-foreground transition hover:brightness-95 hover:shadow-[0_8px_24px_rgba(0,255,148,0.35)]"
               >
-                Get started →
+                Start free
               </Link>
             </div>
-
             <button
-              className="flex flex-col gap-1.5 rounded-md border border-border bg-transparent p-2 md:hidden"
+              type="button"
+              className="flex flex-col gap-1.5 rounded-md border border-border p-2 md:hidden"
               onClick={() => setOpen((o) => !o)}
-              aria-label="menu"
+              aria-label="Menu"
             >
               {[0, 1, 2].map((i) => (
                 <span
                   key={i}
-                  className="block h-0.5 w-5 rounded bg-muted-foreground transition"
+                  className="block h-0.5 w-5 rounded bg-muted-foreground"
                   style={{
                     transform:
                       open && i === 0
-                        ? "rotate(45deg) translate(5px,5px)"
+                        ? "rotate(45deg) translate(5px, 5px)"
                         : open && i === 2
-                          ? "rotate(-45deg) translate(5px,-5px)"
+                          ? "rotate(-45deg) translate(5px, -5px)"
                           : "none",
                     opacity: open && i === 1 ? 0 : 1,
                   }}
@@ -134,175 +390,232 @@ export default function App() {
         </div>
       </header>
 
-      {/* Mobile drawer — must live OUTSIDE <header> because backdrop-filter creates a
-          new containing block that traps position:fixed children inside it */}
       <div
         className={cn(
-          "fixed inset-x-0 bottom-0 top-16 z-40 flex flex-col gap-2 overflow-y-auto border-t border-border bg-background px-6 py-4 transition",
-          open ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-2 opacity-0"
+          "fixed inset-x-0 bottom-0 top-16 z-40 flex flex-col gap-1 overflow-y-auto border-t border-border bg-background px-6 py-4 transition md:hidden",
+          open ? "opacity-100" : "pointer-events-none opacity-0"
         )}
       >
-        {["Features", "How it Works", "Team", "Contact"].map((l) => (
+        {NAV.map((l) => (
           <a
-            key={l}
-            href={`#${l.toLowerCase().replace(/ /g, "-")}`}
+            key={l.href}
+            href={l.href}
             onClick={() => setOpen(false)}
-            className="border-b border-border py-4 text-base font-medium text-muted-foreground hover:text-primary"
+            className="border-b border-border py-3 text-sm font-medium text-muted-foreground"
           >
-            {l}
+            {l.label}
           </a>
         ))}
-        <div className="flex gap-2 pt-2">
-          <Link
-            to="/user/login"
-            onClick={() => setOpen(false)}
-            className="flex-1 rounded-md border border-border px-4 py-2 text-center text-sm font-semibold text-foreground hover:border-primary/40 hover:text-primary"
-          >
+        <div className="flex gap-2 pt-3">
+          <Link to="/user/login" onClick={() => setOpen(false)} className="flex-1 ww-btn-outline text-center text-sm py-2">
             Log in
           </Link>
-          <Link
-            to="/user/register"
-            onClick={() => setOpen(false)}
-            className="flex-1 rounded-md bg-primary px-4 py-2 text-center text-sm font-bold text-primary-foreground hover:brightness-95"
-          >
-            Get started →
+          <Link to="/user/register" onClick={() => setOpen(false)} className="flex-1 ww-btn-primary text-center text-sm py-2">
+            Start free
           </Link>
         </div>
       </div>
 
-      {/* ── HERO ── */}
-      <section className="ww-dot-bg relative overflow-hidden px-6 pb-20 pt-32">
-        <div className="pointer-events-none absolute left-[5%] top-[10%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(0,255,148,0.08)_0%,transparent_70%)]" />
-        <div className="pointer-events-none absolute right-0 top-[30%] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(0,212,255,0.07)_0%,transparent_70%)]" />
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid items-center gap-16 lg:grid-cols-2">
-            {/* Copy */}
+      {/* Hero */}
+      <section className="ww-dot-bg relative overflow-hidden px-6 pb-24 pt-28 md:pt-32">
+        <div className="pointer-events-none absolute left-[8%] top-[12%] h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(0,255,148,0.07)_0%,transparent_70%)]" />
+        <div className="pointer-events-none absolute right-0 top-[20%] h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,rgba(0,212,255,0.06)_0%,transparent_70%)]" />
+        <div className="relative mx-auto max-w-[1140px]">
+          <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-12">
             <div>
               <div className="ww-tag mb-5 border-primary/25 bg-primary/10 text-primary">
-                Built for dev teams
+                For indie founders & tiny studios
               </div>
-              <h1 className="ww-heading text-[clamp(2rem,6vw,3.8rem)] leading-[1.1]">
-                <span className="block">Win every week.</span>
-                <span className="block text-muted-foreground">Ship every sprint.</span>
+              <h1 className="ww-heading text-[clamp(2rem,5.5vw,3.25rem)] leading-[1.08] tracking-tight">
+                Run your software business in one place.
               </h1>
-              <p className="mt-6 max-w-[520px] text-[1.05rem] leading-8 text-muted-foreground">
-                WeekWins is a sprint-driven project manager for small dev teams.
-                Organise work into{' '}
-                <strong className="text-foreground/80">orgs → projects → sprints → tasks</strong>.
-                Stop context-switching. Start shipping.
+              <p className="mt-5 max-w-[520px] text-[1.05rem] leading-relaxed text-muted-foreground">
+                WeekWins connects sprint planning, founder finance, CRM, and execution — so you stop
+                juggling Trello, spreadsheets, and five other tabs to understand if you’re actually winning.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/user/register" className="ww-btn-primary">
-                  Start for free →
+                <Link to="/user/register" className="ww-btn-primary inline-flex items-center gap-2">
+                  Start free
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-                <a href="#how-it-works" className="ww-btn-outline">
-                  See how it works
+                <a href="#workflow" className="ww-btn-outline inline-flex items-center gap-2">
+                  <Workflow className="h-4 w-4" />
+                  Explore workflow
                 </a>
               </div>
-              <div className="mt-10 flex flex-wrap gap-10">
-                {[
-                  ["10x", "faster sprint planning"],
-                  ["100%", "team visibility"],
-                  ["0", "wasted stand-ups"],
-                ].map(([n, l]) => (
-                  <div key={n}>
-                    <div className="ww-heading text-2xl text-primary">{n}</div>
-                    <div className="mt-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
-                      {l}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="mt-6 text-xs text-muted-foreground font-mono">
+                Solo devs · freelancers · technical founders · 2–8 person studios
+              </p>
             </div>
-
-            {/* Mockup */}
-            <div>
-              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_24px_64px_rgba(0,0,0,0.60)]">
-                <div className="flex items-center gap-2 border-b border-border bg-secondary px-4 py-3">
-                  {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
-                    <div key={c} className="h-[11px] w-[11px] rounded-full" style={{ background: c }} />
-                  ))}
-                  <span className="ml-2 text-[11px] text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
-                    weekwins — sprint #12
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
-                  {BOARD_COLS.map((col, ci) => (
-                    <div key={col.label} className={cn(ci > 0 ? "hidden sm:block" : "", ci === 2 ? "hidden md:block" : "")}>
-                      <div
-                        className="mb-2 text-[10px] uppercase tracking-[0.10em]"
-                        style={{ fontFamily: "DM Mono, monospace", color: col.color }}
-                      >
-                        {col.label}
-                      </div>
-                      {col.tasks.map(([task, pri]) => {
-                        const av = AVS[avi++ % AVS.length]
-                        return (
-                          <div key={task} className="mb-2 rounded-lg border border-border bg-muted px-3 py-2">
-                            <div className="mb-2 text-xs font-medium text-foreground/90">{task}</div>
-                            <div className="flex items-center justify-between">
-                              <span
-                                className="rounded-md px-1.5 py-0.5 text-[10px]"
-                                style={{
-                                  fontFamily: "DM Mono, monospace",
-                                  color: PRI[pri],
-                                  background: `${PRI[pri]}18`,
-                                }}
-                              >
-                                {pri}
-                              </span>
-                              <div
-                                className="grid h-5 w-5 place-items-center rounded-full border border-border text-[8px] text-muted-foreground"
-                                style={{ fontFamily: "DM Mono, monospace" }}
-                              >
-                                {av}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-3 border-t border-border px-4 py-3">
-                  <div className="h-2 w-2 shrink-0 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
-                  <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
-                    Sprint ends in 3d 14h · 6/9 tasks done
-                  </span>
-                </div>
-              </div>
-            </div>
+            <HeroConnectedVisual />
           </div>
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="bg-secondary px-6 py-20">
-        <div className="mx-auto max-w-[1200px]">
+      {/* Problem */}
+      <section id="problem" className="border-y border-border bg-secondary px-6 py-20 md:py-24">
+        <div className="mx-auto max-w-[1140px]">
           <FadeIn>
-            <div className="mb-14 text-center">
-              <div className="ww-tag mb-4 border-[rgba(0,212,255,0.25)] bg-[rgba(0,212,255,0.10)] text-[#00d4ff]">
-                The WeekWins Model
+            <div className="max-w-2xl">
+              <div className="ww-tag mb-4 border-[#00d4ff]/30 bg-[#00d4ff]/10 text-[#00d4ff]">The problem</div>
+              <h2 className="ww-heading text-[clamp(1.6rem,4vw,2.5rem)] leading-tight">
+                Your startup probably runs across too many tools.
+              </h2>
+              <p className="mt-4 text-muted-foreground leading-relaxed">
+                You ship code in one app, track money in a sheet, chase clients in another — and still wonder
+                what’s true this week. That’s operational chaos, not a discipline problem.
+              </p>
+            </div>
+          </FadeIn>
+
+          <div className="mt-14 grid gap-10 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+            <FadeIn delay={80}>
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
+                <div className="border-b border-border bg-muted/40 px-4 py-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Today · fragmented
+                </div>
+                <table className="w-full text-left text-sm">
+                  <tbody>
+                    {FRAGMENTED_TOOLS.map((row) => (
+                      <tr key={row.problem} className="border-t border-border/60">
+                        <td className="px-4 py-3 text-muted-foreground">{row.problem}</td>
+                        <td className="px-4 py-3 text-right font-mono text-xs text-foreground/70">{row.tool}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <h2 className="ww-heading text-[clamp(1.7rem,4vw,2.8rem)]">One structure. Zero chaos.</h2>
-              <p className="mt-3 text-base text-muted-foreground">Every piece of work has a home — and a deadline.</p>
+            </FadeIn>
+
+            <FadeIn delay={160} className="flex justify-center py-4 lg:py-0">
+              <div className="flex flex-col items-center gap-2 text-primary">
+                <ChevronRight className="h-8 w-8 hidden lg:block" />
+                <ArrowRight className="h-6 w-6 lg:hidden rotate-90" />
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={200}>
+              <div className="overflow-hidden rounded-xl border border-primary/30 bg-card shadow-[0_0_40px_rgba(0,255,148,0.08)]">
+                <div className="border-b border-primary/20 bg-primary/10 px-4 py-2 font-mono text-[10px] uppercase tracking-wider text-primary">
+                  With WeekWins
+                </div>
+                <div className="p-6 space-y-4">
+                  <Logo size="sm" />
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    One workspace for <strong className="text-foreground">delivery, clients, subscriptions, and cash</strong> —
+                    tied to the same projects and sprints you ship from.
+                  </p>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    {["Projects & sprints", "CRM & follow-ups", "Income, expenses & partitions", "Team & personal execution"].map(
+                      (item) => (
+                        <li key={item} className="flex items-center gap-2">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                          {item}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* Workflow */}
+      <section id="workflow" className="ww-dot-bg px-6 py-20 md:py-24">
+        <div className="mx-auto max-w-[1140px]">
+          <FadeIn>
+            <div className="text-center max-w-2xl mx-auto">
+              <div className="ww-tag mb-4 border-primary/25 bg-primary/10 text-primary mx-auto w-fit">The workflow</div>
+              <h2 className="ww-heading text-[clamp(1.6rem,4vw,2.5rem)]">How founders actually run the week.</h2>
+              <p className="mt-3 text-muted-foreground">
+                Not a feature list — the loop from plan to ship to operate to understand.
+              </p>
+            </div>
+          </FadeIn>
+          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {WORKFLOW_PHASES.map((w, i) => {
+              const Icon = w.icon;
+              return (
+                <FadeIn key={w.phase} delay={i * 90}>
+                  <div className="ww-card h-full flex flex-col">
+                    <div
+                      className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border"
+                      style={{ borderColor: `${w.color}40`, background: `${w.color}12`, color: w.color }}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="font-mono text-[10px] uppercase tracking-widest mb-1" style={{ color: w.color }}>
+                      {w.phase}
+                    </div>
+                    <ul className="space-y-1 text-sm font-medium mb-3">
+                      {w.items.map((item) => (
+                        <li key={item} className="text-foreground/90">
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-auto">{w.line}</p>
+                  </div>
+                </FadeIn>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Built for */}
+      <section id="built-for" className="bg-secondary px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-[1140px]">
+          <FadeIn>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+              <div>
+                <div className="ww-tag mb-3 border-border bg-muted text-muted-foreground w-fit">Built for</div>
+                <h2 className="ww-heading text-2xl md:text-3xl">Founders who ship software — not enterprises.</h2>
+              </div>
+              <p className="text-sm text-muted-foreground max-w-md md:text-right">
+                Sharp positioning beats “works for any team.” WeekWins is opinionated on purpose.
+              </p>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {BUILT_FOR.map((label) => (
+                <span
+                  key={label}
+                  className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground/90"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Outcomes */}
+      <section id="outcomes" className="px-6 py-20 md:py-24">
+        <div className="mx-auto max-w-[1140px]">
+          <FadeIn>
+            <div className="text-center max-w-xl mx-auto mb-14">
+              <div className="ww-tag mb-4 border-[#a78bfa]/30 bg-[#a78bfa]/10 text-[#a78bfa] mx-auto w-fit">Outcomes</div>
+              <h2 className="ww-heading text-[clamp(1.6rem,4vw,2.5rem)]">Modules, organized by what you’re trying to see.</h2>
             </div>
           </FadeIn>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {FLOW.map((f, i) => (
-              <FadeIn key={f.label} delay={i * 100}>
+            {OUTCOME_GROUPS.map((g, i) => (
+              <FadeIn key={g.title} delay={i * 70}>
                 <div className="ww-card ww-card-hover h-full">
-                  <div
-                    className="mb-4 grid h-12 w-12 place-items-center rounded-xl border text-xl"
-                    style={{ background: `${f.color}15`, borderColor: `${f.color}30` }}
-                  >
-                    {f.icon}
+                  <div className="font-mono text-[10px] uppercase tracking-wider mb-2" style={{ color: g.color }}>
+                    {g.title}
                   </div>
-                  <div className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ fontFamily: "DM Mono, monospace", color: f.color }}>
-                    Step {f.step}
-                  </div>
-                  <h3 className="ww-heading text-base">{f.label}</h3>
-                  <p className="mt-2 text-[13.5px] leading-7 text-muted-foreground">{f.desc}</p>
+                  <ul className="space-y-2">
+                    {g.items.map((item) => (
+                      <li key={item} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full" style={{ background: g.color }} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </FadeIn>
             ))}
@@ -310,27 +623,49 @@ export default function App() {
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section id="features" className="ww-dot-bg bg-background px-6 py-20">
-        <div className="mx-auto max-w-[1200px]">
+      {/* Founder pains */}
+      <section className="ww-dot-bg border-t border-border px-6 py-20 md:py-24">
+        <div className="mx-auto max-w-[1140px]">
           <FadeIn>
-            <div className="mb-14 text-center">
-              <div className="ww-tag mb-4 border-[rgba(167,139,250,0.25)] bg-[rgba(167,139,250,0.10)] text-[#a78bfa]">
-                Features
-              </div>
-              <h2 className="ww-heading text-[clamp(1.7rem,4vw,2.8rem)]">Everything your team actually needs.</h2>
-              <p className="mt-3 text-base text-muted-foreground">
-                No bloat. No 200-tab dashboards. Just the features that move work forward.
-              </p>
+            <h2 className="ww-heading text-[clamp(1.5rem,4vw,2.2rem)] text-center max-w-2xl mx-auto">
+              The questions that keep you up — answered in one workspace.
+            </h2>
+          </FadeIn>
+          <div className="mt-12 grid gap-5 sm:grid-cols-2">
+            {FOUNDER_PAINS.map((card, i) => {
+              const Icon = card.icon;
+              return (
+                <FadeIn key={card.q} delay={i * 80}>
+                  <div className="ww-card h-full border-l-2 border-l-primary/50">
+                    <Icon className="h-5 w-5 text-primary mb-3" />
+                    <h3 className="text-lg font-semibold text-foreground">{card.q}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{card.a}</p>
+                  </div>
+                </FadeIn>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Demo panels */}
+      <section className="bg-secondary px-6 py-20 md:py-24">
+        <div className="mx-auto max-w-[1140px]">
+          <FadeIn>
+            <div className="mb-12 max-w-xl">
+              <div className="ww-tag mb-3 border-[#00d4ff]/30 bg-[#00d4ff]/10 text-[#00d4ff]">See it</div>
+              <h2 className="ww-heading text-2xl md:text-3xl">Operational clarity, not dashboard noise.</h2>
             </div>
           </FadeIn>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f, i) => (
-              <FadeIn key={f.title} delay={i * 70}>
-                <div className="ww-card ww-card-hover h-full">
-                  <div className="mb-4 text-[1.8rem]">{f.icon}</div>
-                  <h3 className="ww-heading text-base">{f.title}</h3>
-                  <p className="mt-2 text-[13.5px] leading-7 text-muted-foreground">{f.desc}</p>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {DEMO_PANELS.map((panel, i) => (
+              <FadeIn key={panel.title} delay={i * 60}>
+                <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                  <div className="p-5 min-h-[140px]">{panel.body}</div>
+                  <div className="border-t border-border bg-muted/30 px-5 py-4">
+                    <p className="text-xs font-medium text-primary mb-1">{panel.caption}</p>
+                    <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wide">{panel.title}</p>
+                  </div>
                 </div>
               </FadeIn>
             ))}
@@ -338,48 +673,76 @@ export default function App() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="bg-secondary px-6 py-20">
-        <div className="mx-auto max-w-[860px]">
+      {/* Philosophy */}
+      <section className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-[800px] text-center">
           <FadeIn>
-            <div className="relative overflow-hidden rounded-3xl border border-border bg-[linear-gradient(135deg,#0d1117,#111827)] px-8 py-12 text-center">
-              <div className="pointer-events-none absolute -top-16 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(0,255,148,0.10)_0%,transparent_70%)]" />
-              <div className="ww-tag mb-5 border-primary/25 bg-primary/10 text-primary">Free to start</div>
-              <h2 className="ww-heading text-[clamp(1.7rem,4vw,2.8rem)]">Ready to win your first week?</h2>
-              <p className="mx-auto mt-3 max-w-[440px] text-base text-muted-foreground">
-                Set up your org, create a sprint, assign tasks — and actually ship what you planned.
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <Link to="/user/register" className="ww-btn-primary">
-                  Create your org →
-                </Link>
-                <a href="#features" className="ww-btn-outline">
-                  View demo
-                </a>
-              </div>
+            <Sparkles className="h-6 w-6 text-primary mx-auto mb-4" />
+            <div className="ww-tag mb-5 border-primary/25 bg-primary/10 text-primary mx-auto w-fit">
+              Philosophy
             </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-border bg-background px-6 py-8">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-            <Logo to="/" size="sm" />
-            <div className="text-[11px] text-muted-foreground" style={{ fontFamily: "DM Mono, monospace" }}>
-              © 2026 WeekWins · Built for dev teams that ship
-            </div>
-            <div className="flex gap-6">
-              {["Privacy", "Terms", "Contact"].map((l) => (
-                <a key={l} href="#" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-                  {l}
-                </a>
+            <h2 className="ww-heading text-[clamp(1.6rem,4vw,2.4rem)] leading-tight">
+              Built for operational clarity.
+            </h2>
+            <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
+              Most tools help you create tasks. WeekWins helps you understand your business, ship consistently,
+              and reduce the chaos of running a software company — without becoming an enterprise suite.
+            </p>
+            <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
+              {[
+                ["Understand", "Cash, clients, and delivery in context."],
+                ["Ship", "Weekly rhythm your team can feel."],
+                ["Reduce chaos", "Fewer tabs, fewer surprises."],
+              ].map(([t, d]) => (
+                <div key={t} className="rounded-xl border border-border bg-card/50 p-4">
+                  <div className="text-sm font-semibold text-primary">{t}</div>
+                  <p className="mt-1 text-xs text-muted-foreground">{d}</p>
+                </div>
               ))}
             </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="border-t border-border bg-secondary px-6 py-20">
+        <div className="mx-auto max-w-[720px] text-center">
+          <FadeIn>
+            <h2 className="ww-heading text-[clamp(1.5rem,4vw,2.4rem)] leading-tight">
+              Stop running your startup across disconnected tools.
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              Create a workspace. Invite your team. Run the week in one place.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link to="/user/register" className="ww-btn-primary inline-flex items-center gap-2">
+                Start free
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link to="/user/login" className="ww-btn-outline">
+                Log in
+              </Link>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      <footer className="border-t border-border px-6 py-8">
+        <div className="mx-auto max-w-[1140px] flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <Logo to="/" size="sm" />
+          <p className="font-mono text-[11px] text-muted-foreground">
+            © {new Date().getFullYear()} WeekWins · For founders who run software businesses
+          </p>
+          <div className="flex gap-6 text-sm text-muted-foreground">
+            <a href="#workflow" className="hover:text-primary">
+              Workflow
+            </a>
+            <Link to="/user/register" className="hover:text-primary">
+              Sign up
+            </Link>
           </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }

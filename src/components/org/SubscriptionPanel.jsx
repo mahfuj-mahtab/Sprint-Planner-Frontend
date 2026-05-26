@@ -15,7 +15,12 @@ import api from "@/ApiInception";
 import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
 import { EmptyState } from "@/components/org/EmptyState";
-import { formatMoney, formatDate } from "@/lib/formatMoney";
+import { formatMoneySensitive, formatDate } from "@/lib/formatMoney";
+
+let moneyCanSee = true;
+function mfmt(value, currency = "BDT", compact = false) {
+  return formatMoneySensitive(value, currency, moneyCanSee, compact);
+}
 import { partitionsForExpense, partitionOptionLabel } from "@/lib/partitionScopes";
 import { categoriesForType } from "@/lib/financeCategories";
 import { CategoryColumn } from "@/components/org/CategoryManager";
@@ -55,7 +60,10 @@ export function SubscriptionPanel({
   hasAccounts,
   partitionsForAccount,
   onRefresh,
+  canSeeExactAmounts = true,
+  canWrite = true,
 }) {
+  moneyCanSee = canSeeExactAmounts;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -314,8 +322,8 @@ export function SubscriptionPanel({
           </p>
           {items.length > 0 ? (
             <p className="text-xs text-muted-foreground mt-1 font-mono">
-              Running ~{formatMoney(runningBurn, currency)}/mo
-              {plannedBurn > 0 ? ` · Planned ~${formatMoney(plannedBurn, currency)}/mo` : ""}
+              Running ~{mfmt(runningBurn, currency)}/mo
+              {plannedBurn > 0 ? ` · Planned ~${mfmt(plannedBurn, currency)}/mo` : ""}
             </p>
           ) : null}
         </div>
@@ -426,9 +434,9 @@ export function SubscriptionPanel({
                         {isPlanned ? "Planned" : "Running"}
                       </span>
                     </div>
-                    <p className="text-lg font-mono text-destructive mt-0.5">−{formatMoney(sub.amount, currency)}</p>
+                    <p className="text-lg font-mono text-destructive mt-0.5">−{mfmt(sub.amount, currency)}</p>
                     <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                      ~{formatMoney(monthlyEquivalent(sub.amount, sub.billing_interval, sub.custom_interval_days), currency)}/mo
+                      ~{mfmt(monthlyEquivalent(sub.amount, sub.billing_interval, sub.custom_interval_days), currency)}/mo
                     </p>
                   </div>
                   {isPlanned ? (
@@ -589,7 +597,7 @@ export function SubscriptionPanel({
                     {partitionOptionLabel(p, {
                       showBalance: true,
                       currency,
-                      formatMoney,
+                      formatMoney: (v, c, compact) => mfmt(v, c || currency, compact),
                     })}
                   </option>
                 ))}

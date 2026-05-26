@@ -20,7 +20,7 @@ import { CrmSubnav } from "@/components/org/CrmSubnav";
 import { StatCard } from "@/components/org/StatCard";
 import { EmptyState } from "@/components/org/EmptyState";
 import { Skeleton } from "@/components/ui/Loading";
-import { formatMoney, formatDate } from "@/lib/formatMoney";
+import { formatMoneySensitive, formatDate } from "@/lib/formatMoney";
 import { logTypeLabel } from "@/lib/crmClient";
 import {
   TaskStatusPie,
@@ -96,7 +96,8 @@ function OrgCrmDashboard() {
   }, [orgId]);
 
   const primary = data?.primaryCurrency || "BDT";
-  const fmt = (v, cur = primary) => formatMoney(v, cur);
+  const canSee = data?.access?.canSeeExactAmounts ?? true;
+  const fmt = (v, cur = primary) => formatMoneySensitive(v, cur, canSee);
 
   const clientRevenueAllTime =
     data?.clientRevenueAllTimeByCurrency?.[primary] ??

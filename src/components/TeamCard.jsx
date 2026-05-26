@@ -20,7 +20,7 @@ function roleLabel(role) {
   return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
-function TeamCard({ teamName, members = [], onAddMember, onRemoveMember, orgId, teamId, fetchOrg }) {
+function TeamCard({ teamName, members = [], onAddMember, onRemoveMember, orgId, teamId, fetchOrg, canWrite = true }) {
   const [memberAddShow, setMemberAddShow] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -73,6 +73,7 @@ function TeamCard({ teamName, members = [], onAddMember, onRemoveMember, orgId, 
               </p>
             </div>
           </div>
+          {canWrite ? (
           <div className="flex shrink-0 gap-1">
             <button
               type="button"
@@ -92,6 +93,7 @@ function TeamCard({ teamName, members = [], onAddMember, onRemoveMember, orgId, 
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
+          ) : null}
         </header>
 
         <div className="p-2.5 flex-1 min-h-0 flex flex-col">
@@ -100,15 +102,21 @@ function TeamCard({ teamName, members = [], onAddMember, onRemoveMember, orgId, 
               className="py-6"
               icon={Users}
               title="No members yet"
-              description="Add people from your organization to this project team."
+              description={
+                canWrite
+                  ? "Add people from your organization to this project team."
+                  : "No members on this team yet."
+              }
               action={
-                <button
-                  type="button"
-                  onClick={() => setMemberAddShow(true)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground"
-                >
-                  Add member
-                </button>
+                canWrite ? (
+                  <button
+                    type="button"
+                    onClick={() => setMemberAddShow(true)}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground"
+                  >
+                    Add member
+                  </button>
+                ) : null
               }
             />
           ) : (
@@ -136,14 +144,16 @@ function TeamCard({ teamName, members = [], onAddMember, onRemoveMember, orgId, 
                         </span>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleMemberRemove(member.user._id)}
-                      className="shrink-0 p-1.5 rounded-md opacity-0 group-hover/item:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
-                      title="Remove from team"
-                    >
-                      <UserMinus className="w-3.5 h-3.5" />
-                    </button>
+                    {canWrite ? (
+                      <button
+                        type="button"
+                        onClick={() => handleMemberRemove(member.user._id)}
+                        className="shrink-0 p-1.5 rounded-md opacity-0 group-hover/item:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+                        title="Remove from team"
+                      >
+                        <UserMinus className="w-3.5 h-3.5" />
+                      </button>
+                    ) : null}
                   </li>
                 );
               })}

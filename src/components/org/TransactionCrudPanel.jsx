@@ -12,7 +12,7 @@ import {
   partitionOptionLabel,
   partitionsForExpense,
 } from "@/lib/partitionScopes";
-import { formatMoney, formatDate } from "@/lib/formatMoney";
+import { formatMoneySensitive, formatDate } from "@/lib/formatMoney";
 import { cn } from "@/lib/utils";
 
 const PAYMENT_METHODS = [
@@ -44,8 +44,11 @@ export function TransactionCrudPanel({
   onProjectCreated,
   incomeSources = [],
   onIncomeSourceCreated,
+  canSeeExactAmounts = true,
+  canWrite = true,
 }) {
   const isIncome = type === "income";
+  const fmt = (v) => formatMoneySensitive(v, currency, canSeeExactAmounts);
   const typeCategories = categoriesForType(categories, type);
   const defaultCategory = typeCategories[0]?.name || (isIncome ? "Other income" : "Misc");
 
@@ -254,14 +257,16 @@ export function TransactionCrudPanel({
               Manage categories
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={openCreate}
-            disabled={!hasAccounts || typeCategories.length === 0}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-40"
-          >
-            <Plus className="w-4 h-4" /> Add
-          </button>
+          {canWrite ? (
+            <button
+              type="button"
+              onClick={openCreate}
+              disabled={!hasAccounts || typeCategories.length === 0}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-40"
+            >
+              <Plus className="w-4 h-4" /> Add
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -326,28 +331,30 @@ export function TransactionCrudPanel({
                     )}
                   >
                     {isIncome ? "+" : "−"}
-                    {formatMoney(item.amount, currency)}
+                    {fmt(item.amount)}
                   </td>
                   <td className="px-2 py-1.5">
-                    <div className="flex justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(item)}
-                        className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item._id)}
-                        disabled={submitting}
-                        className="p-2 rounded-md hover:bg-muted text-destructive"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {canWrite ? (
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(item)}
+                          className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item._id)}
+                          disabled={submitting}
+                          className="p-2 rounded-md hover:bg-muted text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -429,7 +436,7 @@ export function TransactionCrudPanel({
                     {partitionOptionLabel(p, {
                       showBalance: !isIncome,
                       currency,
-                      formatMoney,
+                      formatMoney: (v, c, compact) => formatMoneySensitive(v, c || currency, canSeeExactAmounts, compact),
                     })}
                   </option>
                 ))}
@@ -533,7 +540,7 @@ export function TransactionCrudPanel({
             />
           </Field>
           {expenseOverBalance ? (
-            <p className="text-sm text-destructive">Max {formatMoney(expenseBalance, currency)} in this partition</p>
+            <p className="text-sm text-destructive">Max {fmt(expenseBalance)} in this partition</p>
           ) : null}
           <button
             type="submit"

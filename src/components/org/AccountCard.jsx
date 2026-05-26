@@ -1,4 +1,4 @@
-import { formatMoney } from "@/lib/formatMoney";
+import { formatMoneySensitive } from "@/lib/formatMoney";
 import { effectiveScope, PARTITION_SCOPES, scopeLabel } from "@/lib/partitionScopes";
 import { cn } from "@/lib/utils";
 import { Landmark, Smartphone, Banknote, Globe, Pencil, Plus, Trash2 } from "lucide-react";
@@ -24,7 +24,11 @@ export function AccountCard({
   onAddPartition,
   onEditPartition,
   onDeletePartition,
+  canSeeExactAmounts = true,
+  canWrite = true,
 }) {
+  const fmt = (v, compact = false) =>
+    formatMoneySensitive(v, account.currency, canSeeExactAmounts, compact);
   const meta = TYPE_META[account.type] || TYPE_META.bank;
   const Icon = meta.icon;
   const partitions = account.partitions || [];
@@ -59,7 +63,7 @@ export function AccountCard({
           <div className="text-left sm:text-right">
             <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-mono">Total</div>
             <div className="font-mono text-lg text-primary tabular-nums">
-              {formatMoney(total, account.currency, compact)}
+              {fmt(total, compact)}
             </div>
           </div>
           {(onEditAccount || onDeleteAccount || onAddPartition) && !onSelect ? (
@@ -124,7 +128,7 @@ export function AccountCard({
             <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", PARTITION_COLORS[i % PARTITION_COLORS.length])} />
             <span className="font-medium truncate">{p.name}</span>
             <span className="font-mono tabular-nums text-foreground/90">
-              {formatMoney(p.balance, account.currency, true)}
+              {fmt(p.balance, true)}
             </span>
             {p.is_default ? (
               <span className="text-[9px] uppercase text-primary">default</span>

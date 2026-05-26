@@ -13,26 +13,31 @@ import {
 import { patchTaskStatus } from "./TaskStatusSelect";
 import { cn } from "@/lib/utils";
 
-function KanbanCard({ task, teamName, onEdit, onDragStart }) {
+function KanbanCard({ task, teamName, onEdit, onDragStart, readOnly }) {
   return (
     <article
-      draggable
-      onDragStart={(e) => onDragStart(e, task)}
-      className="rounded-lg border border-border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing hover:border-primary/30 transition group"
+      draggable={!readOnly}
+      onDragStart={readOnly ? undefined : (e) => onDragStart(e, task)}
+      className={cn(
+        "rounded-lg border border-border bg-card p-3 shadow-sm hover:border-primary/30 transition group",
+        readOnly ? "cursor-default" : "cursor-grab active:cursor-grabbing"
+      )}
     >
       <div className="flex items-start gap-2">
         <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <h4 className="text-sm font-medium leading-snug">{task.title}</h4>
-            <button
-              type="button"
-              onClick={() => onEdit?.(task)}
-              className="p-1 rounded border border-transparent hover:border-border text-muted-foreground hover:text-foreground shrink-0"
-              title="Edit task"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-            </button>
+            {!readOnly ? (
+              <button
+                type="button"
+                onClick={() => onEdit?.(task)}
+                className="p-1 rounded border border-transparent hover:border-border text-muted-foreground hover:text-foreground shrink-0"
+                title="Edit task"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-1.5 mt-2">
             <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">
@@ -55,7 +60,7 @@ function KanbanCard({ task, teamName, onEdit, onDragStart }) {
   );
 }
 
-export function SprintKanban({ teams, orgId, sprintId, onRefresh, onEditTask }) {
+export function SprintKanban({ teams, orgId, sprintId, onRefresh, onEditTask, readOnly = false }) {
   const [dragTask, setDragTask] = useState(null);
   const [overColumn, setOverColumn] = useState(null);
 
@@ -110,12 +115,16 @@ export function SprintKanban({ teams, orgId, sprintId, onRefresh, onEditTask }) 
           return (
             <div
               key={column}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setOverColumn(column);
-              }}
-              onDragLeave={() => setOverColumn(null)}
-              onDrop={(e) => handleDrop(e, column)}
+              onDragOver={
+                readOnly
+                  ? undefined
+                  : (e) => {
+                      e.preventDefault();
+                      setOverColumn(column);
+                    }
+              }
+              onDragLeave={readOnly ? undefined : () => setOverColumn(null)}
+              onDrop={readOnly ? undefined : (e) => handleDrop(e, column)}
               className={cn(
                 "flex flex-col w-[min(100%,280px)] shrink-0 rounded-xl border bg-muted/20",
                 overColumn === column ? "border-primary/50 bg-primary/5" : "border-border/80"
@@ -136,6 +145,7 @@ export function SprintKanban({ teams, orgId, sprintId, onRefresh, onEditTask }) 
                       key={task._id}
                       task={task}
                       teamName={task.teamName}
+                      readOnly={readOnly}
                       onEdit={onEditTask}
                       onDragStart={(_e, t) => setDragTask(t)}
                     />
