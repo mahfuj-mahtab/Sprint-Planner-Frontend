@@ -2,13 +2,21 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, Loader2, Pencil, Plus, ShoppingBag, Target, Trash2, Wallet } from "lucide-react";
 import { toast } from "react-toastify";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import api from "@/ApiInception";
 import { Field, SelectInput } from "@/components/org/Field";
 import { EmptyState } from "@/components/org/EmptyState";
 import { formatMoneySensitive, formatDateTime } from "@/lib/formatMoney";
+import {
+  goalAllocated,
+  goalRemainingAllocationSlices,
+  goalReserved,
+  goalSettled,
+  readStoredGoals,
+  reservedByPartition,
+  writeStoredGoals,
+} from "@/lib/goals";
 import { effectiveScope } from "@/lib/partitionScopes";
 import { cn } from "@/lib/utils";
-
-const STORAGE_KEY = "ww-goals-v1";
 
 const TOOLTIP_STYLE = {
   backgroundColor: "#0d1117",
@@ -19,29 +27,15 @@ const TOOLTIP_STYLE = {
 
 const goalTypeLabel = (type) => (type === "personal" ? "Personal" : "Company");
 
-function readStoredGoals(orgId) {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return parsed[orgId] || [];
-  } catch {
-    return [];
-  }
-}
 
-function writeStoredGoals(orgId, goals) {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    parsed[orgId] = goals;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-  } catch {
-    // no-op
-  }
-}
-
-export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmounts = true, canWrite = true }) {
+export function GoalsPanel({
+  orgId,
+  accounts,
+  currency = "BDT",
+  canSeeExactAmounts = true,
+  canWrite = true,
+  onRefresh,
+}) {
   const [goals, setGoals] = useState(() => readStoredGoals(orgId));
   const [goalForm, setGoalForm] = useState({ title: "", target: "", type: "company" });
   const [allocationForm, setAllocationForm] = useState({});
@@ -74,9 +68,11 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
     setGoals(next);
     writeStoredGoals(orgId, next);
   };
+  const reservedMap = useMemo(() => reservedByPartition(goals), [goals]);
 
   const addGoal = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     const title = goalForm.title.trim();
     const target = Number(goalForm.target);
     if (!title || !target || target <= 0) {
@@ -114,10 +110,9 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
     setGoalForm({ title: "", target: "", type: "company" });
   };
 
-  const getGoalAllocated = (goal) => goal.allocations.reduce((sum, log) => sum + Number(log.amount || 0), 0);
-  const getGoalSettled = (goal) =>
-    (goal.settlements || []).reduce((sum, log) => sum + Number(log.amount || 0), 0);
-  const getGoalReserved = (goal) => Math.max(0, getGoalAllocated(goal) - getGoalSettled(goal));
+  const getGoalAllocated = (goal) => goalAllocated(goal);
+  const getGoalSettled = (goal) => goalSettled(goal);
+  const getGoalReserved = (goal) => goalReserved(goal);
 
   const addAllocation = (goal, e) => {
     e.preventDefault();
@@ -139,6 +134,21 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
       toast.error("This partition is not allowed for the selected goal type.", { theme: "dark" });
       return;
     }
+    const alreadyReserved = Number(reservedMap[partition.partitionId] || 0);
+    const available = Math.max(0, Number(partition.balance || 0) - alreadyReserved);
+    if (amount > available) {
+      toast.error(
+        `Not enough free money in "${partition.partitionName}". Available: ${fmt(
+          available,
+          partition.currency
+        )} (balance ${fmt(partition.balance, partition.currency)} minus already allocated ${fmt(
+          alreadyReserved,
+          partition.currency
+        )}).`,
+        { theme: "dark" }
+      );
+      return;
+    }
 
     setSubmitting(true);
     const now = new Date().toISOString();
@@ -149,6 +159,7 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
           id: crypto.randomUUID(),
           amount,
           at: now,
+          accountId: partition.accountId,
           accountName: partition.accountName,
           partitionName: partition.partitionName,
           partitionId: partition.partitionId,
@@ -197,8 +208,9 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
     persist(nextGoals);
   };
 
-  const settleGoal = (goal, e) => {
+  const settleGoal = async (goal, e) => {
     e.preventDefault();
+    e.stopPropagation();
     const form = settleForm[goal.id] || {};
     const amount = Number(form.amount || goal.target);
     const status = form.status || "bought";
@@ -211,6 +223,57 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
       toast.error("Settlement amount cannot exceed reserved money.", { theme: "dark" });
       return;
     }
+    const remainingSlices = goalRemainingAllocationSlices(goal);
+    let remainingToDeduct = amount;
+    const expenseChunks = [];
+    for (const slice of remainingSlices) {
+      if (remainingToDeduct <= 0) break;
+      const chunk = Math.min(remainingToDeduct, slice.amount);
+      remainingToDeduct -= chunk;
+      expenseChunks.push({ ...slice, amount: chunk });
+    }
+    if (remainingToDeduct > 0) {
+      toast.error("Could not map settlement to allocated partitions. Please check allocation log.", {
+        theme: "dark",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    let settledApplied = 0;
+    try {
+      for (const chunk of expenseChunks) {
+        const fallbackPartition = scopedPartitions.find((p) => p.partitionId === chunk.partitionId);
+        const accountId = chunk.accountId || fallbackPartition?.accountId;
+        if (!accountId) {
+          throw new Error(`Missing account for partition ${chunk.partitionName || chunk.partitionId}`);
+        }
+        await api.post(`/api/v1/org/${orgId}/finance/expense`, {
+          amount: chunk.amount,
+          category: "Misc",
+          account_id: accountId,
+          partition_id: chunk.partitionId,
+          expense_date: new Date().toISOString().slice(0, 10),
+          is_personal: goal.type === "personal",
+          notes: `Goal settlement: ${goal.title} (${status})`,
+        });
+        settledApplied += chunk.amount;
+      }
+    } catch (error) {
+      if (settledApplied <= 0) {
+        toast.error(error?.response?.data?.message || "Failed to settle goal and create expense.", {
+          theme: "dark",
+        });
+        setSubmitting(false);
+        return;
+      }
+      toast.error(
+        `Partially settled ${fmt(settledApplied, goal.currency)} before an error. Settlement log was updated for the successful part.`,
+        { theme: "dark" }
+      );
+    }
+
+    const applied = settledApplied > 0 ? settledApplied : amount;
     const nextGoals = goals.map((g) => {
       if (g.id !== goal.id) return g;
       return {
@@ -218,7 +281,7 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
         settlements: [
           {
             id: crypto.randomUUID(),
-            amount,
+            amount: applied,
             status,
             at: new Date().toISOString(),
           },
@@ -228,6 +291,9 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
     });
     persist(nextGoals);
     setSettleForm((prev) => ({ ...prev, [goal.id]: { open: false, amount: "", status: "bought" } }));
+    setSubmitting(false);
+    toast.success(`Settled ${fmt(applied, goal.currency)} and recorded as expense.`, { theme: "dark" });
+    onRefresh?.();
   };
 
   const startEditAllocation = (goal, allocation) => {
@@ -242,6 +308,24 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
     const amount = Number(editingAllocation?.amount);
     if (!amount || amount <= 0) {
       toast.error("Amount must be greater than zero.", { theme: "dark" });
+      return;
+    }
+    const partition = scopedPartitions.find((p) => p.partitionId === allocation.partitionId);
+    if (!partition) {
+      toast.error("Partition not found for this allocation.", { theme: "dark" });
+      return;
+    }
+    const byPartition = reservedByPartition(goals, { excludeAllocationId: allocation.id });
+    const alreadyReserved = Number(byPartition[allocation.partitionId] || 0);
+    const available = Math.max(0, Number(partition.balance || 0) - alreadyReserved);
+    if (amount > available) {
+      toast.error(
+        `Cannot save. Max editable allocation is ${fmt(
+          available,
+          partition.currency
+        )} for "${partition.partitionName}" after other goal allocations.`,
+        { theme: "dark" }
+      );
       return;
     }
     const nextGoals = goals.map((g) => {
@@ -447,7 +531,8 @@ export function GoalsPanel({ orgId, accounts, currency = "BDT", canSeeExactAmoun
                       <option value="">Select partition</option>
                       {allowed.map((p) => (
                         <option key={p.partitionId} value={p.partitionId}>
-                          {p.accountName} / {p.partitionName} ({fmt(p.balance, p.currency)})
+                          {p.accountName} / {p.partitionName} (available{" "}
+                          {fmt(Math.max(0, Number(p.balance || 0) - Number(reservedMap[p.partitionId] || 0)), p.currency)})
                         </option>
                       ))}
                     </SelectInput>

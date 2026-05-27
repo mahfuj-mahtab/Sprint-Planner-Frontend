@@ -38,6 +38,12 @@ export function SubscriptionDashboard({ orgId, currency }) {
   const cur = data?.primaryCurrency || currency || "BDT";
   const fmt = (v) => formatMoney(v, cur);
   const s = data?.summary;
+  const monthlyActual = s?.runningMonthly ?? 0;
+  const monthlyExpected = s?.plannedMonthly ?? 0;
+  const monthlyProbable = monthlyActual + monthlyExpected;
+  const yearlyActual = s?.runningMonthly ? s.runningMonthly * 12 : 0;
+  const yearlyExpected = s?.plannedMonthly ? s.plannedMonthly * 12 : 0;
+  const yearlyProbable = yearlyActual + yearlyExpected;
 
   const chartData = (data?.byMonth || []).map((m) => ({
     label: m.label,
@@ -76,32 +82,42 @@ export function SubscriptionDashboard({ orgId, currency }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
         <StatCard
-          label="Running / month"
-          value={fmt(s?.runningMonthly ?? 0)}
+          label="Monthly actual"
+          value={fmt(monthlyActual)}
           variant="expense"
-          sub="Live recurring"
+          sub="Running subscriptions"
         />
         <StatCard
-          label="Planned / month"
-          value={fmt(s?.plannedMonthly ?? 0)}
+          label="Monthly expected"
+          value={fmt(monthlyExpected)}
           variant="balance"
-          sub="Expected, not started"
-        />
-        <StatCard label="Total / month" value={fmt(s?.totalMonthly ?? 0)} variant="expense" />
-        <StatCard label="Total / year" value={fmt(s?.totalYearly ?? 0)} variant="neutral" sub="Forecast" />
-        <StatCard
-          label="Actual this month"
-          value={fmt(s?.actualThisMonth ?? 0)}
-          variant="income"
-          sub={`Expected ${fmt(s?.expectedThisMonth ?? 0)}`}
+          sub="Planned subscriptions"
         />
         <StatCard
-          label="Variance"
-          value={fmt(s?.varianceThisMonth ?? 0)}
-          variant={(s?.varianceThisMonth ?? 0) <= 0 ? "income" : "expense"}
-          sub="Actual − expected"
+          label="Monthly probable total"
+          value={fmt(monthlyProbable)}
+          variant="neutral"
+          sub="Actual + expected"
+        />
+        <StatCard
+          label="Yearly total actual"
+          value={fmt(yearlyActual)}
+          variant="expense"
+          sub="Running subscriptions"
+        />
+        <StatCard
+          label="Yearly total expected"
+          value={fmt(yearlyExpected)}
+          variant="balance"
+          sub="Planned subscriptions"
+        />
+        <StatCard
+          label="Yearly probable total"
+          value={fmt(yearlyProbable)}
+          variant="neutral"
+          sub="Actual + expected"
         />
       </div>
 

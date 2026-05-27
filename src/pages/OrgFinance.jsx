@@ -453,7 +453,13 @@ function OrgFinance() {
         onTabChange={setTab}
       />
 
-      <div className={cn(tab === "sources" || tab === "overview" ? "ww-page-full max-w-none w-full" : "ww-page")}>
+      <div
+        className={cn(
+          tab === "sources" || tab === "overview" || tab === "subscriptions"
+            ? "ww-page-full max-w-none w-full"
+            : "ww-page"
+        )}
+      >
         {tab !== "sources" ? <SetupBanner /> : null}
 
         {loading ? (
@@ -780,6 +786,7 @@ function OrgFinance() {
                 currency={currency}
                 canSeeExactAmounts={canSee}
                 canWrite={canWrite}
+                onRefresh={refresh}
               />
             )}
 
@@ -1068,7 +1075,16 @@ function OrgFinance() {
         </form>
       </Modal>
 
-      <ToastContainer position="top-right" autoClose={4000} theme="dark" />
+      <ToastContainer
+        position="top-right"
+        autoClose={3500}
+        closeOnClick
+        pauseOnHover={false}
+        pauseOnFocusLoss={false}
+        draggable={false}
+        newestOnTop
+        theme="dark"
+      />
     </DashboardLayout>
   );
 }

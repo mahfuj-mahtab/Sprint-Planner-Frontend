@@ -13,6 +13,7 @@ import {
   partitionsForExpense,
 } from "@/lib/partitionScopes";
 import { formatMoneySensitive, formatDate } from "@/lib/formatMoney";
+import { readStoredGoals, reservedByPartition } from "@/lib/goals";
 import { cn } from "@/lib/utils";
 
 const PAYMENT_METHODS = [
@@ -90,7 +91,13 @@ export function TransactionCrudPanel({
 
   const expenseBalance = Number(selectedPartition?.balance) || 0;
   const expenseAmount = Number(form.amount) || 0;
-  const expenseOverBalance = !isIncome && form.partition_id && expenseAmount > expenseBalance;
+  const goalReservedMap = useMemo(
+    () => reservedByPartition(readStoredGoals(orgId)),
+    [orgId, items, accounts]
+  );
+  const reservedForGoals = Number(goalReservedMap[form.partition_id] || 0);
+  const expenseAvailable = Math.max(0, expenseBalance - reservedForGoals);
+  const expenseOverBalance = !isIncome && form.partition_id && expenseAmount > expenseAvailable;
 
   const resetForm = () => ({
     amount: "",
@@ -184,7 +191,12 @@ export function TransactionCrudPanel({
       return;
     }
     if (expenseOverBalance) {
-      toast.error("Insufficient partition balance", { theme: "dark" });
+      toast.error(
+        `Insufficient spendable balance. Available ${fmt(expenseAvailable)} (total ${fmt(
+          expenseBalance
+        )} minus goal-reserved ${fmt(reservedForGoals)}). Remove/edit goal allocation first or lower expense.`,
+        { theme: "dark" }
+      );
       return;
     }
 
@@ -540,7 +552,10 @@ export function TransactionCrudPanel({
             />
           </Field>
           {expenseOverBalance ? (
-            <p className="text-sm text-destructive">Max {fmt(expenseBalance)} in this partition</p>
+            <p className="text-sm text-destructive">
+              Spendable max {fmt(expenseAvailable)} in this partition (balance {fmt(expenseBalance)} − goal reserved{" "}
+              {fmt(reservedForGoals)}).
+            </p>
           ) : null}
           <button
             type="submit"
