@@ -38,6 +38,7 @@ import { categoryLabel } from "@/lib/financeCategories";
 import { PARTITION_SCOPES } from "@/lib/partitionScopes";
 import { CurrencySelect } from "@/components/org/CurrencySelect";
 import { cn } from "@/lib/utils";
+import { normalizeGoal } from "@/lib/goals";
 
 const PAYMENT_METHODS = [
   { value: "bkash", label: "bKash" },
@@ -104,6 +105,7 @@ function OrgFinance() {
   const [unlinkedIncomeTotal, setUnlinkedIncomeTotal] = useState(0);
   const [categories, setCategories] = useState([]);
   const [incomeSources, setIncomeSources] = useState([]);
+  const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [accountModal, setAccountModal] = useState(false);
@@ -138,8 +140,9 @@ function OrgFinance() {
       api.get(`/api/v1/org/${orgId}/clients`),
       api.get(`/api/v1/org/${orgId}/finance/categories`),
       api.get(`/api/v1/org/${orgId}/finance/income-sources`),
+      api.get(`/api/v1/org/${orgId}/finance/goals`),
     ])
-      .then(([ov, tx, profit, proj, cl, cats, sourcesRes]) => {
+      .then(([ov, tx, profit, proj, cl, cats, sourcesRes, goalsRes]) => {
         setOverview(ov.data.overview);
         setTransactions({
           incomes: tx.data.incomes || [],
@@ -152,6 +155,7 @@ function OrgFinance() {
         setClients(cl.data.clients || []);
         setCategories(cats.data.categories || []);
         setIncomeSources(sourcesRes.data.sources || []);
+        setGoals((goalsRes.data.goals || []).map(normalizeGoal).filter(Boolean));
       })
       .catch(() => toast.error("Failed to load finance data", { theme: "dark" }))
       .finally(() => setLoading(false));
@@ -796,6 +800,7 @@ function OrgFinance() {
                 currency={currency}
                 hasAccounts={hasAccounts}
                 partitionsForAccount={partitionsForAccount}
+                goals={goals}
                 canSeeExactAmounts={canSee}
                 canWrite={canWrite}
                 onRefresh={refresh}
@@ -829,6 +834,7 @@ function OrgFinance() {
                 canSeeExactAmounts={canSee}
                 canWrite={canWrite}
                 onRefresh={refresh}
+                onGoalsChange={setGoals}
               />
             )}
 

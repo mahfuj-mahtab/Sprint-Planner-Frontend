@@ -13,7 +13,7 @@ import {
   partitionsForExpense,
 } from "@/lib/partitionScopes";
 import { formatMoneySensitive, formatDate } from "@/lib/formatMoney";
-import { readStoredGoals, reservedByPartition } from "@/lib/goals";
+import { reservedByPartition } from "@/lib/goals";
 import { cn } from "@/lib/utils";
 
 const PAYMENT_METHODS = [
@@ -45,6 +45,7 @@ export function TransactionCrudPanel({
   onProjectCreated,
   incomeSources = [],
   onIncomeSourceCreated,
+  goals = [],
   canSeeExactAmounts = true,
   canWrite = true,
 }) {
@@ -91,10 +92,7 @@ export function TransactionCrudPanel({
 
   const expenseBalance = Number(selectedPartition?.balance) || 0;
   const expenseAmount = Number(form.amount) || 0;
-  const goalReservedMap = useMemo(
-    () => reservedByPartition(readStoredGoals(orgId)),
-    [orgId, items, accounts]
-  );
+  const goalReservedMap = useMemo(() => reservedByPartition(goals), [goals]);
   const reservedForGoals = Number(goalReservedMap[form.partition_id] || 0);
   const expenseAvailable = Math.max(0, expenseBalance - reservedForGoals);
   const expenseOverBalance = !isIncome && form.partition_id && expenseAmount > expenseAvailable;

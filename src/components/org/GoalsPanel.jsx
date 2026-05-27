@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Loader2, Pencil, Plus, ShoppingBag, Target, Trash2, Wallet } from "lucide-react";
 import { toast } from "react-toastify";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
@@ -7,13 +7,14 @@ import { Field, SelectInput } from "@/components/org/Field";
 import { EmptyState } from "@/components/org/EmptyState";
 import { formatMoneySensitive, formatDateTime } from "@/lib/formatMoney";
 import {
+  clearStoredGoals,
   goalAllocated,
-  goalRemainingAllocationSlices,
+  goalId,
   goalReserved,
   goalSettled,
+  normalizeGoal,
   readStoredGoals,
   reservedByPartition,
-  writeStoredGoals,
 } from "@/lib/goals";
 import { effectiveScope } from "@/lib/partitionScopes";
 import { cn } from "@/lib/utils";
@@ -49,8 +50,10 @@ export function GoalsPanel({
   canSeeExactAmounts = true,
   canWrite = true,
   onRefresh,
+  onGoalsChange,
 }) {
-  const [goals, setGoals] = useState(() => readStoredGoals(orgId));
+  const [goals, setGoals] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [goalForm, setGoalForm] = useState({
     title: "",
     target: "",
@@ -84,13 +87,65 @@ export function GoalsPanel({
     return list;
   }, [accounts, currency]);
 
-  const persist = (next) => {
-    setGoals(next);
-    writeStoredGoals(orgId, next);
-  };
+  const applyGoals = useCallback(
+    (incoming) => {
+      const normalized = (incoming || []).map(normalizeGoal).filter(Boolean);
+      setGoals(normalized);
+      onGoalsChange?.(normalized);
+    },
+    [onGoalsChange]
+  );
+
+  const loadGoals = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/api/v1/org/${orgId}/finance/goals`);
+      let incoming = (response.data.goals || []).map(normalizeGoal);
+      if (!incoming.length) {
+        const local = readStoredGoals(orgId);
+        if (local.length && canWrite) {
+          for (const g of local) {
+            const created = await api.post(`/api/v1/org/${orgId}/finance/goals`, {
+              title: g.title,
+              target: g.target,
+              type: g.type,
+              priority: g.priority || "medium",
+              currency: g.currency || currency,
+              expected_at: g.expectedAt || undefined,
+            });
+            const newGoalId = created.data.goal?.id;
+            if (!newGoalId) continue;
+            for (const alloc of [...(g.allocations || [])].reverse()) {
+              if (!alloc.partitionId || !alloc.accountId) continue;
+              await api.post(`/api/v1/org/${orgId}/finance/goals/${newGoalId}/allocations`, {
+                account_id: alloc.accountId,
+                partition_id: alloc.partitionId,
+                amount: alloc.amount,
+              });
+            }
+          }
+          clearStoredGoals(orgId);
+          const again = await api.get(`/api/v1/org/${orgId}/finance/goals`);
+          incoming = (again.data.goals || []).map(normalizeGoal);
+          toast.info("Goals moved from browser storage to database.", { theme: "dark" });
+        }
+      }
+      applyGoals(incoming);
+    } catch {
+      toast.error("Failed to load goals", { theme: "dark" });
+      applyGoals([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId, currency, canWrite, applyGoals]);
+
+  useEffect(() => {
+    loadGoals();
+  }, [loadGoals]);
+
   const reservedMap = useMemo(() => reservedByPartition(goals), [goals]);
 
-  const addGoal = (e) => {
+  const addGoal = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     const title = goalForm.title.trim();
@@ -99,49 +154,42 @@ export function GoalsPanel({
       toast.error("Goal title and target amount are required.", { theme: "dark" });
       return;
     }
-    if (editingGoalId) {
-      const nextGoals = goals.map((goal) => {
-        if (goal.id !== editingGoalId) return goal;
-        const allocated = getGoalAllocated(goal);
-        return {
-          ...goal,
-          title,
-          target,
-          type: goalForm.type,
-          priority: goalForm.priority || "medium",
-          expectedAt: goalForm.expectedAt || "",
-          completedAt: allocated >= target ? goal.completedAt || new Date().toISOString() : null,
-        };
-      });
-      persist(nextGoals);
-      setEditingGoalId(null);
-    } else {
-      const goal = {
-        id: crypto.randomUUID(),
+    setSubmitting(true);
+    try {
+      const payload = {
         title,
         target,
         type: goalForm.type,
         priority: goalForm.priority || "medium",
-        expectedAt: goalForm.expectedAt || "",
         currency,
-        createdAt: new Date().toISOString(),
-        allocations: [],
-      settlements: [],
-        completedAt: null,
+        expected_at: goalForm.expectedAt || undefined,
       };
-      persist([goal, ...goals]);
+      if (editingGoalId) {
+        await api.patch(`/api/v1/org/${orgId}/finance/goals/${editingGoalId}`, payload);
+        toast.success("Goal updated", { theme: "dark" });
+        setEditingGoalId(null);
+      } else {
+        await api.post(`/api/v1/org/${orgId}/finance/goals`, payload);
+        toast.success("Goal added", { theme: "dark" });
+      }
+      setGoalForm({ title: "", target: "", type: "company", priority: "medium", expectedAt: "" });
+      await loadGoals();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to save goal", { theme: "dark" });
+    } finally {
+      setSubmitting(false);
     }
-    setGoalForm({ title: "", target: "", type: "company", priority: "medium", expectedAt: "" });
   };
 
   const getGoalAllocated = (goal) => goalAllocated(goal);
   const getGoalSettled = (goal) => goalSettled(goal);
   const getGoalReserved = (goal) => goalReserved(goal);
 
-  const addAllocation = (goal, e) => {
+  const addAllocation = async (goal, e) => {
     e.preventDefault();
     if (!canWrite) return;
-    const form = allocationForm[goal.id] || {};
+    const gid = goalId(goal);
+    const form = allocationForm[gid] || {};
     const amount = Number(form.amount);
     const partitionId = form.partitionId;
     if (!partitionId || !amount || amount <= 0) {
@@ -175,36 +223,23 @@ export function GoalsPanel({
     }
 
     setSubmitting(true);
-    const now = new Date().toISOString();
-    const nextGoals = goals.map((item) => {
-      if (item.id !== goal.id) return item;
-      const nextAllocations = [
-        {
-          id: crypto.randomUUID(),
-          amount,
-          at: now,
-          accountId: partition.accountId,
-          accountName: partition.accountName,
-          partitionName: partition.partitionName,
-          partitionId: partition.partitionId,
-          currency: partition.currency,
-        },
-        ...item.allocations,
-      ];
-      const total = nextAllocations.reduce((sum, log) => sum + Number(log.amount || 0), 0);
-      return {
-        ...item,
-        allocations: nextAllocations,
-        completedAt: total >= item.target ? item.completedAt || now : null,
-      };
-    });
-    persist(nextGoals);
-    setAllocationForm((prev) => ({ ...prev, [goal.id]: { partitionId: "", amount: "" } }));
-    setSubmitting(false);
+    try {
+      await api.post(`/api/v1/org/${orgId}/finance/goals/${gid}/allocations`, {
+        account_id: partition.accountId,
+        partition_id: partition.partitionId,
+        amount,
+      });
+      setAllocationForm((prev) => ({ ...prev, [gid]: { partitionId: "", amount: "" } }));
+      await loadGoals();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to allocate", { theme: "dark" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const editGoal = (goal) => {
-    setEditingGoalId(goal.id);
+    setEditingGoalId(goalId(goal));
     setGoalForm({
       title: goal.title,
       target: String(goal.target),
@@ -214,30 +249,38 @@ export function GoalsPanel({
     });
   };
 
-  const deleteGoal = (goal) => {
+  const deleteGoal = async (goal) => {
     if (!window.confirm(`Delete goal "${goal.title}" and all allocation logs?`)) return;
-    persist(goals.filter((g) => g.id !== goal.id));
-    if (editingGoalId === goal.id) {
-      setEditingGoalId(null);
-      setGoalForm({ title: "", target: "", type: "company", priority: "medium", expectedAt: "" });
+    const gid = goalId(goal);
+    try {
+      await api.delete(`/api/v1/org/${orgId}/finance/goals/${gid}`);
+      if (editingGoalId === gid) {
+        setEditingGoalId(null);
+        setGoalForm({ title: "", target: "", type: "company", priority: "medium", expectedAt: "" });
+      }
+      await loadGoals();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to delete goal", { theme: "dark" });
     }
   };
 
-  const deleteAllocation = (goal, allocation) => {
+  const deleteAllocation = async (goal, allocation) => {
     if (!window.confirm("Delete this allocation log?")) return;
-    const nextGoals = goals.map((g) => {
-      if (g.id !== goal.id) return g;
-      const allocations = g.allocations.filter((log) => log.id !== allocation.id);
-      const total = allocations.reduce((sum, log) => sum + Number(log.amount || 0), 0);
-      return { ...g, allocations, completedAt: total >= g.target ? g.completedAt : null };
-    });
-    persist(nextGoals);
+    try {
+      await api.delete(
+        `/api/v1/org/${orgId}/finance/goals/${goalId(goal)}/allocations/${allocation.id}`
+      );
+      await loadGoals();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to delete allocation", { theme: "dark" });
+    }
   };
 
   const settleGoal = async (goal, e) => {
     e.preventDefault();
     e.stopPropagation();
-    const form = settleForm[goal.id] || {};
+    const gid = goalId(goal);
+    const form = settleForm[gid] || {};
     const amount = Number(form.amount || goal.target);
     const status = form.status || "bought";
     const reserved = getGoalReserved(goal);
@@ -249,125 +292,49 @@ export function GoalsPanel({
       toast.error("Settlement amount cannot exceed reserved money.", { theme: "dark" });
       return;
     }
-    const remainingSlices = goalRemainingAllocationSlices(goal);
-    let remainingToDeduct = amount;
-    const expenseChunks = [];
-    for (const slice of remainingSlices) {
-      if (remainingToDeduct <= 0) break;
-      const chunk = Math.min(remainingToDeduct, slice.amount);
-      remainingToDeduct -= chunk;
-      expenseChunks.push({ ...slice, amount: chunk });
-    }
-    if (remainingToDeduct > 0) {
-      toast.error("Could not map settlement to allocated partitions. Please check allocation log.", {
-        theme: "dark",
-      });
-      return;
-    }
 
     setSubmitting(true);
-    let settledApplied = 0;
     try {
-      for (const chunk of expenseChunks) {
-        const fallbackPartition = scopedPartitions.find((p) => p.partitionId === chunk.partitionId);
-        const accountId = chunk.accountId || fallbackPartition?.accountId;
-        if (!accountId) {
-          throw new Error(`Missing account for partition ${chunk.partitionName || chunk.partitionId}`);
-        }
-        await api.post(`/api/v1/org/${orgId}/finance/expense`, {
-          amount: chunk.amount,
-          category: "Misc",
-          account_id: accountId,
-          partition_id: chunk.partitionId,
-          expense_date: new Date().toISOString().slice(0, 10),
-          is_personal: goal.type === "personal",
-          notes: `Goal settlement: ${goal.title} (${status})`,
-        });
-        settledApplied += chunk.amount;
-      }
-    } catch (error) {
-      if (settledApplied <= 0) {
-        toast.error(error?.response?.data?.message || "Failed to settle goal and create expense.", {
-          theme: "dark",
-        });
-        setSubmitting(false);
-        return;
-      }
-      toast.error(
-        `Partially settled ${fmt(settledApplied, goal.currency)} before an error. Settlement log was updated for the successful part.`,
-        { theme: "dark" }
-      );
+      const response = await api.post(`/api/v1/org/${orgId}/finance/goals/${gid}/settle`, {
+        amount,
+        status,
+      });
+      const applied = response.data.settledAmount ?? amount;
+      setSettleForm((prev) => ({ ...prev, [gid]: { open: false, amount: "", status: "bought" } }));
+      toast.success(`Settled ${fmt(applied, goal.currency)} and recorded as expense.`, { theme: "dark" });
+      await loadGoals();
+      onRefresh?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to settle goal", { theme: "dark" });
+    } finally {
+      setSubmitting(false);
     }
-
-    const applied = settledApplied > 0 ? settledApplied : amount;
-    const nextGoals = goals.map((g) => {
-      if (g.id !== goal.id) return g;
-      return {
-        ...g,
-        settlements: [
-          {
-            id: crypto.randomUUID(),
-            amount: applied,
-            status,
-            at: new Date().toISOString(),
-          },
-          ...(g.settlements || []),
-        ],
-      };
-    });
-    persist(nextGoals);
-    setSettleForm((prev) => ({ ...prev, [goal.id]: { open: false, amount: "", status: "bought" } }));
-    setSubmitting(false);
-    toast.success(`Settled ${fmt(applied, goal.currency)} and recorded as expense.`, { theme: "dark" });
-    onRefresh?.();
   };
 
   const startEditAllocation = (goal, allocation) => {
     setEditingAllocation({
-      goalId: goal.id,
+      goalId: goalId(goal),
       allocationId: allocation.id,
       amount: String(allocation.amount),
     });
   };
 
-  const saveAllocationEdit = (goal, allocation) => {
+  const saveAllocationEdit = async (goal, allocation) => {
     const amount = Number(editingAllocation?.amount);
     if (!amount || amount <= 0) {
       toast.error("Amount must be greater than zero.", { theme: "dark" });
       return;
     }
-    const partition = scopedPartitions.find((p) => p.partitionId === allocation.partitionId);
-    if (!partition) {
-      toast.error("Partition not found for this allocation.", { theme: "dark" });
-      return;
-    }
-    const byPartition = reservedByPartition(goals, { excludeAllocationId: allocation.id });
-    const alreadyReserved = Number(byPartition[allocation.partitionId] || 0);
-    const available = Math.max(0, Number(partition.balance || 0) - alreadyReserved);
-    if (amount > available) {
-      toast.error(
-        `Cannot save. Max editable allocation is ${fmt(
-          available,
-          partition.currency
-        )} for "${partition.partitionName}" after other goal allocations.`,
-        { theme: "dark" }
+    try {
+      await api.patch(
+        `/api/v1/org/${orgId}/finance/goals/${goalId(goal)}/allocations/${allocation.id}`,
+        { amount }
       );
-      return;
+      setEditingAllocation(null);
+      await loadGoals();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to update allocation", { theme: "dark" });
     }
-    const nextGoals = goals.map((g) => {
-      if (g.id !== goal.id) return g;
-      const allocations = g.allocations.map((log) =>
-        log.id === allocation.id ? { ...log, amount } : log
-      );
-      const total = allocations.reduce((sum, log) => sum + Number(log.amount || 0), 0);
-      return {
-        ...g,
-        allocations,
-        completedAt: total >= g.target ? g.completedAt || new Date().toISOString() : null,
-      };
-    });
-    persist(nextGoals);
-    setEditingAllocation(null);
   };
 
   const chartData = useMemo(
@@ -526,7 +493,11 @@ export function GoalsPanel({
         </section>
       ) : null}
 
-      {goals.length === 0 ? (
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : goals.length === 0 ? (
         <EmptyState
           icon={Target}
           title="No goals yet"
