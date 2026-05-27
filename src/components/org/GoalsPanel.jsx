@@ -26,6 +26,20 @@ const TOOLTIP_STYLE = {
 };
 
 const goalTypeLabel = (type) => (type === "personal" ? "Personal" : "Company");
+const GOAL_PRIORITIES = ["high", "medium", "low", "later"];
+const GOAL_PRIORITY_LABELS = {
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+  later: "Later",
+};
+const GOAL_PRIORITY_BADGE = {
+  high: "bg-emerald-500/15 text-emerald-400 border-emerald-500/35",
+  medium: "bg-[#00d4ff]/15 text-[#00d4ff] border-[#00d4ff]/35",
+  low: "bg-amber-500/15 text-amber-200 border-amber-500/35",
+  later: "bg-muted/40 text-muted-foreground border-border",
+};
+const goalPriorityRank = (priority) => GOAL_PRIORITIES.indexOf(priority || "medium");
 
 
 export function GoalsPanel({
@@ -37,7 +51,13 @@ export function GoalsPanel({
   onRefresh,
 }) {
   const [goals, setGoals] = useState(() => readStoredGoals(orgId));
-  const [goalForm, setGoalForm] = useState({ title: "", target: "", type: "company" });
+  const [goalForm, setGoalForm] = useState({
+    title: "",
+    target: "",
+    type: "company",
+    priority: "medium",
+    expectedAt: "",
+  });
   const [allocationForm, setAllocationForm] = useState({});
   const [settleForm, setSettleForm] = useState({});
   const [editingGoalId, setEditingGoalId] = useState(null);
@@ -88,6 +108,8 @@ export function GoalsPanel({
           title,
           target,
           type: goalForm.type,
+          priority: goalForm.priority || "medium",
+          expectedAt: goalForm.expectedAt || "",
           completedAt: allocated >= target ? goal.completedAt || new Date().toISOString() : null,
         };
       });
@@ -99,6 +121,8 @@ export function GoalsPanel({
         title,
         target,
         type: goalForm.type,
+        priority: goalForm.priority || "medium",
+        expectedAt: goalForm.expectedAt || "",
         currency,
         createdAt: new Date().toISOString(),
         allocations: [],
@@ -107,7 +131,7 @@ export function GoalsPanel({
       };
       persist([goal, ...goals]);
     }
-    setGoalForm({ title: "", target: "", type: "company" });
+    setGoalForm({ title: "", target: "", type: "company", priority: "medium", expectedAt: "" });
   };
 
   const getGoalAllocated = (goal) => goalAllocated(goal);
@@ -185,6 +209,8 @@ export function GoalsPanel({
       title: goal.title,
       target: String(goal.target),
       type: goal.type,
+      priority: goal.priority || "medium",
+      expectedAt: goal.expectedAt || "",
     });
   };
 
@@ -193,7 +219,7 @@ export function GoalsPanel({
     persist(goals.filter((g) => g.id !== goal.id));
     if (editingGoalId === goal.id) {
       setEditingGoalId(null);
-      setGoalForm({ title: "", target: "", type: "company" });
+      setGoalForm({ title: "", target: "", type: "company", priority: "medium", expectedAt: "" });
     }
   };
 
@@ -362,12 +388,37 @@ export function GoalsPanel({
       { name: "In progress", value: active, color: "#00d4ff" },
     ];
   }, [goals]);
+  const totalGoalTarget = useMemo(
+    () => goals.reduce((sum, goal) => sum + Number(goal.target || 0), 0),
+    [goals]
+  );
+  const sortedGoals = useMemo(() => {
+    return [...goals].sort((a, b) => {
+      const rank = goalPriorityRank(a.priority) - goalPriorityRank(b.priority);
+      if (rank !== 0) return rank;
+      const aExpected = a.expectedAt ? new Date(a.expectedAt).getTime() : Number.MAX_SAFE_INTEGER;
+      const bExpected = b.expectedAt ? new Date(b.expectedAt).getTime() : Number.MAX_SAFE_INTEGER;
+      if (aExpected !== bExpected) return aExpected - bExpected;
+      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+    });
+  }, [goals]);
 
   return (
     <div className="space-y-5 text-left">
+      <section className="grid sm:grid-cols-2 gap-3">
+        <div className="ww-card p-4">
+          <div className="text-xs text-muted-foreground">Total goal amount</div>
+          <div className="text-2xl font-mono font-semibold mt-1">{fmt(totalGoalTarget, currency)}</div>
+        </div>
+        <div className="ww-card p-4">
+          <div className="text-xs text-muted-foreground">Goals count</div>
+          <div className="text-2xl font-mono font-semibold mt-1">{goals.length}</div>
+        </div>
+      </section>
+
       <section className="ww-card p-4">
         <h3 className="text-base font-semibold mb-3">{editingGoalId ? "Edit goal" : "Create goal"}</h3>
-        <form onSubmit={addGoal} className="grid md:grid-cols-4 gap-3">
+        <form onSubmit={addGoal} className="grid md:grid-cols-5 gap-3">
           <Field label="Goal name">
             <input
               className="ww-input ww-input-sm w-full"
@@ -398,6 +449,28 @@ export function GoalsPanel({
               <option value="personal">Personal</option>
             </SelectInput>
           </Field>
+          <Field label="Priority">
+            <SelectInput
+              value={goalForm.priority}
+              onChange={(e) => setGoalForm({ ...goalForm, priority: e.target.value })}
+              disabled={!canWrite}
+            >
+              {GOAL_PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {GOAL_PRIORITY_LABELS[p]}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
+          <Field label="Expected to achieve">
+            <input
+              className="ww-input ww-input-sm w-full"
+              type="date"
+              value={goalForm.expectedAt}
+              onChange={(e) => setGoalForm({ ...goalForm, expectedAt: e.target.value })}
+              disabled={!canWrite}
+            />
+          </Field>
           <div className="flex items-end">
             <button type="submit" className="ww-btn-primary w-full text-sm" disabled={!canWrite}>
               <Plus className="w-4 h-4 mr-1" /> {editingGoalId ? "Save goal" : "Add goal"}
@@ -410,7 +483,7 @@ export function GoalsPanel({
             className="mt-2 text-xs text-muted-foreground hover:underline"
             onClick={() => {
               setEditingGoalId(null);
-              setGoalForm({ title: "", target: "", type: "company" });
+              setGoalForm({ title: "", target: "", type: "company", priority: "medium", expectedAt: "" });
             }}
           >
             Cancel editing
@@ -461,7 +534,7 @@ export function GoalsPanel({
         />
       ) : (
         <ul className="space-y-3">
-          {goals.map((goal) => {
+          {sortedGoals.map((goal) => {
             const allocated = getGoalAllocated(goal);
             const settled = getGoalSettled(goal);
             const reserved = getGoalReserved(goal);
@@ -484,6 +557,14 @@ export function GoalsPanel({
                       <span className="text-[10px] uppercase px-2 py-0.5 rounded border border-border text-muted-foreground">
                         {goalTypeLabel(goal.type)}
                       </span>
+                      <span
+                        className={cn(
+                          "text-[10px] uppercase px-2 py-0.5 rounded border font-semibold",
+                          GOAL_PRIORITY_BADGE[goal.priority || "medium"]
+                        )}
+                      >
+                        {GOAL_PRIORITY_LABELS[goal.priority || "medium"]}
+                      </span>
                       {done ? (
                         <span className="text-[10px] uppercase px-2 py-0.5 rounded border border-primary/30 text-primary bg-primary/10 inline-flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Complete
@@ -493,6 +574,7 @@ export function GoalsPanel({
                     <div className="text-xs text-muted-foreground mt-1">
                       Target {fmt(goal.target, goal.currency)} · Reserved {fmt(reserved, goal.currency)} · Settled{" "}
                       {fmt(settled, goal.currency)}
+                      {goal.expectedAt ? ` · Expected ${goal.expectedAt}` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

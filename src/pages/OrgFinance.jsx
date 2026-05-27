@@ -493,6 +493,48 @@ function OrgFinance() {
                 </div>
 
                 <div>
+                  <p className="text-xs text-muted-foreground mb-2">Business P&amp;L — year and all time</p>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <StatCard
+                      label={`Income (${overview.currentYear || "This year"})`}
+                      value={fmt(overview.businessYearIncome ?? 0, currency)}
+                      variant="income"
+                      sub="Business income this year"
+                    />
+                    <StatCard
+                      label={`Expense (${overview.currentYear || "This year"})`}
+                      value={fmt(overview.businessYearExpense ?? 0, currency)}
+                      variant="expense"
+                      sub="Business expense this year"
+                    />
+                    <StatCard
+                      label={`Profit/Loss (${overview.currentYear || "This year"})`}
+                      value={fmt(overview.businessYearProfit ?? 0, currency)}
+                      variant={(overview.businessYearProfit ?? 0) >= 0 ? "income" : "expense"}
+                      sub="Income − expense"
+                    />
+                    <StatCard
+                      label="All-time income"
+                      value={fmt(overview.businessAllTimeIncome ?? 0, currency)}
+                      variant="income"
+                      sub="Total business income"
+                    />
+                    <StatCard
+                      label="All-time expense"
+                      value={fmt(overview.businessAllTimeExpense ?? 0, currency)}
+                      variant="expense"
+                      sub="Total business expense"
+                    />
+                    <StatCard
+                      label="All-time profit/loss"
+                      value={fmt(overview.businessAllTimeProfit ?? 0, currency)}
+                      variant={(overview.businessAllTimeProfit ?? 0) >= 0 ? "income" : "expense"}
+                      sub="Income − expense"
+                    />
+                  </div>
+                </div>
+
+                <div>
                   <p className="text-xs text-muted-foreground mb-2">Cash by partition scope — all time balances</p>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <StatCard

@@ -121,47 +121,63 @@ function OrgDashboard() {
       </div>
 
       <div className="ww-page-full space-y-6 pb-10">
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard
-            label="Business revenue"
-            value={fmt(finance.monthIncome)}
-            variant="income"
-            sub={finance.periodLabel ? `This month · ${finance.periodLabel}` : "This calendar month"}
-          />
-          <StatCard
-            label="Business expense"
-            value={fmt(finance.monthExpense)}
-            variant="expense"
-            sub="This month · business partitions"
-          />
-          <StatCard
-            label="Business net"
-            value={fmt(finance.netProfit)}
-            variant={finance.netProfit >= 0 ? "income" : "expense"}
-            sub="This month · revenue − expense"
-          />
-          <StatCard
-            label="Cash balance"
-            value={fmt(finance.totalBalance)}
-            variant="balance"
-            sub={
-              finance.ownerBalance != null
-                ? `All time · Owner ${fmt(finance.ownerBalance)}`
-                : "All time · all partitions"
-            }
-          />
-          <StatCard
-            label="Tasks done"
-            value={`${tasks.completionPct}%`}
-            sub={`All time · ${tasks.completed}/${tasks.total} tasks`}
-            variant="neutral"
-          />
-          <StatCard
-            label="Active sprints"
-            value={String(counts.activeSprints)}
-            sub={`Now · ${counts.totalSprints} total sprints`}
-            variant="neutral"
-          />
+        <div className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            {finance.periodLabel ? `This month · ${finance.periodLabel}` : "This calendar month"}
+          </p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              label="Revenue"
+              value={fmt(finance.monthIncome)}
+              variant="income"
+              sub="This month"
+            />
+            <StatCard
+              label="Expense"
+              value={fmt(finance.monthExpense)}
+              variant="expense"
+              sub="This month"
+            />
+            <StatCard
+              label="Profit / Loss"
+              value={fmt(finance.netProfit)}
+              variant={finance.netProfit >= 0 ? "income" : "expense"}
+              sub="This month"
+            />
+            <StatCard
+              label="Cash balance"
+              value={fmt(finance.totalBalance)}
+              variant="balance"
+              sub="All partitions"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground pt-1">All time</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              label="Revenue"
+              value={fmt(finance.allTimeIncome ?? 0)}
+              variant="income"
+              sub="All time"
+            />
+            <StatCard
+              label="Expense"
+              value={fmt(finance.allTimeExpense ?? 0)}
+              variant="expense"
+              sub="All time"
+            />
+            <StatCard
+              label="Profit / Loss"
+              value={fmt(finance.allTimeProfit ?? 0)}
+              variant={(finance.allTimeProfit ?? 0) >= 0 ? "income" : "expense"}
+              sub="All time"
+            />
+            <StatCard
+              label="Projects"
+              value={String(counts.projects)}
+              variant="neutral"
+              sub={`${counts.activeSprints} active sprints`}
+            />
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
