@@ -1,17 +1,109 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus, Users } from "lucide-react";
+import { Crown, Eye, EyeOff, Loader2, Lock, Pencil, Plus, Users } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "../ApiInception";
 import MemberCard from "./MemberCard";
 import { EmptyState } from "@/components/org/EmptyState";
 import { Field, SelectInput } from "@/components/org/Field";
 import { Modal } from "@/components/org/Modal";
+import { cn } from "@/lib/utils";
 
 const ORG_ROLES = [
-  { value: "admin", label: "Admin — full data & member management" },
-  { value: "editor", label: "Editor — can edit, amounts hidden" },
+  { value: "admin", label: "Admin — sees all amounts, manages members" },
+  { value: "editor", label: "Editor — full write access, amounts hidden" },
   { value: "viewer", label: "Viewer — read-only, amounts hidden" },
 ];
+
+const ROLE_MATRIX = [
+  {
+    role: "owner",
+    label: "Owner",
+    style: "border-primary/40 bg-primary/10 text-primary",
+    icon: Crown,
+    seeAmounts: true,
+    canWrite: true,
+    manageMembers: true,
+  },
+  {
+    role: "admin",
+    label: "Admin",
+    style: "border-[#00d4ff]/40 bg-[#00d4ff]/10 text-[#00d4ff]",
+    icon: Eye,
+    seeAmounts: true,
+    canWrite: true,
+    manageMembers: true,
+  },
+  {
+    role: "editor",
+    label: "Editor",
+    style: "border-violet-500/40 bg-violet-500/10 text-violet-300",
+    icon: Pencil,
+    seeAmounts: false,
+    canWrite: true,
+    manageMembers: false,
+  },
+  {
+    role: "viewer",
+    label: "Viewer",
+    style: "border-border bg-muted/40 text-muted-foreground",
+    icon: Lock,
+    seeAmounts: false,
+    canWrite: false,
+    manageMembers: false,
+  },
+];
+
+function RoleMatrix() {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border bg-muted/30">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Role permissions</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/20">
+              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Role</th>
+              <th className="px-3 py-2.5 text-center font-medium text-muted-foreground whitespace-nowrap">See amounts</th>
+              <th className="px-3 py-2.5 text-center font-medium text-muted-foreground whitespace-nowrap">Write / edit</th>
+              <th className="px-3 py-2.5 text-center font-medium text-muted-foreground whitespace-nowrap">Manage members</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ROLE_MATRIX.map((r) => {
+              const Icon = r.icon;
+              return (
+                <tr key={r.role} className="border-t border-border/60 hover:bg-muted/10">
+                  <td className="px-4 py-2.5">
+                    <span className={cn("inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-md border uppercase tracking-wide font-medium", r.style)}>
+                      <Icon className="w-3 h-3" />
+                      {r.label}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    {r.seeAmounts
+                      ? <Eye className="w-4 h-4 text-emerald-400 mx-auto" />
+                      : <EyeOff className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    {r.canWrite
+                      ? <span className="text-emerald-400 text-xs font-semibold">✓</span>
+                      : <span className="text-muted-foreground/40 text-xs">—</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    {r.manageMembers
+                      ? <span className="text-emerald-400 text-xs font-semibold">✓</span>
+                      : <span className="text-muted-foreground/40 text-xs">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 const MEMBER_STATUSES = [
   { value: "active", label: "Active" },
@@ -119,9 +211,11 @@ function MembersShow({ orgId, ownerId: ownerIdProp, members: initialMembers, acc
 
       {!access?.canSeeExactAmounts && access?.role ? (
         <p className="text-xs text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
-          Your role ({access.role}) can use finance and CRM, but exact amounts are hidden.
+          Your role (<span className="font-medium capitalize">{access.role}</span>) can use finance and CRM, but exact amounts are hidden.
         </p>
       ) : null}
+
+      <RoleMatrix />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {owner ? (

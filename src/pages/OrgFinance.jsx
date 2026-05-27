@@ -31,6 +31,7 @@ import { TransactionCrudPanel } from "@/components/org/TransactionCrudPanel";
 import { CategoryManager } from "@/components/org/CategoryManager";
 import { SubscriptionPanel } from "@/components/org/SubscriptionPanel";
 import { IncomeSourcesPanel } from "@/components/org/IncomeSourcesPanel";
+import { GoalsPanel } from "@/components/org/GoalsPanel";
 import { Skeleton } from "@/components/ui/Loading";
 import { formatMoneySensitive, formatDateTime } from "@/lib/formatMoney";
 import { categoryLabel } from "@/lib/financeCategories";
@@ -62,6 +63,7 @@ const TABS = [
   { id: "income", label: "Income", icon: TrendingUp },
   { id: "expense", label: "Expense", icon: TrendingDown },
   { id: "subscriptions", label: "Subscriptions", icon: Repeat },
+  { id: "goals", label: "Goals", icon: Target },
   { id: "transfer", label: "Transfer", icon: ArrowLeftRight },
   { id: "activity", label: "Activity", icon: List },
   { id: "categories", label: "Categories", icon: Tags },
@@ -451,7 +453,7 @@ function OrgFinance() {
         onTabChange={setTab}
       />
 
-      <div className={cn(tab === "sources" ? "ww-page-full max-w-none w-full" : "ww-page")}>
+      <div className={cn(tab === "sources" || tab === "overview" ? "ww-page-full max-w-none w-full" : "ww-page")}>
         {tab !== "sources" ? <SetupBanner /> : null}
 
         {loading ? (
@@ -653,6 +655,7 @@ function OrgFinance() {
               <IncomeSourcesPanel
                 orgId={orgId}
                 projects={projects}
+                incomes={transactions.incomes}
                 currency={currency}
                 canSeeExactAmounts={canSee}
                 canWrite={canWrite}
@@ -767,6 +770,16 @@ function OrgFinance() {
                 canSeeExactAmounts={canSee}
                 canWrite={canWrite}
                 onRefresh={refresh}
+              />
+            )}
+
+            {tab === "goals" && (
+              <GoalsPanel
+                orgId={orgId}
+                accounts={accounts}
+                currency={currency}
+                canSeeExactAmounts={canSee}
+                canWrite={canWrite}
               />
             )}
 

@@ -26,19 +26,40 @@ function mfmt(value, currency = "BDT", compact = false) {
   return formatMoneySensitive(value, currency, moneyCanSee, compact);
 }
 import {
+  INCOME_SOURCE_PRIORITIES,
   INCOME_SOURCE_STATUSES,
   INCOME_SOURCE_TYPES,
   defaultForm,
   emptyForecastRow,
   EXPECTED_EARNING_PERIODS,
   formatMonthsAsDuration,
+  incomeSourcePriorityRank,
+  normalizeIncomeSourcePriority,
   normalizeExpectedFromForm,
   periodYearlyTotal,
+  priorityBadgeClass,
+  priorityLabel,
   statusBadgeClass,
   statusLabel,
   typeLabel,
 } from "@/lib/incomeSources";
 import { cn } from "@/lib/utils";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+const TOOLTIP_STYLE = {
+  backgroundColor: "#0d1117",
+  border: "1px solid #1e2a3a",
+  borderRadius: "8px",
+  fontSize: "12px",
+};
 
 function ForecastEditor({ periods, onChange, currency }) {
   const updateRow = (idx, patch) => {
@@ -128,6 +149,18 @@ const STICKY_SOURCE =
 const STICKY_SOURCE_HEAD =
   "sticky left-0 z-[3] border-r border-border bg-muted shadow-[6px_0_16px_rgba(0,0,0,0.12)]";
 
+// Full-row background tint per priority so users know where to focus first
+const PRIORITY_ROW_BG = {
+  high:   "bg-emerald-500/[0.12] hover:bg-emerald-500/[0.18]",
+  medium: "bg-[#00d4ff]/[0.07] hover:bg-[#00d4ff]/[0.12]",
+  low:    "bg-amber-500/[0.07] hover:bg-amber-500/[0.12]",
+  later:  "bg-muted/20 hover:bg-muted/40 opacity-60",
+};
+
+function priorityRowBg(priority) {
+  return PRIORITY_ROW_BG[normalizeIncomeSourcePriority(priority)] ?? PRIORITY_ROW_BG.medium;
+}
+
 function defaultForecastYear(years, matrix) {
   if (!years.length) return new Date().getFullYear();
   const now = new Date().getFullYear();
@@ -185,13 +218,24 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
 
   const months = useMemo(() => monthsInCalendarYear(selectedYear), [selectedYear]);
 
+  const sortedRows = useMemo(() => {
+    return [...rows].sort((a, b) => {
+      const pa = normalizeIncomeSourcePriority(rowById[a.sourceId]?.priority);
+      const pb = normalizeIncomeSourcePriority(rowById[b.sourceId]?.priority);
+      const rankDiff = incomeSourcePriorityRank(pa) - incomeSourcePriorityRank(pb);
+      if (rankDiff !== 0) return rankDiff;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+  }, [rows, rowById]);
+
   const visibleRows = useMemo(() => {
-    if (!hideEmpty || view !== "monthly") return rows;
-    return rows.filter((row) => {
+    const base = sortedRows;
+    if (!hideEmpty || view !== "monthly") return base;
+    return base.filter((row) => {
       const hasMonth = months.some(({ key }) => (row.months?.[key] || 0) > 0);
       return hasMonth || sumYearForRow(row, selectedYear) > 0;
     });
-  }, [rows, hideEmpty, view, months, selectedYear]);
+  }, [sortedRows, hideEmpty, view, months, selectedYear]);
 
   const yearStats = useMemo(() => {
     const earning = rows.filter((r) => sumYearForRow(r, selectedYear) > 0).length;
@@ -342,17 +386,14 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
                   </td>
                 </tr>
               ) : (
-                visibleRows.map((row, idx) => {
+                visibleRows.map((row) => {
                   const cur = row.currency || rowById[row.sourceId]?.currency || "BDT";
                   const yearTotal = sumYearForRow(row, selectedYear);
+                  const rowPriority = normalizeIncomeSourcePriority(rowById[row.sourceId]?.priority);
                   return (
                     <tr
                       key={row.sourceId}
-                      className={cn(
-                        "border-t border-border/60",
-                        idx % 2 === 0 ? "bg-card" : "bg-muted/15",
-                        "hover:bg-primary/[0.06]"
-                      )}
+                      className={cn("border-t border-border/60", priorityRowBg(rowPriority))}
                     >
                       <td className={cn(STICKY_SOURCE, "px-4 py-2.5 align-top")}>
                         <div className="font-medium text-foreground leading-snug">{row.name}</div>
@@ -364,6 +405,14 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
                             )}
                           >
                             {statusLabel(row.status)}
+                          </span>
+                          <span
+                            className={cn(
+                              "text-[10px] uppercase px-1.5 py-0.5 rounded border font-semibold",
+                              priorityBadgeClass(rowById[row.sourceId]?.priority || "medium")
+                            )}
+                          >
+                            {priorityLabel(rowById[row.sourceId]?.priority || "medium")}
                           </span>
                           <span className="text-[10px] font-mono text-muted-foreground">{cur}</span>
                         </div>
@@ -428,18 +477,20 @@ function ForecastMonthlySnapshot({ matrix, items, fillViewport = false }) {
               </tr>
             </thead>
             <tbody>
-              {visibleRows.map((row, idx) => {
+              {visibleRows.map((row) => {
                 const cur = row.currency || rowById[row.sourceId]?.currency || "BDT";
+                const rowPriority = normalizeIncomeSourcePriority(rowById[row.sourceId]?.priority);
                 return (
                   <tr
                     key={row.sourceId}
-                    className={cn(
-                      "border-t border-border/60",
-                      idx % 2 === 0 ? "bg-card" : "bg-muted/15",
-                      "hover:bg-primary/[0.06]"
-                    )}
+                    className={cn("border-t border-border/60", priorityRowBg(rowPriority))}
                   >
-                    <td className={cn(STICKY_SOURCE, "px-4 py-2.5 font-medium")}>{row.name}</td>
+                    <td className={cn(STICKY_SOURCE, "px-4 py-2.5")}>
+                      <div className="font-medium">{row.name}</div>
+                      <span className={cn("text-[10px] uppercase px-1.5 py-0.5 rounded border font-semibold inline-block mt-0.5", priorityBadgeClass(rowPriority))}>
+                        {priorityLabel(rowPriority)}
+                      </span>
+                    </td>
                     {years.map((y) => {
                       const amt = sumYearForRow(row, y);
                       return (
@@ -600,6 +651,7 @@ export function IncomeSourcesPanel({
   projects,
   onProjectCreated,
   onRefresh,
+  incomes = [],
   currency = "BDT",
   canSeeExactAmounts = true,
   canWrite = true,
@@ -620,7 +672,15 @@ export function IncomeSourcesPanel({
     return api
       .get(`/api/v1/org/${orgId}/finance/income-sources`)
       .then((r) => {
-        setItems(r.data.sources || []);
+        const incoming = r.data.sources || [];
+        incoming.sort((a, b) => {
+          const rankDiff =
+            incomeSourcePriorityRank(normalizeIncomeSourcePriority(a.priority)) -
+            incomeSourcePriorityRank(normalizeIncomeSourcePriority(b.priority));
+          if (rankDiff !== 0) return rankDiff;
+          return String(a.name || "").localeCompare(String(b.name || ""));
+        });
+        setItems(incoming);
         setExpectedTotals(r.data.expectedTotals || null);
         setForecastMatrix(r.data.forecastMatrix || null);
       })
@@ -645,6 +705,7 @@ export function IncomeSourcesPanel({
       description: source.description || "",
       type: source.type || "other",
       status: source.status || "idea",
+      priority: normalizeIncomeSourcePriority(source.priority),
       currency: defaultFinanceCurrency(source.currency || orgCurrency),
       planned_investment: source.planned_investment ? String(source.planned_investment) : "",
       revenue_start_after_months: String(source.revenue_start_after_months ?? 0),
@@ -677,6 +738,7 @@ export function IncomeSourcesPanel({
     description: form.description,
     type: form.type,
     status: form.status,
+    priority: normalizeIncomeSourcePriority(form.priority),
     currency: form.currency,
     planned_investment: Number(form.planned_investment) || 0,
     revenue_start_after_months: Math.round(Number(form.revenue_start_after_months) || 0),
@@ -737,6 +799,69 @@ export function IncomeSourcesPanel({
     form.expected_earning_period
   );
 
+  const actualMatrix = useMemo(() => {
+    const months = {};
+    const yearsSet = new Set();
+    for (const tx of incomes || []) {
+      const srcId = String(tx.income_source_id?._id || tx.income_source_id || "");
+      if (!srcId) continue;
+      const date = tx.payment_date ? new Date(tx.payment_date) : null;
+      if (!date || Number.isNaN(date.getTime())) continue;
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const key = `${year}-${String(month).padStart(2, "0")}`;
+      yearsSet.add(year);
+      if (!months[srcId]) months[srcId] = {};
+      months[srcId][key] = (months[srcId][key] || 0) + Number(tx.amount || 0);
+    }
+    const years = Array.from(yearsSet).sort((a, b) => a - b);
+    const rows = items.map((source) => {
+      const srcId = String(source._id);
+      const perMonth = months[srcId] || {};
+      const yearTotals = {};
+      for (const key of Object.keys(perMonth)) {
+        const y = Number(key.slice(0, 4));
+        yearTotals[y] = (yearTotals[y] || 0) + perMonth[key];
+      }
+      return {
+        sourceId: srcId,
+        name: source.name,
+        status: source.status,
+        priority: normalizeIncomeSourcePriority(source.priority),
+        currency: source.currency || currency,
+        months: perMonth,
+        yearTotals,
+      };
+    });
+    return { years, rows };
+  }, [incomes, items, currency]);
+
+  const [actualYear, setActualYear] = useState(() => {
+    const now = new Date().getFullYear();
+    const years = actualMatrix.years || [];
+    return years.includes(now) ? now : years[years.length - 1] || now;
+  });
+
+  useEffect(() => {
+    if (actualMatrix.years.length && !actualMatrix.years.includes(actualYear)) {
+      setActualYear(actualMatrix.years[actualMatrix.years.length - 1]);
+    }
+  }, [actualMatrix.years, actualYear]);
+
+  const actualVsForecastByYear = useMemo(() => {
+    const years = new Set([...(forecastMatrix?.years || []), ...(actualMatrix.years || [])]);
+    return Array.from(years)
+      .sort((a, b) => a - b)
+      .map((year) => {
+        const actual = actualMatrix.rows.reduce(
+          (sum, row) => sum + (row.yearTotals?.[year] || row.yearTotals?.[String(year)] || 0),
+          0
+        );
+        const forecast = forecastMatrix?.yearTotals?.[year] ?? forecastMatrix?.yearTotals?.[String(year)] ?? 0;
+        return { year: String(year), actual, forecast };
+      });
+  }, [actualMatrix, forecastMatrix]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -794,6 +919,109 @@ export function IncomeSourcesPanel({
         </section>
       ) : null}
 
+      {actualMatrix.rows.length > 0 && actualMatrix.years.length > 0 ? (
+        <section className="rounded-2xl border border-border bg-card p-4 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-base font-semibold">Actual monthly snapshot</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Month-by-month actual income by source.
+              </p>
+            </div>
+            <SelectInput value={String(actualYear)} onChange={(e) => setActualYear(Number(e.target.value))} className="max-w-28 text-sm">
+              {actualMatrix.years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </SelectInput>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm border-collapse min-w-[60rem]">
+              <thead>
+                <tr className="bg-muted border-b border-border">
+                  <th className={cn(STICKY_SOURCE_HEAD, "text-left px-3 py-2 font-normal text-muted-foreground")}>Income source</th>
+                  {MONTH_NAMES.map((label) => (
+                    <th key={label} className="px-2 py-2 text-right font-normal text-muted-foreground min-w-[4.5rem]">
+                      {label}
+                    </th>
+                  ))}
+                  <th className="px-3 py-2 text-right font-semibold">{actualYear} total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...actualMatrix.rows]
+                  .sort((a, b) => {
+                    const rankDiff =
+                      incomeSourcePriorityRank(normalizeIncomeSourcePriority(a.priority)) -
+                      incomeSourcePriorityRank(normalizeIncomeSourcePriority(b.priority));
+                    if (rankDiff !== 0) return rankDiff;
+                    return String(a.name || "").localeCompare(String(b.name || ""));
+                  })
+                  .map((row) => {
+                  const yearTotal = row.yearTotals?.[actualYear] || 0;
+                  const rowPriority = normalizeIncomeSourcePriority(row.priority);
+                  return (
+                    <tr key={row.sourceId} className={cn("border-t border-border/60", priorityRowBg(rowPriority))}>
+                      <td className={cn(STICKY_SOURCE, "px-3 py-2.5")}>
+                        <div className="font-medium">{row.name}</div>
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          <span className={cn("text-[10px] uppercase px-1.5 py-0.5 rounded border inline-block", statusBadgeClass(row.status))}>
+                            {statusLabel(row.status)}
+                          </span>
+                          <span className={cn("text-[10px] uppercase px-1.5 py-0.5 rounded border inline-block font-semibold", priorityBadgeClass(rowPriority))}>
+                            {priorityLabel(rowPriority)}
+                          </span>
+                        </div>
+                      </td>
+                      {MONTH_NAMES.map((_, i) => {
+                        const key = `${actualYear}-${String(i + 1).padStart(2, "0")}`;
+                        const amt = row.months?.[key] || 0;
+                        return (
+                          <td key={key} className={cn("px-2 py-2.5 text-right font-mono text-[13px]", amt > 0 ? "text-primary" : "text-muted-foreground/30")}>
+                            {amt > 0 ? mfmt(amt, row.currency, true) : "—"}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2.5 text-right font-mono font-semibold">{yearTotal > 0 ? mfmt(yearTotal, row.currency) : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {actualVsForecastByYear.length > 0 ? (
+        <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+          <div>
+            <h3 className="text-base font-semibold">Year by year: actual vs prediction</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Combined totals per year.
+            </p>
+          </div>
+          <div className="h-72 rounded-lg border border-border bg-muted/10 p-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={actualVsForecastByYear} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e2a3a" />
+                <XAxis dataKey="year" tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  formatter={(value, name) => [
+                    mfmt(value, currency, true),
+                    name === "actual" ? "Actual" : "Predicted",
+                  ]}
+                />
+                <Bar dataKey="forecast" name="Predicted" fill="#00d4ff" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="actual" name="Actual" fill="#00ff94" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      ) : null}
+
       <details className="shrink-0 rounded-xl border border-border bg-card/40 group">
         <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold flex items-center justify-between gap-2 hover:bg-muted/20 rounded-xl [&::-webkit-details-marker]:hidden">
           <span>
@@ -830,6 +1058,14 @@ export function IncomeSourcesPanel({
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-[15px]">{source.name}</span>
+                      <span
+                        className={cn(
+                          "text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border font-semibold",
+                          priorityBadgeClass(source.priority || "medium")
+                        )}
+                      >
+                        {priorityLabel(source.priority || "medium")}
+                      </span>
                       <span
                         className={cn(
                           "text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border",
@@ -950,6 +1186,21 @@ export function IncomeSourcesPanel({
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               />
             </Field>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Priority">
+              <SelectInput value={form.priority || "medium"} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                {INCOME_SOURCE_PRIORITIES.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
+            <div className="rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+              <div className="text-[11px] text-muted-foreground">List order rule</div>
+              <div className="text-xs mt-0.5">High → Medium → Low → Later (Later stays at bottom)</div>
+            </div>
           </div>
           <div className="rounded-lg border border-primary/25 bg-primary/5 p-3 space-y-3">
             <div className="text-sm font-medium">Expected earning (optional)</div>

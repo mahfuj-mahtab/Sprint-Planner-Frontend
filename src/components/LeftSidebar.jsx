@@ -53,6 +53,9 @@ function LeftSidebar() {
     }, [])
 
     const handleOrgDelete = (org_id) => {
+        if (!window.confirm("Are you sure you want to delete this organization? This action cannot be undone.")) {
+            return;
+        }
         api.delete(`/api/v1/users/org/delete/${org_id}`).then((response) => {
             console.log(response)
             toast.success(response.data.message, {
@@ -300,6 +303,18 @@ function LeftSidebar() {
                                 onClose={() => setShowCreateOrg(false)}
                                 fetchOrg={() => fetchOrg()}
                                 onCreated={(org) => {
+                                    setProfileDetaile((prev) => {
+                                        if (!prev?.user || !org) return prev;
+                                        const orgId = org._id || org.id;
+                                        if (!orgId) return prev;
+                                        const exists = (prev.organizations || []).some((o) => (o._id || o.id) === orgId);
+                                        if (exists) return prev;
+                                        const ownerId = org.owner_id?._id || org.owner_id || prev.user._id;
+                                        return {
+                                            ...prev,
+                                            organizations: [{ ...org, owner_id: ownerId }, ...(prev.organizations || [])],
+                                        };
+                                    });
                                     const id = org._id || org.id;
                                     if (id) navigate(`/user/profile/org/${id}?view=members`);
                                 }}

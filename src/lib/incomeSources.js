@@ -16,6 +16,54 @@ export const INCOME_SOURCE_STATUSES = [
   { value: "closed", label: "Closed" },
 ];
 
+export const INCOME_SOURCE_PRIORITIES = [
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+  { value: "later", label: "Later" },
+];
+
+export const normalizeIncomeSourcePriority = (priority) => {
+  const value = String(priority || "").toLowerCase();
+  if (value === "high" || value === "medium" || value === "low" || value === "later") {
+    return value;
+  }
+  return "medium";
+};
+
+export const priorityLabel = (priority) =>
+  INCOME_SOURCE_PRIORITIES.find((p) => p.value === normalizeIncomeSourcePriority(priority))?.label || "Medium";
+
+export const incomeSourcePriorityRank = (priority) => {
+  switch (normalizeIncomeSourcePriority(priority)) {
+    case "high":
+      return 0;
+    case "medium":
+      return 1;
+    case "low":
+      return 2;
+    case "later":
+      return 3;
+    default:
+      return 1;
+  }
+};
+
+export const priorityBadgeClass = (priority) => {
+  switch (normalizeIncomeSourcePriority(priority)) {
+    case "high":
+      return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+    case "medium":
+      return "bg-[#00d4ff]/15 text-[#00d4ff] border-[#00d4ff]/30";
+    case "low":
+      return "bg-amber-500/15 text-amber-200 border-amber-500/30";
+    case "later":
+      return "bg-muted text-muted-foreground border-border";
+    default:
+      return "bg-[#00d4ff]/15 text-[#00d4ff] border-[#00d4ff]/30";
+  }
+};
+
 export const statusLabel = (status) =>
   INCOME_SOURCE_STATUSES.find((s) => s.value === status)?.label || status;
 
@@ -79,6 +127,7 @@ export const defaultForm = (defaultCurrency = "BDT") => ({
   description: "",
   type: "content",
   status: "idea",
+  priority: "medium",
   currency: defaultCurrency,
   planned_investment: "",
   expected_earning_amount: "",

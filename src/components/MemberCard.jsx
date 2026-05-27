@@ -135,15 +135,21 @@ function MemberCard({ member, orgId, ownerId, isOwner: isOwnerProp, canManage, o
           </div>
         </div>
 
-        {isOwner ? (
-          <div className="mt-4 pt-3 border-t border-border/60">
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5" />
-              Full access including exact financial amounts
-            </p>
-          </div>
-        ) : canManage ? (
-          <div className="mt-4 pt-3 border-t border-border/60 flex justify-end gap-2">
+        <div className="mt-3 pt-2.5 border-t border-border/60">
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 shrink-0" />
+            {isOwner || orgRole === "owner"
+              ? "Full access · sees all amounts · manages members"
+              : orgRole === "admin"
+              ? "Full access · sees all amounts · manages members"
+              : orgRole === "editor"
+              ? "Can edit everything · amounts are hidden"
+              : "Read-only · amounts are hidden"}
+          </p>
+        </div>
+
+        {!isOwner && canManage ? (
+          <div className="mt-3 flex justify-end gap-2">
             <button
               type="button"
               onClick={openEdit}

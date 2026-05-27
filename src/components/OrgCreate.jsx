@@ -7,12 +7,19 @@ function OrgCreate({ onClose, fetchOrg, onCreated }) {
     register,
     handleSubmit,
   } = useForm()
-  const onSubmit = (data) => {
-    api.post(`/api/v1/users/org/create`, data).then((response) => {
+  const onSubmit = async (data) => {
+    try {
+      const response = await api.post(`/api/v1/users/org/create`, data);
       console.log(response.data.message)
       onClose();
-      if (onCreated && response.data.organization) {
-        onCreated(response.data.organization);
+      const createdOrg = response.data.organization || response.data.org || null;
+      if (onCreated && createdOrg) {
+        onCreated(createdOrg);
+      }
+      try {
+        await fetchOrg();
+      } catch {
+        // keep UX smooth even if profile refresh fails
       }
       toast.success(response.data.message, {
         position: "top-right",
@@ -25,8 +32,7 @@ function OrgCreate({ onClose, fetchOrg, onCreated }) {
         theme: "dark",
 
       });
-      fetchOrg()
-    }).catch((error) => {
+    } catch (error) {
       console.log(error.response.data);
       toast.error(error.response.data.message, {
         position: "top-right",
@@ -40,9 +46,8 @@ function OrgCreate({ onClose, fetchOrg, onCreated }) {
 
       });
       console.error("There was an error!", error);
-    });
-
-  }
+    }
+  };
   return (
     <div>
       <h2 className="text-xl font-bold mb-6 text-center ww-heading">Create Organization</h2>
