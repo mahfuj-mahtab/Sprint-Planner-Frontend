@@ -222,7 +222,7 @@ function LeftSidebar() {
                             return (
                                 <li key={org._id} className="relative flex items-center">
                                     <Link
-                                        to={`/user/profile/org/${org._id}`}
+                                        to={`/user/profile/org/${org._id}?view=projects`}
                                         aria-current={isActive ? 'page' : undefined}
                                         className={cn(
                                             "w-[93%] mr-3 flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-colors",

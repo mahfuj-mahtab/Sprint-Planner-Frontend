@@ -13,7 +13,7 @@ import SprintCreate from "../components/SprintCreate";
 import SprintEdit from "../components/SprintEdit";
 import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
-import { ArrowLeft, BarChart3, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
+import { ArrowLeft, BarChart3, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
 import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ListPagination } from "@/components/org/ListPagination";
@@ -193,6 +193,9 @@ function ShowOrgDetails() {
       setView("details");
       if (qTab) setActiveTab(qTab);
       if (qProjectId !== selectedProjectId) handleSelectProject(qProjectId);
+    } else if (qView === "projects") {
+      setView("projects");
+      if (!projects.length) loadProjects(1);
     } else if (!qView && view !== "projects" && view !== "members") {
       setView("projects");
     }
@@ -310,6 +313,12 @@ function ShowOrgDetails() {
   const orgName = orgDetails?.organization?.name || "Organization";
   const orgMemberCount = orgDetails?.organization?.members?.length ?? 0;
   const canManageMembers = orgDetails?.access?.canManageMembers ?? false;
+  const accessRole = String(orgDetails?.access?.role || "").toLowerCase();
+  const isViewer =
+    accessRole === "viewer" ||
+    (!orgDetails?.access?.canWrite &&
+      !orgDetails?.access?.canManageMembers &&
+      !orgDetails?.access?.canSeeExactAmounts);
   const canWriteDelivery = orgDetails?.deliveryAccess?.canWrite ?? true;
   const deliveryReadOnlyReason = orgDetails?.deliveryAccess?.reason;
   const needsTeamInvite = canManageMembers && orgMemberCount === 0;
@@ -534,42 +543,85 @@ function ShowOrgDetails() {
                     </p>
                   </div>
                 </button>
-                <Link
-                  to={`/user/profile/org/${orgId}/dashboard`}
-                  className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#a78bfa]/40 transition"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#a78bfa]/30 bg-[#a78bfa]/10">
-                    <BarChart3 className="w-4 h-4 text-[#a78bfa]" />
-                  </div>
-                  <div>
-                    <h3 className="text-[15px] font-semibold group-hover:text-[#a78bfa]">Dashboard</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">Income, tasks, projects, charts</p>
-                  </div>
-                </Link>
-                <Link
-                  to={`/user/profile/org/${orgId}/crm`}
-                  className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#00d4ff]/30 transition"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#00d4ff]/30 bg-[#00d4ff]/10">
-                    <Users className="w-4 h-4 text-[#00d4ff]" />
-                  </div>
-                  <div>
-                    <h3 className="text-[15px] font-semibold group-hover:text-[#00d4ff]">CRM</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">Pipeline, follow-ups, clients</p>
-                  </div>
-                </Link>
-                <Link
-                  to={`/user/profile/org/${orgId}/finance`}
-                  className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-primary/30 transition"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
-                    <Wallet className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-[15px] font-semibold group-hover:text-primary">Finance</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">Accounts, income, expense</p>
-                  </div>
-                </Link>
+                {isViewer ? (
+                  <>
+                    <div className="rounded-xl border border-border bg-muted/20 p-4 flex items-start gap-3 opacity-75 cursor-not-allowed pointer-events-none select-none">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/30">
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold text-muted-foreground inline-flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5" />
+                          Dashboard
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Locked for viewer role</p>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/20 p-4 flex items-start gap-3 opacity-75 cursor-not-allowed pointer-events-none select-none">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/30">
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold text-muted-foreground inline-flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5" />
+                          CRM
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Locked for viewer role</p>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/20 p-4 flex items-start gap-3 opacity-75 cursor-not-allowed pointer-events-none select-none">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/30">
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold text-muted-foreground inline-flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5" />
+                          Finance
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Locked for viewer role</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to={`/user/profile/org/${orgId}/dashboard`}
+                      className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#a78bfa]/40 transition"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#a78bfa]/30 bg-[#a78bfa]/10">
+                        <BarChart3 className="w-4 h-4 text-[#a78bfa]" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold group-hover:text-[#a78bfa]">Dashboard</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Income, tasks, projects, charts</p>
+                      </div>
+                    </Link>
+                    <Link
+                      to={`/user/profile/org/${orgId}/crm`}
+                      className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#00d4ff]/30 transition"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#00d4ff]/30 bg-[#00d4ff]/10">
+                        <Users className="w-4 h-4 text-[#00d4ff]" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold group-hover:text-[#00d4ff]">CRM</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Pipeline, follow-ups, clients</p>
+                      </div>
+                    </Link>
+                    <Link
+                      to={`/user/profile/org/${orgId}/finance`}
+                      className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-primary/30 transition"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
+                        <Wallet className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold group-hover:text-primary">Finance</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Accounts, income, expense</p>
+                      </div>
+                    </Link>
+                  </>
+                )}
               </div>
 
               <h2 className="lg:text-2xl text-lg font-semibold mb-4">Projects</h2>

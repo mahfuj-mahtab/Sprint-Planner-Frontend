@@ -17,7 +17,8 @@ import api from "../ApiInception";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/org/StatCard";
 import { Skeleton } from "@/components/ui/Loading";
-import { formatMoney } from "@/lib/formatMoney";
+import { formatMoneySensitive } from "@/lib/formatMoney";
+import { useOrgAccess } from "@/hooks/useOrgAccess";
 import { convertDate } from "@/utils/utils";
 import { cn } from "@/lib/utils";
 import { MemberAvatar } from "@/components/MemberAvatar";
@@ -105,6 +106,7 @@ function ProjectDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { access } = useOrgAccess(orgId);
 
   useEffect(() => {
     setLoading(true);
@@ -115,7 +117,8 @@ function ProjectDashboard() {
       .finally(() => setLoading(false));
   }, [orgId, projectId]);
 
-  const fmt = (v) => formatMoney(v, "BDT");
+  const canSee = access?.canSeeExactAmounts ?? data?.access?.canSeeExactAmounts ?? true;
+  const fmt = (v) => formatMoneySensitive(v, "BDT", canSee);
 
   if (loading) {
     return (

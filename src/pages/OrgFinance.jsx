@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import {
   ArrowDownLeft,
   ArrowLeftRight,
@@ -86,6 +86,7 @@ function FinanceSkeleton() {
 
 function OrgFinance() {
   const { orgId } = useParams();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
   const prefillClient = searchParams.get("clientId") || "";
@@ -182,6 +183,12 @@ function OrgFinance() {
     for (const a of accounts) map[a._id] = a.partitions || [];
     return map;
   }, [accounts]);
+
+  useEffect(() => {
+    if (overview?.access?.role === "viewer") {
+      navigate(`/user/profile/org/${orgId}`);
+    }
+  }, [overview, navigate, orgId]);
 
   useEffect(() => {
     if (!hasAccounts || loading) return;

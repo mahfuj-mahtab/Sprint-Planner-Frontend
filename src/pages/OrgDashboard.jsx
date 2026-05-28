@@ -41,6 +41,12 @@ function OrgDashboard() {
       .finally(() => setLoading(false));
   }, [orgId]);
 
+  useEffect(() => {
+    if (data?.access?.role === "viewer") {
+      navigate(`/user/profile/org/${orgId}`);
+    }
+  }, [data, navigate, orgId]);
+
   const canSee = data?.access?.canSeeExactAmounts ?? true;
   const fmt = (v) => formatMoneySensitive(v, "BDT", canSee);
 

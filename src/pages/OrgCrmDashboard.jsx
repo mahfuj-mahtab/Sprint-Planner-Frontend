@@ -95,6 +95,12 @@ function OrgCrmDashboard() {
       .finally(() => setLoading(false));
   }, [orgId]);
 
+  useEffect(() => {
+    if (data?.access?.role === "viewer") {
+      navigate(`/user/profile/org/${orgId}`);
+    }
+  }, [data, navigate, orgId]);
+
   const primary = data?.primaryCurrency || "BDT";
   const canSee = data?.access?.canSeeExactAmounts ?? true;
   const fmt = (v, cur = primary) => formatMoneySensitive(v, cur, canSee);

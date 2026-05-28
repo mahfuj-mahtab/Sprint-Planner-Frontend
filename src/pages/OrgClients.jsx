@@ -91,6 +91,12 @@ function OrgClients() {
   const fmt = (v, cur = defaultCurrency, compact = false) =>
     formatMoneySensitive(v, cur, canSee, compact);
 
+  useEffect(() => {
+    if (access?.role === "viewer") {
+      navigate(`/user/profile/org/${orgId}`);
+    }
+  }, [access, navigate, orgId]);
+
   const fetchOverview = useCallback(() => {
     return api
       .get(`/api/v1/org/${orgId}/clients/overview`)
