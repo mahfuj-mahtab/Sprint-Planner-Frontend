@@ -3,7 +3,8 @@ import api from "../ApiInception";
 
 const DEFAULT_ACCESS = {
   role: null,
-  canSeeExactAmounts: true,
+  canSeeExactAmounts: false,
+  canAccessFinance: false,
   canManageMembers: false,
   canWrite: false,
   isOrgOwner: false,
