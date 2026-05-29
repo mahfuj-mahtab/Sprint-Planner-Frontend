@@ -19,6 +19,9 @@ import OrgCrmDashboard from './pages/OrgCrmDashboard.jsx';
 import OrgFinance from './pages/OrgFinance.jsx';
 import OrgDashboard from './pages/OrgDashboard.jsx';
 import ProjectDashboard from './pages/ProjectDashboard.jsx';
+import InvestorListPage from './pages/InvestorListPage.jsx';
+import InvestmentRecordPage from './pages/InvestmentRecordPage.jsx';
+import InvestorDashboardPage from './pages/InvestorDashboardPage.jsx';
 
 // Use the WeekWins dark theme across the app by default.
 document.documentElement.classList.add('dark')
@@ -59,6 +62,18 @@ const router = createBrowserRouter([
   {
     path: "/user/profile/org/:orgId/finance",
     element: <OrgFinance />
+  },
+  {
+    path: "/user/profile/org/:orgId/investors",
+    element: <InvestorListPage />
+  },
+  {
+    path: "/user/profile/org/:orgId/investors/record",
+    element: <InvestmentRecordPage />
+  },
+  {
+    path: "/user/profile/org/:orgId/investors/dashboard",
+    element: <InvestorDashboardPage />
   },
   {
     path: "/user/profile/org/:orgId/project/:projectId/dashboard",

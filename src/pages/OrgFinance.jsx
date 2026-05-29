@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  DollarSign,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import api from "../ApiInception";
@@ -41,6 +42,7 @@ import { PARTITION_SCOPES } from "@/lib/partitionScopes";
 import { CurrencySelect } from "@/components/org/CurrencySelect";
 import { cn } from "@/lib/utils";
 import { normalizeGoal } from "@/lib/goals";
+import { useInvestorDashboard, useInvestors } from "@/hooks/useInvestor";
 
 const PAYMENT_METHODS = [
   { value: "bkash", label: "bKash" },
@@ -69,6 +71,7 @@ const TABS = [
   { id: "subscriptions", label: "Subscriptions", icon: Repeat },
   { id: "goals", label: "Goals", icon: Target },
   { id: "transfer", label: "Transfer", icon: ArrowLeftRight },
+  { id: "investors", label: "Investors", icon: Users },
   { id: "activity", label: "Activity", icon: List },
   { id: "categories", label: "Categories", icon: Tags },
 ];
@@ -90,6 +93,12 @@ function FinanceSkeleton() {
 function OrgFinance() {
   const { orgId } = useParams();
   const navigate = useNavigate();
+  const { investors: financeInvestors, loading: financeInvestorsLoading } = useInvestors(orgId);
+  const {
+    metrics: investorMetrics,
+    summary: investorSummary,
+    loading: investorDashboardLoading,
+  } = useInvestorDashboard(orgId);
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
   const prefillClient = searchParams.get("clientId") || "";
@@ -913,6 +922,42 @@ function OrgFinance() {
 
             {tab === "categories" && (
               <CategoryManager orgId={orgId} categories={categories} canWrite={canWrite} onRefresh={refresh} />
+            )}
+
+            {tab === "investors" && (
+              <div className="space-y-4">
+                <div className="ww-card-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold">Investor Management</h3>
+                      <p className="text-xs text-muted-foreground mt-1">Track investments and investor ownership</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link 
+                        to={`/user/profile/org/${orgId}/investors`}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                      >
+                        <Users className="w-4 h-4" />
+                        Manage Investors
+                      </Link>
+                      <Link 
+                        to={`/user/profile/org/${orgId}/investors/record`}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Record Investment
+                      </Link>
+                      <Link 
+                        to={`/user/profile/org/${orgId}/investors/dashboard`}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-accent text-accent-foreground rounded-md hover:bg-accent/90"
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                        Dashboard
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
             {tab === "transfer" && (

@@ -1,0 +1,591 @@
+/* Investor System Styles */
+
+.page {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0;
+  color: #333;
+}
+
+/* Buttons */
+.primaryBtn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primaryBtn:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.primaryBtn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancelBtn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelBtn:hover {
+  background-color: #da190b;
+}
+
+.cancelBtn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.iconBtn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.iconBtn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.iconBtn.danger:hover {
+  background-color: rgba(244, 67, 54, 0.2);
+}
+
+.submitBtn {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submitBtn:hover {
+  background-color: #0b7dda;
+}
+
+.submitBtn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.card h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+/* Forms */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.formGroup input,
+.formGroup textarea,
+.formGroup select {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.formGroup textarea {
+  resize: vertical;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.error {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.formActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Tables */
+.tableContainer {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table thead {
+  background-color: #f5f5f5;
+  border-bottom: 2px solid #ddd;
+}
+
+.table thead th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.table tbody td {
+  padding: 1rem;
+}
+
+.table .name {
+  font-weight: 600;
+  color: #2196F3;
+}
+
+.table .actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.statusBadge.active {
+  background-color: #c8e6c9;
+  color: #2e7d32;
+}
+
+.statusBadge.inactive {
+  background-color: #ffccbc;
+  color: #d84315;
+}
+
+.statusBadge.exited {
+  background-color: #cfd8dc;
+  color: #455a64;
+}
+
+/* Dashboard */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.metricCard {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.metricCard:hover {
+  border-color: #2196F3;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
+  transform: translateY(-2px);
+}
+
+.metricCard h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.metricCard .value {
+  margin: 0.5rem 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2196F3;
+}
+
+.metricCard .label {
+  display: block;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.section {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+/* Ownership Breakdown */
+.ownershipList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ownershipItem {
+  display: grid;
+  grid-template-columns: 1fr 200px 150px;
+  gap: 1rem;
+  align-items: center;
+}
+
+.ownershipBar {
+  background-color: #f0f0f0;
+  height: 30px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ownershipFill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  transition: width 0.3s ease;
+}
+
+.ownershipLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+}
+
+.ownershipLabel .percentage {
+  font-weight: 600;
+  color: #2196F3;
+}
+
+.ownershipAmount {
+  text-align: right;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Top Investors */
+.topInvestorsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.topInvestorItem {
+  display: grid;
+  grid-template-columns: 60px 1fr 150px;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.topInvestorItem:hover {
+  background-color: #f0f0f0;
+}
+
+.rank {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2196F3;
+  text-align: center;
+}
+
+.investorInfo h4 {
+  margin: 0;
+  color: #333;
+}
+
+.investorInfo p {
+  margin: 0.25rem 0 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.investorAmount {
+  text-align: right;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #4CAF50;
+}
+
+/* Investors Table */
+.investorsTable {
+  overflow-x: auto;
+}
+
+.investorsTable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.investorsTable thead {
+  background-color: #f5f5f5;
+}
+
+.investorsTable thead th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd;
+}
+
+.investorsTable tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Details Grid */
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.detailsGrid > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.detailsGrid label {
+  font-weight: 600;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.detailsGrid p {
+  margin: 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.detailsActions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Status Messages */
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #999;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.empty p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.error {
+  background-color: #ffebee;
+  border: 1px solid #ef5350;
+  color: #c62828;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.success {
+  background-color: #e8f5e9;
+  border: 1px solid #4CAF50;
+  color: #2e7d32;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.description {
+  color: #666;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.infoList {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.infoList li {
+  margin-bottom: 0.5rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+  }
+
+  .metricsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .ownershipItem {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .topInvestorItem {
+    grid-template-columns: 1fr;
+  }
+
+  .investorAmount {
+    text-align: left;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+}
