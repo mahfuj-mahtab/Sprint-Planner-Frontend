@@ -12,6 +12,7 @@ import {
   Plus,
   Repeat,
   Tags,
+  HandCoins,
   Target,
   TrendingDown,
   TrendingUp,
@@ -32,6 +33,7 @@ import { CategoryManager } from "@/components/org/CategoryManager";
 import { SubscriptionPanel } from "@/components/org/SubscriptionPanel";
 import { IncomeSourcesPanel } from "@/components/org/IncomeSourcesPanel";
 import { GoalsPanel } from "@/components/org/GoalsPanel";
+import { DebtPanel } from "@/components/org/DebtPanel";
 import { Skeleton } from "@/components/ui/Loading";
 import { formatMoneySensitive, formatDateTime } from "@/lib/formatMoney";
 import { categoryLabel } from "@/lib/financeCategories";
@@ -63,6 +65,7 @@ const TABS = [
   { id: "accounts", label: "Accounts", icon: Landmark },
   { id: "income", label: "Income", icon: TrendingUp },
   { id: "expense", label: "Expense", icon: TrendingDown },
+  { id: "debt", label: "Debt", icon: HandCoins },
   { id: "subscriptions", label: "Subscriptions", icon: Repeat },
   { id: "goals", label: "Goals", icon: Target },
   { id: "transfer", label: "Transfer", icon: ArrowLeftRight },
@@ -101,7 +104,7 @@ function OrgFinance() {
   const [overview, setOverview] = useState(null);
   const [projects, setProjects] = useState([]);
   const [clients, setClients] = useState([]);
-  const [transactions, setTransactions] = useState({ incomes: [], expenses: [], transfers: [] });
+  const [transactions, setTransactions] = useState({ incomes: [], expenses: [], transfers: [], debts: [] });
   const [profitSummary, setProfitSummary] = useState([]);
   const [unlinkedIncomeTotal, setUnlinkedIncomeTotal] = useState(0);
   const [categories, setCategories] = useState([]);
@@ -149,6 +152,7 @@ function OrgFinance() {
           incomes: tx.data.incomes || [],
           expenses: tx.data.expenses || [],
           transfers: tx.data.transfers || [],
+          debts: tx.data.debts || [],
         });
         setProfitSummary(profit.data.summary || []);
         setUnlinkedIncomeTotal(profit.data.unlinkedIncomeTotal || 0);
@@ -225,6 +229,34 @@ function OrgFinance() {
             : "Partition transfer",
         meta: "",
       })),
+      ...transactions.debts.flatMap((d) => {
+        const borrowed = d.direction === "borrowed";
+        const events = [
+          {
+            id: `${d._id}-open`,
+            type: borrowed ? "debt_borrow" : "debt_lend",
+            amount: d.principal,
+            date: d.lent_at,
+            label: borrowed
+              ? `Borrowed from ${d.counterparty_name}`
+              : `Lent to ${d.counterparty_name}`,
+            meta: [d.account_name, d.partition_name].filter(Boolean).join(" · "),
+          },
+        ];
+        for (const r of d.repayments || []) {
+          events.push({
+            id: `${d._id}-repay-${r._id}`,
+            type: borrowed ? "debt_borrow_repay" : "debt_repay",
+            amount: r.amount,
+            date: r.repaid_at,
+            label: borrowed
+              ? `Repaid ${d.counterparty_name}`
+              : `Repayment from ${d.counterparty_name}`,
+            meta: [d.account_name, d.partition_name, r.notes].filter(Boolean).join(" · "),
+          });
+        }
+        return events;
+      }),
     ];
     return items.sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [transactions, categories]);
@@ -466,12 +498,16 @@ function OrgFinance() {
 
       <div
         className={cn(
-          tab === "sources" || tab === "overview" || tab === "subscriptions"
+          tab === "sources" ||
+          tab === "overview" ||
+          tab === "subscriptions" ||
+          tab === "debt" ||
+          tab === "goals"
             ? "ww-page-full max-w-none w-full"
             : "ww-page"
         )}
       >
-        {tab !== "sources" ? <SetupBanner /> : null}
+        {tab !== "sources" && tab !== "debt" ? <SetupBanner /> : null}
 
         {loading ? (
           <FinanceSkeleton />
@@ -572,6 +608,22 @@ function OrgFinance() {
                       variant="balance"
                       sub="Sum of all accounts"
                     />
+                    {(overview.debtReceivable ?? overview.debtOutstanding ?? 0) > 0 && (
+                      <StatCard
+                        label="They owe you"
+                        value={fmt(overview.debtReceivable ?? overview.debtOutstanding, currency)}
+                        variant="neutral"
+                        sub="Open loans you gave"
+                      />
+                    )}
+                    {(overview.debtPayable ?? 0) > 0 && (
+                      <StatCard
+                        label="You owe others"
+                        value={fmt(overview.debtPayable, currency)}
+                        variant="expense"
+                        sub="Open money you borrowed"
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -833,6 +885,20 @@ function OrgFinance() {
               />
             )}
 
+            {tab === "debt" && (
+              <DebtPanel
+                orgId={orgId}
+                accounts={accounts}
+                goals={goals}
+                currency={currency}
+                hasAccounts={hasAccounts}
+                canSeeExactAmounts={canSee}
+                canWrite={canWrite}
+                accessRole={overview?.access?.role || ""}
+                onRefresh={refresh}
+              />
+            )}
+
             {tab === "goals" && (
               <GoalsPanel
                 orgId={orgId}
@@ -938,7 +1004,7 @@ function OrgFinance() {
                   <EmptyState
                     icon={List}
                     title="No transactions yet"
-                    description="Income, expenses, and partition transfers will show up here in chronological order."
+                    description="Income, expenses, transfers, and debt lend/repay events appear here in chronological order."
                     action={
                       hasAccounts ? (
                         <button type="button" onClick={() => setTab("income")} className="ww-btn-primary text-sm">
@@ -959,13 +1025,22 @@ function OrgFinance() {
                             "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
                             item.type === "income" && "bg-primary/15 text-primary",
                             item.type === "expense" && "bg-destructive/15 text-destructive",
-                            item.type === "transfer" && "bg-[#00d4ff]/15 text-[#00d4ff]"
+                            item.type === "transfer" && "bg-[#00d4ff]/15 text-[#00d4ff]",
+                            (item.type === "debt_lend" || item.type === "debt_repay") &&
+                              "bg-violet-500/15 text-violet-400",
+                            (item.type === "debt_borrow" || item.type === "debt_borrow_repay") &&
+                              "bg-amber-500/15 text-amber-300"
                           )}
                         >
                           {item.type === "income" ? (
                             <ArrowDownLeft className="w-4 h-4" />
                           ) : item.type === "expense" ? (
                             <ArrowUpRight className="w-4 h-4" />
+                          ) : item.type === "debt_lend" ||
+                            item.type === "debt_repay" ||
+                            item.type === "debt_borrow" ||
+                            item.type === "debt_borrow_repay" ? (
+                            <HandCoins className="w-4 h-4" />
                           ) : (
                             <ArrowLeftRight className="w-4 h-4" />
                           )}
@@ -982,10 +1057,22 @@ function OrgFinance() {
                             "font-mono text-base font-medium tabular-nums shrink-0",
                             item.type === "income" && "text-primary",
                             item.type === "expense" && "text-destructive",
-                            item.type === "transfer" && "text-[#00d4ff]"
+                            item.type === "transfer" && "text-[#00d4ff]",
+                            item.type === "debt_lend" && "text-violet-400",
+                            item.type === "debt_repay" && "text-emerald-400",
+                            item.type === "debt_borrow" && "text-amber-300",
+                            item.type === "debt_borrow_repay" && "text-destructive"
                           )}
                         >
-                          {item.type === "expense" ? "−" : item.type === "income" ? "+" : ""}
+                          {item.type === "expense" ||
+                          item.type === "debt_lend" ||
+                          item.type === "debt_borrow_repay"
+                            ? "−"
+                            : item.type === "income" ||
+                                item.type === "debt_repay" ||
+                                item.type === "debt_borrow"
+                              ? "+"
+                              : ""}
                           {fmt(item.amount, currency)}
                         </div>
                       </li>
