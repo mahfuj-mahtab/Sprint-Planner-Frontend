@@ -46,6 +46,7 @@ export function TransactionCrudPanel({
   incomeSources = [],
   onIncomeSourceCreated,
   goals = [],
+  investors = [],
   canSeeExactAmounts = true,
   canWrite = true,
 }) {
@@ -109,8 +110,14 @@ export function TransactionCrudPanel({
     payment_date: today(),
     expense_date: today(),
     is_personal: false,
+    investor_id: "",
     notes: "",
   });
+
+  const activeInvestors = useMemo(
+    () => (investors || []).filter((inv) => inv.status === "active"),
+    [investors]
+  );
 
   const openCreate = () => {
     setEditingId(null);
@@ -137,6 +144,7 @@ export function TransactionCrudPanel({
       payment_date: item.payment_date ? new Date(item.payment_date).toISOString().slice(0, 10) : today(),
       expense_date: item.expense_date ? new Date(item.expense_date).toISOString().slice(0, 10) : today(),
       is_personal: Boolean(item.is_personal),
+      investor_id: item.investor_id?._id || item.investor_id || "",
       notes: item.notes || "",
     });
     setModalOpen(true);
@@ -228,6 +236,7 @@ export function TransactionCrudPanel({
           income_source_id: form.income_source_id || undefined,
           expense_date: form.expense_date,
           is_personal: form.is_personal,
+          investor_id: form.investor_id || null,
           notes: form.notes,
         };
         if (editingId) {
@@ -315,6 +324,9 @@ export function TransactionCrudPanel({
                 <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal">Date</th>
                 <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal">Category</th>
                 <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal">Project</th>
+                {!isIncome && investors.length > 0 ? (
+                  <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal">Investor</th>
+                ) : null}
                 <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal text-right">Amount</th>
                 <th className="px-4 py-2.5 w-20" />
               </tr>
@@ -334,6 +346,11 @@ export function TransactionCrudPanel({
                   >
                     {item.project_id?.name || (isIncome ? "No project" : "—")}
                   </td>
+                  {!isIncome && investors.length > 0 ? (
+                    <td className="px-4 py-2.5 text-muted-foreground truncate max-w-[120px]">
+                      {item.investor_id?.name || "—"}
+                    </td>
+                  ) : null}
                   <td
                     className={cn(
                       "px-4 py-2.5 text-right font-mono tabular-nums font-medium",
@@ -533,14 +550,44 @@ export function TransactionCrudPanel({
               />
             </Field>
           ) : (
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.is_personal}
-                onChange={(e) => setPersonal(e.target.checked)}
-              />
-              Personal expense (Owner / Excluded partition)
-            </label>
+            <>
+              {activeInvestors.length > 0 ? (
+                <Field
+                  label="Investor payout"
+                  hint="Records business expense and investor return (dividend) for cap-table tracking"
+                >
+                  <SelectInput
+                    value={form.investor_id}
+                    onChange={(e) => {
+                      const investor_id = e.target.value;
+                      const investorCategory = typeCategories.find((c) => c.name === "Investor")?.name;
+                      setForm({
+                        ...form,
+                        investor_id,
+                        is_personal: investor_id ? false : form.is_personal,
+                        category: investor_id && investorCategory ? investorCategory : form.category,
+                      });
+                    }}
+                  >
+                    <option value="">None — regular expense</option>
+                    {activeInvestors.map((inv) => (
+                      <option key={inv._id} value={inv._id}>
+                        {inv.name}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </Field>
+              ) : null}
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_personal}
+                  disabled={Boolean(form.investor_id)}
+                  onChange={(e) => setPersonal(e.target.checked)}
+                />
+                Personal expense (Owner / Excluded partition)
+              </label>
+            </>
           )}
           <Field label="Notes">
             <input

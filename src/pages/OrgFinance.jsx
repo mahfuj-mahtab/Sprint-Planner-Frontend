@@ -113,6 +113,7 @@ function OrgFinance() {
   const [categories, setCategories] = useState([]);
   const [incomeSources, setIncomeSources] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [investors, setInvestors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [accountModal, setAccountModal] = useState(false);
@@ -148,8 +149,9 @@ function OrgFinance() {
       api.get(`/api/v1/org/${orgId}/finance/categories`),
       api.get(`/api/v1/org/${orgId}/finance/income-sources`),
       api.get(`/api/v1/org/${orgId}/finance/goals`),
+      api.get(`/api/v1/org/${orgId}/finance/investors/`),
     ])
-      .then(([ov, tx, profit, proj, cl, cats, sourcesRes, goalsRes]) => {
+      .then(([ov, tx, profit, proj, cl, cats, sourcesRes, goalsRes, investorsRes]) => {
         setOverview(ov.data.overview);
         setTransactions({
           incomes: tx.data.incomes || [],
@@ -164,6 +166,7 @@ function OrgFinance() {
         setCategories(cats.data.categories || []);
         setIncomeSources(sourcesRes.data.sources || []);
         setGoals((goalsRes.data.goals || []).map(normalizeGoal).filter(Boolean));
+        setInvestors(investorsRes.data.data || []);
       })
       .catch(() => toast.error("Failed to load finance data", { theme: "dark" }))
       .finally(() => setLoading(false));
@@ -864,6 +867,7 @@ function OrgFinance() {
                 hasAccounts={hasAccounts}
                 partitionsForAccount={partitionsForAccount}
                 goals={goals}
+                investors={investors}
                 canSeeExactAmounts={canSee}
                 canWrite={canWrite}
                 onRefresh={refresh}

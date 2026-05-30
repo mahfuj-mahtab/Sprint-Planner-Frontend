@@ -13,7 +13,7 @@ import SprintCreate from "../components/SprintCreate";
 import SprintEdit from "../components/SprintEdit";
 import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
-import { ArrowLeft, BarChart3, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
+import { ArrowLeft, BarChart3, BookOpen, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
 import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ListPagination } from "@/components/org/ListPagination";
@@ -618,6 +618,18 @@ function ShowOrgDetails() {
                       <div>
                         <h3 className="text-[15px] font-semibold group-hover:text-primary">Finance</h3>
                         <p className="text-sm text-muted-foreground mt-0.5">Accounts, income, expense</p>
+                      </div>
+                    </Link>
+                    <Link
+                      to={`/user/profile/org/${orgId}/learning`}
+                      className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#a78bfa]/40 transition"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#a78bfa]/30 bg-[#a78bfa]/10">
+                        <BookOpen className="w-4 h-4 text-[#a78bfa]" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold group-hover:text-[#a78bfa]">Learning</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Topics, assignments, progress</p>
                       </div>
                     </Link>
                   </>

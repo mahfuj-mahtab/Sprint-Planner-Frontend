@@ -29,6 +29,16 @@ const InvestorListPage = () => {
     .filter((i) => i.status !== "exited")
     .reduce((s, i) => s + Number(i.ownership_percentage || 0), 0);
 
+  const totals = investors.reduce(
+    (acc, inv) => {
+      acc.invested += Number(inv.total_invested || 0);
+      acc.returned += Number(inv.total_returned || 0);
+      return acc;
+    },
+    { invested: 0, returned: 0 }
+  );
+  totals.net = totals.invested - totals.returned;
+
   const handleCreate = async (data) => {
     setFormLoading(true);
     try {
@@ -126,21 +136,31 @@ const InvestorListPage = () => {
           canWrite={canWrite}
         />
 
-        <div className="grid sm:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="ww-card-sm p-4">
             <p className="text-xs text-muted-foreground">Investors</p>
             <p className="text-2xl font-semibold tabular-nums">{investors.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {investors.filter((i) => i.status === "active").length} active
+            </p>
+          </div>
+          <div className="ww-card-sm p-4">
+            <p className="text-xs text-muted-foreground">Total invested</p>
+            <p className="text-2xl font-semibold tabular-nums text-primary font-mono">{fmt(totals.invested)}</p>
+          </div>
+          <div className="ww-card-sm p-4">
+            <p className="text-xs text-muted-foreground">Total returned</p>
+            <p className="text-2xl font-semibold tabular-nums text-destructive font-mono">{fmt(totals.returned)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Expense-linked payouts</p>
+          </div>
+          <div className="ww-card-sm p-4">
+            <p className="text-xs text-muted-foreground">Net capital</p>
+            <p className="text-2xl font-semibold tabular-nums font-mono">{fmt(totals.net)}</p>
           </div>
           <div className="ww-card-sm p-4">
             <p className="text-xs text-muted-foreground">Ownership allocated</p>
             <p className="text-2xl font-semibold tabular-nums">{allocatedOwnership}%</p>
-            <p className="text-xs text-muted-foreground mt-1">{100 - allocatedOwnership}% free</p>
-          </div>
-          <div className="ww-card-sm p-4">
-            <p className="text-xs text-muted-foreground">Active</p>
-            <p className="text-2xl font-semibold tabular-nums">
-              {investors.filter((i) => i.status === "active").length}
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">{Math.max(0, 100 - allocatedOwnership)}% free</p>
           </div>
         </div>
 
@@ -201,7 +221,7 @@ const InvestorListPage = () => {
               <h2 className="ww-heading text-xl">Investor details</h2>
               <p className="mt-1 text-sm font-semibold text-primary">{selectedInvestor.name}</p>
             </div>
-            <div className="grid gap-4 border-b border-border pb-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 border-b border-border pb-5 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <label className="ww-label">Type</label>
                 <p className="text-sm capitalize">{selectedInvestor.investor_type}</p>
@@ -219,6 +239,31 @@ const InvestorListPage = () => {
                 <p className="text-sm font-semibold text-primary font-mono">
                   {fmt(selectedInvestor.total_invested)}
                 </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {selectedInvestor.investment_count} round
+                  {selectedInvestor.investment_count === 1 ? "" : "s"}
+                </p>
+              </div>
+              <div>
+                <label className="ww-label">Total returned</label>
+                <p className="text-sm font-semibold text-destructive font-mono">
+                  {fmt(selectedInvestor.total_returned)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {selectedInvestor.return_count || 0} payout
+                  {(selectedInvestor.return_count || 0) === 1 ? "" : "s"} via expenses
+                </p>
+              </div>
+              <div>
+                <label className="ww-label">Net position</label>
+                <p className="text-sm font-semibold font-mono">
+                  {fmt(
+                    selectedInvestor.net_position ??
+                      Number(selectedInvestor.total_invested || 0) -
+                        Number(selectedInvestor.total_returned || 0)
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Invested minus returned</p>
               </div>
             </div>
             <div className="mt-5 flex gap-3">

@@ -22,6 +22,7 @@ import ProjectDashboard from './pages/ProjectDashboard.jsx';
 import InvestorListPage from './pages/InvestorListPage.jsx';
 import InvestmentRecordPage from './pages/InvestmentRecordPage.jsx';
 import InvestorDashboardPage from './pages/InvestorDashboardPage.jsx';
+import OrgLearning from './pages/OrgLearning.jsx';
 
 // Use the WeekWins dark theme across the app by default.
 document.documentElement.classList.add('dark')
@@ -62,6 +63,10 @@ const router = createBrowserRouter([
   {
     path: "/user/profile/org/:orgId/finance",
     element: <OrgFinance />
+  },
+  {
+    path: "/user/profile/org/:orgId/learning",
+    element: <OrgLearning />
   },
   {
     path: "/user/profile/org/:orgId/investors",

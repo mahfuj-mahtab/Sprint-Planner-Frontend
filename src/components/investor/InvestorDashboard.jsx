@@ -79,8 +79,12 @@ export function InvestorDashboard({
   const topBar = (summary.topInvestors || []).slice(0, 6).map((inv) => ({
     name: inv.name.length > 12 ? `${inv.name.slice(0, 12)}…` : inv.name,
     invested: Number(inv.total_invested || 0),
+    returned: Number(inv.total_returned || 0),
     ownership: Number(inv.ownership_percentage || 0),
   }));
+
+  const totalReturned = Number(metrics.summary?.total_returned ?? summary.totalReturned ?? 0);
+  const netCapital = Number(metrics.summary?.net_capital ?? summary.netCapital ?? summary.totalRaised - totalReturned);
 
   const ownershipAllocated = Number(metrics.summary?.total_ownership_allocated || 0);
   const ownershipFree = Math.max(0, 100 - ownershipAllocated);
@@ -99,6 +103,18 @@ export function InvestorDashboard({
           value={metrics.summary.active_investors}
           sub={`${metrics.summary.total_investors} total`}
           variant="balance"
+        />
+        <StatCard
+          label="Total returned"
+          value={fmt(totalReturned, cur)}
+          sub="Payouts via expense (dividends)"
+          variant="expense"
+        />
+        <StatCard
+          label="Net capital"
+          value={fmt(netCapital, cur)}
+          sub="Invested − returned"
+          variant={netCapital >= 0 ? "income" : "expense"}
         />
         <StatCard
           label="Avg per investor"
@@ -191,9 +207,9 @@ export function InvestorDashboard({
         <div className="ww-card p-4 lg:col-span-8">
           <h3 className="text-sm font-semibold mb-1 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
-            Top investors by capital
+            Invested vs returned
           </h3>
-          <p className="text-xs text-muted-foreground mb-3">Total invested per investor</p>
+          <p className="text-xs text-muted-foreground mb-3">Capital in vs payouts out per investor</p>
           {topBar.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No investments recorded</p>
           ) : (
@@ -206,10 +222,11 @@ export function InvestorDashboard({
                   <Tooltip
                     contentStyle={TOOLTIP_STYLE}
                     formatter={(value, name) =>
-                      name === "invested" ? fmt(value, cur) : `${value}%`
+                      name === "ownership" ? `${value}%` : fmt(value, cur)
                     }
                   />
-                  <Bar dataKey="invested" name="invested" fill="#00d4ff" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="invested" name="Invested" fill="#00d4ff" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="returned" name="Returned" fill="#f87171" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -228,6 +245,8 @@ export function InvestorDashboard({
                   <th className="px-4 py-3 font-semibold">Type</th>
                   <th className="px-4 py-3 font-semibold">Ownership</th>
                   <th className="px-4 py-3 font-semibold">Invested</th>
+                  <th className="px-4 py-3 font-semibold">Returned</th>
+                  <th className="px-4 py-3 font-semibold">Net</th>
                   <th className="px-4 py-3 font-semibold">Rounds</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                 </tr>
@@ -240,6 +259,12 @@ export function InvestorDashboard({
                     <td className="px-4 py-3 font-mono tabular-nums">{inv.ownership_percentage}%</td>
                     <td className="px-4 py-3 font-mono tabular-nums text-primary">
                       {fmt(inv.total_invested, cur)}
+                    </td>
+                    <td className="px-4 py-3 font-mono tabular-nums text-destructive">
+                      {fmt(inv.total_returned, cur)}
+                    </td>
+                    <td className="px-4 py-3 font-mono tabular-nums">
+                      {fmt(inv.net_position ?? inv.total_invested - inv.total_returned, cur)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{inv.investment_count}</td>
                     <td className="px-4 py-3">

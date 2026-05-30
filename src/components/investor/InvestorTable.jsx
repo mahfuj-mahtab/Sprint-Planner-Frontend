@@ -38,14 +38,16 @@ export function InvestorTable({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full min-w-[880px] text-left text-sm">
+      <table className="w-full min-w-[1020px] text-left text-sm">
         <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-[0.08em] text-muted-foreground">
           <tr>
             <th className="px-4 py-3 font-semibold">Name</th>
             <th className="px-4 py-3 font-semibold">Type</th>
             <th className="px-4 py-3 font-semibold">Email</th>
             <th className="px-4 py-3 font-semibold">Ownership</th>
-            <th className="px-4 py-3 font-semibold">Total invested</th>
+            <th className="px-4 py-3 font-semibold text-right">Invested</th>
+            <th className="px-4 py-3 font-semibold text-right">Returned</th>
+            <th className="px-4 py-3 font-semibold text-right">Net</th>
             <th className="px-4 py-3 font-semibold">Rounds</th>
             <th className="px-4 py-3 font-semibold">Status</th>
             {canWrite ? <th className="px-4 py-3 font-semibold">Actions</th> : null}
@@ -62,10 +64,26 @@ export function InvestorTable({
               </td>
               <td className="px-4 py-4 text-muted-foreground">{investor.email || "—"}</td>
               <td className="px-4 py-4 font-mono tabular-nums">{investor.ownership_percentage}%</td>
-              <td className="px-4 py-4 font-semibold text-primary font-mono tabular-nums">
+              <td className="px-4 py-4 text-right font-semibold text-primary font-mono tabular-nums">
                 {fmt(investor.total_invested)}
               </td>
-              <td className="px-4 py-4 text-muted-foreground">{investor.investment_count}</td>
+              <td className="px-4 py-4 text-right font-semibold text-destructive font-mono tabular-nums">
+                {fmt(investor.total_returned)}
+              </td>
+              <td className="px-4 py-4 text-right font-mono tabular-nums">
+                {fmt(
+                  investor.net_position ??
+                    Number(investor.total_invested || 0) - Number(investor.total_returned || 0)
+                )}
+              </td>
+              <td className="px-4 py-4 text-muted-foreground">
+                {investor.investment_count}
+                {Number(investor.return_count) > 0 ? (
+                  <span className="text-xs block text-destructive/80">
+                    {investor.return_count} payout{investor.return_count === 1 ? "" : "s"}
+                  </span>
+                ) : null}
+              </td>
               <td className="px-4 py-4">
                 <span
                   className={cn(
