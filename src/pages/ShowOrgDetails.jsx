@@ -13,7 +13,7 @@ import SprintCreate from "../components/SprintCreate";
 import SprintEdit from "../components/SprintEdit";
 import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
-import { ArrowLeft, BarChart3, BookOpen, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
+import { ArrowLeft, BarChart3, BookOpen, Flag, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
 import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ListPagination } from "@/components/org/ListPagination";
@@ -630,6 +630,18 @@ function ShowOrgDetails() {
                       <div>
                         <h3 className="text-[15px] font-semibold group-hover:text-[#a78bfa]">Learning</h3>
                         <p className="text-sm text-muted-foreground mt-0.5">Topics, assignments, progress</p>
+                      </div>
+                    </Link>
+                    <Link
+                      to={`/user/profile/org/${orgId}/strategy`}
+                      className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#f59e0b]/40 transition sm:col-span-2 lg:col-span-1"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#f59e0b]/30 bg-[#f59e0b]/10">
+                        <Flag className="w-4 h-4 text-[#f59e0b]" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold group-hover:text-[#f59e0b]">Goals</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Year & quarter goals — simple plan</p>
                       </div>
                     </Link>
                   </>
