@@ -13,6 +13,7 @@ import { WeeklyChecklistSection } from "@/components/org/strategy/WeeklyChecklis
 import { GoalCascadeTree } from "@/components/org/strategy/GoalCascadeTree";
 import { SimpleGoalCard } from "@/components/org/strategy/SimpleGoalCard";
 import { SimpleGoalModal } from "@/components/org/strategy/SimpleGoalModal";
+import { SelectInput } from "@/components/org/Field";
 import { useOrgAccess } from "@/hooks/useOrgAccess";
 import { useStrategyPage } from "@/hooks/useStrategyPage";
 import { currentQuarter, currentYear, isLongTermGoal } from "@/lib/strategy";
@@ -30,6 +31,7 @@ function OrgStrategy() {
 
   const [year, setYear] = useState(currentYear());
   const [quarter, setQuarter] = useState(currentQuarter());
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -46,16 +48,26 @@ function OrgStrategy() {
   const canWrite = data?.access?.canWrite ?? hookAccess?.canWrite ?? false;
   const allGoals = data?.goals || [];
 
-  const longTermGoals = useMemo(() => allGoals.filter((g) => isLongTermGoal(g)), [allGoals]);
+  const filteredGoals = useMemo(() => {
+    if (!selectedProjectId) return allGoals;
+    return allGoals.filter((goal) =>
+      Array.isArray(goal.project_ids) && goal.project_ids.some((id) => {
+        const normalized = typeof id === "object" ? id._id || id : id;
+        return normalized?.toString() === selectedProjectId;
+      })
+    );
+  }, [allGoals, selectedProjectId]);
+
+  const longTermGoals = useMemo(() => filteredGoals.filter((g) => isLongTermGoal(g)), [filteredGoals]);
 
   const yearGoals = useMemo(
-    () => allGoals.filter((g) => g.level === "annual" && g.year === year),
-    [allGoals, year]
+    () => filteredGoals.filter((g) => g.level === "annual" && g.year === year),
+    [filteredGoals, year]
   );
 
   const quarterGoals = useMemo(
-    () => allGoals.filter((g) => g.level === "quarterly" && g.year === year && g.quarter === quarter),
-    [allGoals, year, quarter]
+    () => filteredGoals.filter((g) => g.level === "quarterly" && g.year === year && g.quarter === quarter),
+    [filteredGoals, year, quarter]
   );
 
   const openAddLong = () => setModal({ mode: "long_term" });
@@ -168,6 +180,21 @@ function OrgStrategy() {
           <div>
             <h1 className="text-lg font-semibold">Goals</h1>
             <p className="text-xs text-muted-foreground">Long term → Year → Quarter (linked)</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted-foreground">Project:</span>
+            <SelectInput
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="max-w-xs"
+            >
+              <option value="">All projects</option>
+              {data?.projects?.map((project) => (
+                <option key={project._id} value={project._id}>
+                  {project.name}
+                </option>
+              ))}
+            </SelectInput>
           </div>
         </div>
       </div>
@@ -389,6 +416,7 @@ function OrgStrategy() {
         quarter={quarter}
         initial={modal?.initial}
         projects={data.projects}
+        selectedProjectId={selectedProjectId}
         longTermGoals={longTermGoals}
         yearGoals={yearGoals}
         onSubmit={handleSave}

@@ -13,6 +13,7 @@ export function SimpleGoalModal({
   quarter,
   initial,
   projects,
+  selectedProjectId,
   longTermGoals,
   yearGoals,
   onSubmit,
@@ -76,6 +77,13 @@ export function SimpleGoalModal({
 
     const parentRaw = fd.get("parent_id");
     const parent_id = parentRaw ? String(parentRaw) : null;
+    const projectId = fd.get("project_id");
+    const project_ids = projectId ? [projectId] : [];
+
+    if (isLong && !projectId) {
+      window.alert("Please select a project for the long term goal.");
+      return;
+    }
 
     onSubmit({
       title: fd.get("title"),
@@ -85,12 +93,7 @@ export function SimpleGoalModal({
       quarter: isYear || isLong ? null : Number(quarter),
       status,
       parent_id: isLong ? null : parent_id,
-      project_ids: isYear || isLong
-        ? []
-        : (() => {
-            const pid = fd.get("project_id");
-            return pid ? [pid] : [];
-          })(),
+      project_ids,
       key_results,
     });
   };
@@ -193,6 +196,28 @@ export function SimpleGoalModal({
             defaultValue={initial?.description}
           />
         </Field>
+
+        {projects?.length > 0 ? (
+          <Field
+            label={isLong ? "Project" : "Linked project"}
+            hint={isLong ? "Each long term goal must belong to a project." : "Associate this goal with a project."}
+          >
+            <SelectInput
+              name="project_id"
+              defaultValue={
+                initial?.project_ids?.[0]?._id || initial?.project_ids?.[0] || selectedProjectId || ""
+              }
+              required={isLong}
+            >
+              <option value="">{isLong ? "— Select project —" : "None"}</option>
+              {projects.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.name}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
+        ) : null}
 
         {!isYear && !isLong ? (
           <>
