@@ -1,4 +1,5 @@
 export const TASK_STATUSES = [
+  "Pending",
   "Backlog",
   "In Progress",
   "In Review",
@@ -7,7 +8,7 @@ export const TASK_STATUSES = [
   "Cancelled",
 ];
 
-export const KANBAN_COLUMNS = ["Backlog", "In Progress", "In Review", "Blocked", "Done"];
+export const KANBAN_COLUMNS = ["Pending", "Backlog", "In Progress", "In Review", "Blocked", "Done"];
 
 export const TASK_TYPES = [
   { value: "feature", label: "Feature" },
@@ -19,22 +20,27 @@ export const TASK_TYPES = [
 export const TASK_PRIORITIES = ["Low", "Medium", "High", "Critical"];
 
 export const LEGACY_STATUS_MAP = {
-  Pending: "Backlog",
   "Work In Progress": "In Progress",
   Hold: "Blocked",
   Completed: "Done",
 };
 
 export const TASK_TRANSITIONS = {
-  Backlog: ["In Progress", "Cancelled"],
-  "In Progress": ["In Review", "Blocked", "Backlog", "Cancelled"],
+  Pending: ["In Progress", "Backlog", "Cancelled"],
+  Backlog: ["Pending", "In Progress", "Cancelled"],
+  "In Progress": ["In Review", "Blocked", "Pending", "Backlog", "Cancelled"],
   "In Review": ["Done", "In Progress", "Blocked"],
-  Blocked: ["In Progress", "Backlog", "Cancelled"],
-  Done: ["In Progress", "Backlog"],
-  Cancelled: ["Backlog"],
+  Blocked: ["In Progress", "Pending", "Backlog", "Cancelled"],
+  Done: ["In Progress", "Pending", "Backlog"],
+  Cancelled: ["Pending", "Backlog"],
 };
 
 export const STATUS_META = {
+  Pending: {
+    label: "Pending",
+    className: "bg-[#f59e0b]/15 text-[#f59e0b] border-[#f59e0b]/30",
+    dot: "#f59e0b",
+  },
   Backlog: {
     label: "Backlog",
     className: "bg-muted/80 text-muted-foreground border-border",
@@ -68,10 +74,10 @@ export const STATUS_META = {
 };
 
 export const normalizeTaskStatus = (status) => {
-  if (!status) return "Backlog";
+  if (!status) return "Pending";
   if (LEGACY_STATUS_MAP[status]) return LEGACY_STATUS_MAP[status];
   if (TASK_STATUSES.includes(status)) return status;
-  return "Backlog";
+  return "Pending";
 };
 
 export const canTransition = (from, to) => {

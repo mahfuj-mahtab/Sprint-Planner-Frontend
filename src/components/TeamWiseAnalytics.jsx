@@ -56,7 +56,7 @@ function bumpMemberStat(stat, status) {
   stat.total++;
   if (s === "Done") stat.completed++;
   else if (s === "In Progress" || s === "In Review") stat.wip++;
-  else if (s === "Backlog") stat.pending++;
+  else if (s === "Pending" || s === "Backlog") stat.pending++;
   else if (s === "Blocked") stat.hold++;
   else if (s === "Cancelled") stat.cancelled++;
 }
@@ -294,7 +294,7 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
       name: truncateName(team.name),
       completed: c.Done,
       wip: (c["In Progress"] || 0) + (c["In Review"] || 0),
-      pending: c.Backlog,
+      pending: (c.Pending || 0) + (c.Backlog || 0),
       hold: c.Blocked,
       cancelled: c.Cancelled,
     };
@@ -397,8 +397,8 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <StatCard label="In progress" value={(statusCounts["In Progress"] || 0) + (statusCounts["In Review"] || 0)} variant="balance" />
-        <StatCard label="Backlog" value={statusCounts.Backlog} variant="neutral" />
-        <StatCard label="On hold" value={statusCounts.Hold} variant="neutral" />
+        <StatCard label="Pending" value={(statusCounts.Pending || 0) + (statusCounts.Backlog || 0)} variant="neutral" />
+        <StatCard label="On hold" value={statusCounts.Blocked} variant="neutral" />
         <StatCard label="Cancelled" value={statusCounts.Cancelled} variant="expense" />
         <StatCard label="Unassigned" value={unassigned} variant="neutral" sub="Tasks with no owner" />
         <StatCard
@@ -487,7 +487,7 @@ function TeamWiseAnalytics({ teams = [], sprint }) {
                   {[
                     { label: "Done", val: c.Done, color: "text-[#00ff94]" },
                     { label: "WIP", val: (c["In Progress"] || 0) + (c["In Review"] || 0), color: "text-[#00d4ff]" },
-                    { label: "Backlog", val: c.Backlog, color: "text-slate-400" },
+                    { label: "Pending", val: (c.Pending || 0) + (c.Backlog || 0), color: "text-slate-400" },
                     { label: "Hold", val: c.Hold, color: "text-[#a78bfa]" },
                   ].map((box) => (
                     <div key={box.label} className="rounded-xl bg-muted/25 border border-border/60 px-4 py-3 text-center min-w-[72px]">

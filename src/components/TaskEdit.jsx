@@ -9,10 +9,13 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
     const [teamDetails, setTeamDetails] = useState([])
     const [teamMembers, setTeamMembers] = useState([])
     const [featureModules, setFeatureModules] = useState([])
+    const [projects, setProjects] = useState([])
+    const [selectedProjectId, setSelectedProjectId] = useState(projectId || "")
     const {
         register,
         handleSubmit,
         reset,
+        setValue,
     } = useForm()
     const handleMemberToggle = (memberId) => {
         setSelectedMembers(prev =>
@@ -33,6 +36,30 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
         setTeamMembers([]);
     }
 }
+    const loadProjectTeams = (nextProjectId, selectedTeamId = "") => {
+        if (!nextProjectId) {
+            setTeamDetails({ teams: [] });
+            setFeatureModules([]);
+            setTeamMembers([]);
+            return;
+        }
+        api.get(`/api/v1/org/project/${nextProjectId}/team/fetch/${orgId}`).then((response) => {
+            setTeamDetails(response.data);
+            if (selectedTeamId) {
+                const team = response.data?.teams?.find((t) => t._id === selectedTeamId);
+                setTeamMembers((team?.members || []).map((m) => ({
+                    id: m.user._id,
+                    name: m.user.fullName,
+                })));
+            }
+        }).catch((error) => {
+            console.error("There was an error!", error);
+        });
+
+        api.get(`/api/v1/org/${orgId}/projects/${nextProjectId}/features/summary`).then((r) => {
+            if (r.data?.success) setFeatureModules(r.data.modules || []);
+        }).catch(() => setFeatureModules([]));
+    }
     const onSubmit = (data) => {
         console.log(data);
         console.log('Selected Members:', selectedMembers);
@@ -75,6 +102,9 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
             console.log(response.data)
             setTaskDetail(response.data.task);
             setSelectedMembers(response.data.task.assignee.map(m => m._id));
+            const taskProjectId = response.data.task?.project_id?._id || response.data.task?.project_id || projectId || "";
+            const taskTeamId = response.data.task?.team_id?._id || "";
+            setSelectedProjectId(taskProjectId);
             reset({
                 name: response.data.task.title,
                 description: response.data.task.description,
@@ -85,9 +115,11 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
                 task_type: response.data.task.task_type || "feature",
                 blocked_reason: response.data.task.blocked_reason || "",
                 acceptance_criteria: response.data.task.acceptance_criteria || "",
-                team: response.data.task.team_id._id,
+                projectId: taskProjectId,
+                team: taskTeamId,
                 featureId: response.data.task?.feature_id?._id || ""
             });
+            loadProjectTeams(taskProjectId, taskTeamId);
             // setProfileDetaile(response.data);
         }).catch((error) => {
             console.error("There was an error!", error);
@@ -95,21 +127,10 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
     }, [])
 
     useEffect(() => {
-        const url = projectId
-            ? `/api/v1/org/project/${projectId}/team/fetch/${orgId}`
-            : `/api/v1/org/team/fetch/${orgId}`;
-        api.get(url).then((response) => {
-            console.log(response.data)
-            setTeamDetails(response.data);
-            // setProfileDetaile(response.data);
-        }).catch((error) => {
-            console.error("There was an error!", error);
-        });
-
-        if (projectId) {
-            api.get(`/api/v1/org/${orgId}/projects/${projectId}/features/summary`).then((r) => {
-                if (r.data?.success) setFeatureModules(r.data.modules || []);
-            }).catch(() => setFeatureModules([]));
+        if (!projectId) {
+            api.get(`/api/v1/org/${orgId}/projects`, { params: { limit: 100, archived: "false" } }).then((response) => {
+                setProjects(response.data.projects || []);
+            }).catch((error) => console.error("There was an error!", error));
         }
     }, [])
 
@@ -150,6 +171,33 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
                         <div className="sm:col-span-2">
+                            <label htmlFor="projectId" className="ww-label">Project</label>
+                            <select
+                                name="projectId"
+                                id="projectId"
+                                className="ww-input"
+                                required
+                                disabled={Boolean(projectId)}
+                                {...register("projectId", { required: true })}
+                                value={selectedProjectId}
+                                onChange={(e) => {
+                                    setSelectedProjectId(e.target.value);
+                                    setValue("projectId", e.target.value);
+                                    setValue("team", "");
+                                    setValue("featureId", "");
+                                    setSelectedMembers([]);
+                                    loadProjectTeams(e.target.value);
+                                }}
+                            >
+                                <option value="">Select project</option>
+                                {projectId ? <option value={projectId}>Current project</option> : null}
+                                {projects.map((project) => (
+                                    <option key={project._id} value={project._id}>{project.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="sm:col-span-2">
                             <label htmlFor="name" className="ww-label">Task Name</label>
                             <input type="text" name="name" id="name" className="ww-input" placeholder="Type task name" required="" {...register("name", { required: true })} />
                         </div>
@@ -179,6 +227,7 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
                         <div className="w-full">
                             <label htmlFor="status" className="ww-label">Status</label>
                             <select name="status" id="status" className="ww-input" required="" {...register("status", { required: true })}>
+                                <option value="Pending">Pending</option>
                                 <option value="Backlog">Backlog</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="In Review">In Review</option>

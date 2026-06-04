@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 export function TaskStatusBadge({ status, className }) {
   const key = normalizeTaskStatus(status);
-  const meta = STATUS_META[key] || STATUS_META.Backlog;
+  const meta = STATUS_META[key] || STATUS_META.Pending;
   return (
     <span
       className={cn(

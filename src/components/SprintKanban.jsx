@@ -14,6 +14,7 @@ import { patchTaskStatus } from "./TaskStatusSelect";
 import { cn } from "@/lib/utils";
 
 function KanbanCard({ task, teamName, onEdit, onDragStart, readOnly }) {
+  const projectName = task.project?.name || task.project_id?.name;
   return (
     <article
       draggable={!readOnly}
@@ -48,7 +49,9 @@ function KanbanCard({ task, teamName, onEdit, onDragStart, readOnly }) {
           {task.blocked_reason ? (
             <p className="text-[11px] text-destructive/90 mt-2 line-clamp-2">{task.blocked_reason}</p>
           ) : null}
-          <p className="text-[10px] text-muted-foreground mt-2 truncate">{teamName}</p>
+          <p className="text-[10px] text-muted-foreground mt-2 truncate">
+            {projectName ? `${projectName} / ` : ""}{teamName}
+          </p>
           {task.assignee?.length > 0 ? (
             <p className="text-[10px] text-muted-foreground truncate">
               {task.assignee.map((a) => a.fullName).join(", ")}

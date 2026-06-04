@@ -12,7 +12,7 @@ export function TaskStatusSelect({
 }) {
   const current = normalizeTaskStatus(value);
   const options = showAll
-    ? ["Backlog", "In Progress", "In Review", "Blocked", "Done", "Cancelled"]
+    ? ["Pending", "Backlog", "In Progress", "In Review", "Blocked", "Done", "Cancelled"]
     : [current, ...nextStatuses(current)].filter((s, i, arr) => arr.indexOf(s) === i);
 
   return (

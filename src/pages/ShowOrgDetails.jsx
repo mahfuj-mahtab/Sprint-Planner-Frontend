@@ -13,6 +13,7 @@ import SprintCreate from "../components/SprintCreate";
 import SprintEdit from "../components/SprintEdit";
 import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
+import OrgTaskBoard from "../components/OrgTaskBoard";
 import { ArrowLeft, BarChart3, BookOpen, Flag, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
 import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -25,7 +26,7 @@ function ShowOrgDetails() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [view, setView] = useState("projects"); // "projects" | "details" | "members"
+  const [view, setView] = useState("tasks"); // "tasks" | "projects" | "details" | "members"
   const [activeTab, setActiveTab] = useState("sprints");
 
   const [orgDetails, setOrgDetails] = useState(null);
@@ -43,6 +44,8 @@ function ShowOrgDetails() {
   const [sprintPage, setSprintPage] = useState(1);
   const [sprintFilters, setSprintFilters] = useState({ search: "", active: "" });
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [projectDetailsLoading, setProjectDetailsLoading] = useState(false);
+  const [sprintLoading, setSprintLoading] = useState(false);
 
   const [showCreateSprint, setShowCreateSprint] = useState(false);
   const [showTeamCreate, setShowTeamCreate] = useState(false);
@@ -65,6 +68,7 @@ function ShowOrgDetails() {
 
   const orgLevelTabs = useMemo(
     () => [
+      { id: "tasks", label: "Tasks" },
       { id: "projects", label: "Projects" },
       { id: "members", label: "Members" },
     ],
@@ -91,6 +95,9 @@ function ShowOrgDetails() {
 
   const loadSprints = (projectId, page = sprintPage) => {
     if (!projectId) return Promise.resolve();
+    setSprintLoading(true);
+    setSprintDetails([]);
+    setSprintPagination(null);
     const params = { page, limit: 10 };
     if (sprintFilters.search.trim()) params.search = sprintFilters.search.trim();
     if (sprintFilters.active) params.active = sprintFilters.active;
@@ -104,11 +111,13 @@ function ShowOrgDetails() {
       })
       .catch((error) => {
         console.error("There was an error!", error);
-      });
+      })
+      .finally(() => setSprintLoading(false));
   };
 
-  const orgFetch = (projectId) => {
-    api
+  const orgFetch = (projectId, options = {}) => {
+    if (options.showProjectLoader) setProjectDetailsLoading(true);
+    return api
       .get(`/api/v1/org/fetch/${orgId}`, { params: projectId ? { projectId } : undefined })
       .then((response) => {
         setOrgDetails(response.data);
@@ -116,12 +125,15 @@ function ShowOrgDetails() {
       })
       .catch((error) => {
         console.error("There was an error!", error);
+      })
+      .finally(() => {
+        if (options.showProjectLoader) setProjectDetailsLoading(false);
       });
   };
 
   useEffect(() => {
     // Reset view/state when switching organizations to avoid leaking previous org's selected project
-    setView("projects");
+    setView("tasks");
     setActiveTab("sprints");
     setShowCreateSprint(false);
     setShowTeamCreate(false);
@@ -136,6 +148,8 @@ function ShowOrgDetails() {
     setProjectPage(1);
     setSprintDetails([]);
     setSprintPagination(null);
+    setProjectDetailsLoading(false);
+    setSprintLoading(false);
     setOrgDetails(null);
     const sp = new URLSearchParams(location.search);
     const qView = sp.get("view");
@@ -154,7 +168,7 @@ function ShowOrgDetails() {
       setActiveTab(qTab || "sprints");
       orgFetch(qProjectId);
     } else {
-      setView("projects");
+      setView("tasks");
       loadProjects(1);
       orgFetch();
     }
@@ -196,8 +210,11 @@ function ShowOrgDetails() {
     } else if (qView === "projects") {
       setView("projects");
       if (!projects.length) loadProjects(1);
-    } else if (!qView && view !== "projects" && view !== "members") {
-      setView("projects");
+    } else if (qView === "tasks") {
+      setView("tasks");
+      if (!projects.length) loadProjects(1);
+    } else if (!qView && view !== "tasks" && view !== "projects" && view !== "members") {
+      setView("tasks");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
@@ -211,7 +228,11 @@ function ShowOrgDetails() {
     setSelectedProjectId(projectId);
     setActiveTab("sprints");
     setSprintPage(1);
-    orgFetch(projectId);
+    setProjectDetailsLoading(true);
+    setSprintDetails([]);
+    setSprintPagination(null);
+    setOrgDetails((current) => (current ? { ...current, teams: [] } : current));
+    orgFetch(projectId, { showProjectLoader: true });
     loadSprints(projectId, 1);
   };
 
@@ -239,8 +260,14 @@ function ShowOrgDetails() {
 
   const handleOpenOrgProjects = () => {
     setView("projects");
-    navigate(`/user/profile/org/${orgId}`);
+    navigate(`/user/profile/org/${orgId}?view=projects`);
     loadProjects(projectPage);
+  };
+
+  const handleOpenOrgTasks = () => {
+    setView("tasks");
+    navigate(`/user/profile/org/${orgId}?view=tasks`);
+    if (!projects.length) loadProjects(1);
   };
 
   const handleDeleteProject = (projectId) => {
@@ -272,6 +299,29 @@ function ShowOrgDetails() {
 
   const Skeleton = ({ className = "" }) => (
     <div className={`animate-pulse rounded-lg bg-muted/60 ${className}`} />
+  );
+
+  const ProjectDetailsSkeleton = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-64" />
+        <Skeleton className="h-4 w-96 max-w-full" />
+      </div>
+      <div className="grid gap-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <Skeleton className="h-5 w-52 mb-3" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+              <Skeleton className="h-9 w-24 shrink-0" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 
   if (!orgDetails) {
@@ -449,7 +499,11 @@ function ShowOrgDetails() {
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => (tab.id === "members" ? handleOpenOrgMembers() : handleOpenOrgProjects())}
+                    onClick={() => {
+                      if (tab.id === "members") handleOpenOrgMembers();
+                      else if (tab.id === "projects") handleOpenOrgProjects();
+                      else handleOpenOrgTasks();
+                    }}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                       view === tab.id ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
@@ -761,11 +815,19 @@ function ShowOrgDetails() {
             </div>
           ) : null}
 
-          {view === "details" && !canWriteDelivery && deliveryReadOnlyReason ? (
+          {view === "tasks" ? (
+            <OrgTaskBoard orgId={orgId} canWrite={orgDetails?.access?.canWrite ?? true} />
+          ) : null}
+
+          {view === "details" && projectDetailsLoading ? (
+            <ProjectDetailsSkeleton />
+          ) : null}
+
+          {view === "details" && !projectDetailsLoading && !canWriteDelivery && deliveryReadOnlyReason ? (
             <ReadOnlyBanner reason={deliveryReadOnlyReason} />
           ) : null}
 
-          {view === "details" && activeTab === "sprints" && (
+          {view === "details" && !projectDetailsLoading && activeTab === "sprints" && (
             <div>
               <h2 className="lg:text-2xl text-lg font-semibold mb-4">
                 Sprints{" "}
@@ -798,7 +860,9 @@ function ShowOrgDetails() {
                 </Field>
               </div>
 
-              {sprintDetails.length > 0 ? (
+              {sprintLoading ? (
+                <ProjectDetailsSkeleton />
+              ) : sprintDetails.length > 0 ? (
                 sprintDetails.map((sprint) => (
                   <SprintBlock
                     key={sprint.sprint._id}
@@ -829,7 +893,7 @@ function ShowOrgDetails() {
             </div>
           )}
 
-          {view === "details" && activeTab === "team" && (
+          {view === "details" && !projectDetailsLoading && activeTab === "team" && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-xl font-semibold ww-heading">
@@ -867,15 +931,15 @@ function ShowOrgDetails() {
             </div>
           )}
 
-          {view === "details" && activeTab === "features" && (
+          {view === "details" && !projectDetailsLoading && activeTab === "features" && (
             <FeatureAnalysis orgId={orgId} projectId={selectedProjectId} canWrite={canWriteDelivery} />
           )}
 
-          {view === "details" && activeTab === "versions" && (
+          {view === "details" && !projectDetailsLoading && activeTab === "versions" && (
             <ProjectVersions orgId={orgId} projectId={selectedProjectId} />
           )}
 
-          {view === "details" && activeTab === "docs" && (
+          {view === "details" && !projectDetailsLoading && activeTab === "docs" && (
             <ProjectDocs orgId={orgId} projectId={selectedProjectId} />
           )}
 
@@ -911,7 +975,7 @@ function ShowOrgDetails() {
               >
                 &times;
               </button>
-              <TeamCreate onClose={() => { setShowTeamCreate(false); orgFetch(); }} orgId={orgId} projectId={selectedProjectId} fetchOrg={() => orgFetch()} />
+              <TeamCreate onClose={() => { setShowTeamCreate(false); orgFetch(selectedProjectId); }} orgId={orgId} projectId={selectedProjectId} fetchOrg={() => orgFetch(selectedProjectId)} />
             </div>
           </div>
         )}
@@ -970,7 +1034,7 @@ function ShowOrgDetails() {
               >
                 &times;
               </button>
-              <SprintEdit onClose={() => setShowSprintEdit(false)} orgId={orgId} sprintId={editingSprintId} orgFetch={() => orgFetch()} />
+              <SprintEdit onClose={() => setShowSprintEdit(false)} orgId={orgId} sprintId={editingSprintId} orgFetch={() => orgFetch(selectedProjectId)} />
             </div>
           </div>
         )}

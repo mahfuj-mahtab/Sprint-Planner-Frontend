@@ -70,6 +70,7 @@ export function SprintTeamTasks({
     priority: task.priority,
     startDate: toInputDate(task.startDate),
     endDate: toInputDate(task.endDate),
+    projectId: task.project_id?._id || task.project_id || team.project_id,
     team: team._id,
     members: (task.assignee || []).map((a) => a._id || a),
     featureId: task.feature_id?._id || task.feature_id || "",
@@ -113,10 +114,11 @@ export function SprintTeamTasks({
       await api.post(`/api/v1/org/team/add/task/org/${orgId}/sprint/${sprintId}`, {
         name: title,
         description: "",
-        status: "Backlog",
+        status: "Pending",
         priority: "Medium",
         startDate: sprintStart,
         endDate: sprintEnd,
+        projectId: team.project_id,
         team: team._id,
         members: [],
       });

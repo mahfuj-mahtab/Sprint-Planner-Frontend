@@ -27,7 +27,7 @@ export function TaskWorkflowGuide({ className = "" }) {
         ))}
       </div>
       <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
-        <strong className="text-foreground font-normal">Backlog</strong> → plan ·{" "}
+        <strong className="text-foreground font-normal">Pending</strong> → plan ·{" "}
         <strong className="text-foreground font-normal">In progress</strong> → build ·{" "}
         <strong className="text-foreground font-normal">In review</strong> → QA / PR ·{" "}
         <strong className="text-foreground font-normal">Done</strong> → shipped. Use{" "}
