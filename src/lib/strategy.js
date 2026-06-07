@@ -15,6 +15,10 @@ export const STRATEGY_HELP = {
         "Link to a year goal. Break it into checklist items (completed / not completed, like project features). Optional numbers if you need a target count.",
     },
     {
+      term: "Priority",
+      meaning: "High = what you focus on now. Goals sort high → medium → low so your top priorities stand out.",
+    },
+    {
       term: "Progress %",
       meaning: "If a goal has linked children, its % is the average of those children (you are going the right way).",
     },
@@ -43,6 +47,49 @@ export const GOAL_STATUS_CLASS = {
   draft: "bg-muted/40 text-muted-foreground border-border",
   cancelled: "bg-muted/30 text-muted-foreground border-border",
 };
+
+export const GOAL_PRIORITIES = ["high", "medium", "low", "later"];
+
+export const GOAL_PRIORITY_LABELS = {
+  high: "High priority",
+  medium: "Medium",
+  low: "Low",
+  later: "Later",
+};
+
+export const GOAL_PRIORITY_BADGE = {
+  high: "bg-emerald-500/20 text-emerald-300 border-emerald-500/45 font-semibold",
+  medium: "bg-[#00d4ff]/15 text-[#00d4ff] border-[#00d4ff]/35",
+  low: "bg-amber-500/15 text-amber-200 border-amber-500/35",
+  later: "bg-muted/40 text-muted-foreground border-border",
+};
+
+export const GOAL_PRIORITY_CARD = {
+  high: "ring-2 ring-emerald-500/55 border-emerald-500/40 bg-emerald-500/[0.06]",
+  medium: "border-border hover:border-primary/25",
+  low: "border-border/70 opacity-95",
+  later: "border-border/50 opacity-85",
+};
+
+export const GOAL_PRIORITY_OPTIONS = [
+  { value: "high", label: "High — focus now" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+  { value: "later", label: "Later" },
+];
+
+export function goalPriorityRank(priority) {
+  const idx = GOAL_PRIORITIES.indexOf(priority || "medium");
+  return idx === -1 ? 1 : idx;
+}
+
+export function sortGoalsByPriority(goals) {
+  return [...goals].sort((a, b) => {
+    const pr = goalPriorityRank(a.priority) - goalPriorityRank(b.priority);
+    if (pr !== 0) return pr;
+    return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+  });
+}
 
 export function isLongTermGoal(goal) {
   return LONG_TERM_LEVELS.includes(goal.level);

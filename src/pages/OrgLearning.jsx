@@ -5,9 +5,6 @@ import {
   ArrowLeft,
   BookOpen,
   Calendar,
-  ChevronDown,
-  ChevronUp,
-  GripVertical,
   Loader2,
   Pencil,
   Plus,
@@ -22,15 +19,20 @@ import { StatCard } from "@/components/org/StatCard";
 import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
 import { Skeleton } from "@/components/ui/Loading";
+import { LearningTopicBoard } from "@/components/LearningTopicBoard";
 import { formatDate } from "@/lib/formatMoney";
+import {
+  LEARNING_BOARD_COLUMNS,
+  LEARNING_TOPIC_STATUS_LABELS,
+  LEARNING_TOPIC_STATUS_CLASS,
+  normalizeLearningTopicStatus,
+} from "@/lib/learningWorkflow";
 import { cn } from "@/lib/utils";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
 const STATUS_LABEL = {
-  draft: "Draft",
-  active: "Active",
-  archived: "Archived",
+  ...LEARNING_TOPIC_STATUS_LABELS,
   not_started: "Not started",
   in_progress: "In progress",
   completed: "Completed",
@@ -38,9 +40,7 @@ const STATUS_LABEL = {
 };
 
 const STATUS_CLASS = {
-  draft: "bg-muted/40 text-muted-foreground border-border",
-  active: "bg-primary/15 text-primary border-primary/30",
-  archived: "bg-muted/30 text-muted-foreground border-border",
+  ...LEARNING_TOPIC_STATUS_CLASS,
   not_started: "bg-muted/40 text-muted-foreground border-border",
   in_progress: "bg-amber-500/15 text-amber-200 border-amber-500/30",
   completed: "bg-primary/15 text-primary border-primary/30",
@@ -144,168 +144,6 @@ function AssignmentRow({ assignment, canUpdate, canManage, onProgressCommit, onD
   );
 }
 
-function TopicCard({
-  topic,
-  index,
-  expanded,
-  onToggle,
-  canWrite,
-  onEdit,
-  onDelete,
-  onAssign,
-  onAssignmentProgress,
-  onAssignmentDelete,
-  currentUserId,
-  dragHandleProps,
-  isDragging,
-  isDropTarget,
-}) {
-  const { progress, assignments } = topic;
-
-  return (
-    <article
-      className={cn(
-        "ww-card overflow-hidden transition-all duration-200",
-        isDragging && "opacity-50 scale-[0.99] shadow-lg ring-2 ring-[#a78bfa]/50",
-        isDropTarget && "ring-2 ring-primary border-primary/40"
-      )}
-    >
-      {isDropTarget ? (
-        <div className="h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
-      ) : null}
-
-      <div className="p-4 sm:p-5">
-        <div className="flex gap-3">
-          {canWrite ? (
-            <div
-              {...dragHandleProps}
-              className="flex shrink-0 items-center justify-center w-8 rounded-lg border border-dashed border-border bg-muted/30 text-muted-foreground cursor-grab active:cursor-grabbing hover:border-[#a78bfa]/50 hover:text-[#a78bfa] touch-none"
-              title="Drag to reorder"
-            >
-              <GripVertical className="w-4 h-4" />
-              <span className="sr-only">Drag handle</span>
-            </div>
-          ) : null}
-
-          <div className="flex-1 min-w-0 space-y-3">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                    #{index + 1}
-                  </span>
-                  <h3 className="font-semibold text-base">{topic.title}</h3>
-                  <span
-                    className={cn(
-                      "inline-flex rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
-                      STATUS_CLASS[topic.status] || STATUS_CLASS.active
-                    )}
-                  >
-                    {STATUS_LABEL[topic.status] || topic.status}
-                  </span>
-                </div>
-                {topic.description ? (
-                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{topic.description}</p>
-                ) : null}
-              </div>
-
-              <div className="flex items-center gap-1 shrink-0">
-                {canWrite ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={onAssign}
-                      className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/10"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" /> Assign
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onEdit}
-                      className="p-2 rounded-lg border border-border hover:bg-muted text-muted-foreground"
-                      title="Edit"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onDelete}
-                      className="p-2 rounded-lg border border-border hover:bg-muted text-destructive"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={onToggle}
-                  className="p-2 rounded-lg border border-border hover:bg-muted text-muted-foreground"
-                  aria-expanded={expanded}
-                >
-                  {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-              {topic.start_date ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" /> Start {formatDate(topic.start_date)}
-                </span>
-              ) : null}
-              {topic.due_date ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" /> Due {formatDate(topic.due_date)}
-                </span>
-              ) : null}
-              <span>
-                {progress.completed}/{progress.total} completed
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Team progress</span>
-                <span className="font-mono tabular-nums">{progress.avg_progress}%</span>
-              </div>
-              <ProgressBar value={progress.avg_progress} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {expanded ? (
-        <div className="border-t border-border bg-muted/10 px-4 sm:px-5 py-4 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assignments</p>
-          {assignments.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">
-              No assignments yet.
-              {canWrite ? " Use Assign to add team members." : ""}
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {assignments.map((a) => {
-                const isMine = String(a.user_id?._id || a.user_id) === String(currentUserId);
-                return (
-                  <AssignmentRow
-                    key={a._id}
-                    assignment={a}
-                    canUpdate={canWrite || isMine}
-                    canManage={canWrite}
-                    onProgressCommit={onAssignmentProgress}
-                    onDelete={onAssignmentDelete}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : null}
-    </article>
-  );
-}
-
 function OrgLearning() {
   const { orgId } = useParams();
   const navigate = useNavigate();
@@ -314,9 +152,8 @@ function OrgLearning() {
   const [summary, setSummary] = useState(null);
   const [access, setAccess] = useState(null);
   const [members, setMembers] = useState([]);
-  const [expanded, setExpanded] = useState({});
-  const [dragTopicId, setDragTopicId] = useState(null);
-  const [dropTargetId, setDropTargetId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [detailTopic, setDetailTopic] = useState(null);
   const [topicModal, setTopicModal] = useState(false);
   const [assignModal, setAssignModal] = useState(false);
   const [editingTopic, setEditingTopic] = useState(null);
@@ -325,7 +162,7 @@ function OrgLearning() {
   const [topicForm, setTopicForm] = useState({
     title: "",
     description: "",
-    status: "active",
+    status: "pending",
     start_date: "",
     due_date: "",
   });
@@ -365,12 +202,22 @@ function OrgLearning() {
     setTopicForm({
       title: topic?.title || "",
       description: topic?.description || "",
-      status: topic?.status || "active",
+      status: normalizeLearningTopicStatus(topic?.status) || "pending",
       start_date: topic?.start_date ? new Date(topic.start_date).toISOString().slice(0, 10) : "",
       due_date: topic?.due_date ? new Date(topic.due_date).toISOString().slice(0, 10) : "",
     });
     setTopicModal(true);
   };
+
+  const boardTopics = useMemo(() => {
+    if (statusFilter === "archived") {
+      return topics.filter((t) => normalizeLearningTopicStatus(t.status) === "archived");
+    }
+    if (statusFilter) {
+      return topics.filter((t) => normalizeLearningTopicStatus(t.status) === statusFilter);
+    }
+    return topics.filter((t) => normalizeLearningTopicStatus(t.status) !== "archived");
+  }, [topics, statusFilter]);
 
   const saveTopic = async (e) => {
     e.preventDefault();
@@ -440,7 +287,6 @@ function OrgLearning() {
       });
       toast.success("Member assigned", { theme: "dark" });
       setAssignModal(false);
-      setExpanded((prev) => ({ ...prev, [assignTopic._id]: true }));
       load();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
@@ -506,45 +352,8 @@ function OrgLearning() {
     }
   };
 
-  const handleDragStart = (e, topicId) => {
-    setDragTopicId(topicId);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", topicId);
-  };
-
-  const handleDragOver = (e, topicId) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (dragTopicId && dragTopicId !== topicId) setDropTargetId(topicId);
-  };
-
-  const handleDrop = async (e, targetId) => {
-    e.preventDefault();
-    setDropTargetId(null);
-    if (!dragTopicId || dragTopicId === targetId || !canWrite) {
-      setDragTopicId(null);
-      return;
-    }
-    const ids = topics.map((t) => t._id);
-    const from = ids.indexOf(dragTopicId);
-    const to = ids.indexOf(targetId);
-    if (from < 0 || to < 0) {
-      setDragTopicId(null);
-      return;
-    }
-    const next = [...ids];
-    next.splice(from, 1);
-    next.splice(to, 0, dragTopicId);
-    const map = Object.fromEntries(topics.map((t) => [t._id, t]));
-    setTopics(next.map((id) => map[id]));
-    setDragTopicId(null);
-    try {
-      await api.patch(`/api/v1/org/${orgId}/learning/topics/reorder`, { orderedIds: next });
-      toast.success("Order saved", { theme: "dark", autoClose: 1500 });
-    } catch {
-      toast.error("Reorder failed", { theme: "dark" });
-      load();
-    }
+  const openTopicDetail = (topic) => {
+    setDetailTopic(topic);
   };
 
   const myTopics = useMemo(() => {
@@ -558,6 +367,11 @@ function OrgLearning() {
       })
       .filter(Boolean);
   }, [topics, currentUserId]);
+
+  const detailTopicLive = useMemo(() => {
+    if (!detailTopic) return null;
+    return topics.find((t) => t._id === detailTopic._id) || detailTopic;
+  }, [topics, detailTopic]);
 
   if (loading) {
     return (
@@ -616,7 +430,7 @@ function OrgLearning() {
           <StatCard
             label="Topics"
             value={summary?.topic_count ?? 0}
-            sub={`${summary?.active_topics ?? 0} active`}
+            sub={`${summary?.active_topics ?? 0} in learning`}
             variant="neutral"
           />
           <StatCard
@@ -657,15 +471,24 @@ function OrgLearning() {
         ) : null}
 
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
             <div>
               <h2 className="text-sm font-semibold">Learning topics</h2>
-              {canWrite ? (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Use the grip handle on each card to drag and reorder priority
-                </p>
-              ) : null}
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Drag topics between columns to update status — Pending → Learning → Review → Completed
+              </p>
             </div>
+            <Field label="Filter" className="mb-0 min-w-[9rem]">
+              <SelectInput value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <option value="">All on board</option>
+                {LEARNING_BOARD_COLUMNS.map((s) => (
+                  <option key={s} value={s}>
+                    {LEARNING_TOPIC_STATUS_LABELS[s]}
+                  </option>
+                ))}
+                <option value="archived">{LEARNING_TOPIC_STATUS_LABELS.archived}</option>
+              </SelectInput>
+            </Field>
           </div>
 
           {topics.length === 0 ? (
@@ -682,45 +505,35 @@ function OrgLearning() {
                 </button>
               ) : null}
             </div>
-          ) : (
-            <div className="space-y-4">
-              {topics.map((topic, index) => (
-                <div
-                  key={topic._id}
-                  onDragOver={(e) => handleDragOver(e, topic._id)}
-                  onDragLeave={() => setDropTargetId((id) => (id === topic._id ? null : id))}
-                  onDrop={(e) => handleDrop(e, topic._id)}
-                >
-                  <TopicCard
-                    topic={topic}
-                    index={index}
-                    expanded={Boolean(expanded[topic._id])}
-                    onToggle={() => setExpanded((p) => ({ ...p, [topic._id]: !p[topic._id] }))}
-                    canWrite={canWrite}
-                    onEdit={() => openTopicModal(topic)}
-                    onDelete={() => deleteTopic(topic)}
-                    onAssign={() => openAssign(topic)}
-                    onAssignmentProgress={updateProgress}
-                    onAssignmentDelete={deleteAssignment}
-                    currentUserId={currentUserId}
-                    isDragging={dragTopicId === topic._id}
-                    isDropTarget={dropTargetId === topic._id && dragTopicId !== topic._id}
-                    dragHandleProps={
-                      canWrite
-                        ? {
-                            draggable: true,
-                            onDragStart: (e) => handleDragStart(e, topic._id),
-                            onDragEnd: () => {
-                              setDragTopicId(null);
-                              setDropTargetId(null);
-                            },
-                          }
-                        : undefined
-                    }
-                  />
+          ) : statusFilter === "archived" ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {boardTopics.map((topic) => (
+                <div key={topic._id} className="ww-card p-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-sm">{topic.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Archived</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openTopicDetail(topic)}
+                    className="text-xs px-3 py-1.5 rounded-md border border-[#a78bfa]/40 text-[#a78bfa]"
+                  >
+                    Open
+                  </button>
                 </div>
               ))}
             </div>
+          ) : (
+            <LearningTopicBoard
+              orgId={orgId}
+              topics={boardTopics}
+              canWrite={canWrite}
+              onRefresh={load}
+              onEdit={openTopicModal}
+              onDelete={deleteTopic}
+              onAssign={openAssign}
+              onOpen={openTopicDetail}
+            />
           )}
         </section>
 
@@ -779,9 +592,12 @@ function OrgLearning() {
               value={topicForm.status}
               onChange={(e) => setTopicForm({ ...topicForm, status: e.target.value })}
             >
-              <option value="active">Active</option>
-              <option value="draft">Draft</option>
-              <option value="archived">Archived</option>
+              {LEARNING_BOARD_COLUMNS.map((s) => (
+                <option key={s} value={s}>
+                  {LEARNING_TOPIC_STATUS_LABELS[s]}
+                </option>
+              ))}
+              <option value="archived">{LEARNING_TOPIC_STATUS_LABELS.archived}</option>
             </SelectInput>
           </Field>
           <button
@@ -792,6 +608,95 @@ function OrgLearning() {
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Save topic"}
           </button>
         </form>
+      </Modal>
+
+      <Modal
+        open={Boolean(detailTopicLive)}
+        onClose={() => setDetailTopic(null)}
+        title={detailTopicLive?.title || "Topic"}
+        size="lg"
+      >
+        {detailTopicLive ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "inline-flex rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-wide font-semibold",
+                  STATUS_CLASS[normalizeLearningTopicStatus(detailTopicLive.status)]
+                )}
+              >
+                {STATUS_LABEL[normalizeLearningTopicStatus(detailTopicLive.status)]}
+              </span>
+              {detailTopicLive.start_date ? (
+                <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" /> Start {formatDate(detailTopicLive.start_date)}
+                </span>
+              ) : null}
+              {detailTopicLive.due_date ? (
+                <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" /> Due {formatDate(detailTopicLive.due_date)}
+                </span>
+              ) : null}
+            </div>
+            {detailTopicLive.description ? (
+              <p className="text-sm text-muted-foreground">{detailTopicLive.description}</p>
+            ) : null}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Team progress</span>
+                <span className="font-mono tabular-nums">{detailTopicLive.progress?.avg_progress ?? 0}%</span>
+              </div>
+              <ProgressBar value={detailTopicLive.progress?.avg_progress ?? 0} />
+            </div>
+            <div className="border-t border-border pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assignments</p>
+                {canWrite ? (
+                  <button
+                    type="button"
+                    onClick={() => openAssign(detailTopicLive)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/10"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" /> Assign
+                  </button>
+                ) : null}
+              </div>
+              {(detailTopicLive.assignments || []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No assignments yet.</p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {detailTopicLive.assignments.map((a) => {
+                    const isMine = String(a.user_id?._id || a.user_id) === String(currentUserId);
+                    return (
+                      <AssignmentRow
+                        key={a._id}
+                        assignment={a}
+                        canUpdate={canWrite || isMine}
+                        canManage={canWrite}
+                        onProgressCommit={updateProgress}
+                        onDelete={deleteAssignment}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {canWrite ? (
+              <div className="flex gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDetailTopic(null);
+                    openTopicModal(detailTopicLive);
+                  }}
+                  className="inline-flex items-center gap-1 text-sm px-3 py-2 rounded-lg border border-border hover:bg-muted"
+                >
+                  <Pencil className="w-4 h-4" /> Edit topic
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </Modal>
 
       <Modal open={assignModal} onClose={() => setAssignModal(false)} title={`Assign — ${assignTopic?.title || ""}`}>

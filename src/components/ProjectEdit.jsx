@@ -2,6 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ToastContainer, toast } from "react-toastify";
 import api from "../ApiInception";
+import { PROJECT_BOARD_COLUMNS, PROJECT_STATUS_LABELS, PROJECT_PRIORITIES, normalizeProjectStatus } from "@/lib/projectWorkflow";
+
+function toDateInput(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
 
 function ProjectEdit({ onClose, orgId, project, onUpdated }) {
   const [clients, setClients] = useState([]);
@@ -16,7 +24,10 @@ function ProjectEdit({ onClose, orgId, project, onUpdated }) {
       name: project?.name || "",
       description: project?.description || "",
       project_type: project?.project_type || "product",
-      status: project?.status || "active",
+      status: normalizeProjectStatus(project?.status) || "pending",
+      priority: project?.priority || "medium",
+      start_date: toDateInput(project?.start_date),
+      end_date: toDateInput(project?.end_date),
       client_id: project?.client_id || "",
       budget: project?.budget ?? "",
     });
@@ -30,6 +41,9 @@ function ProjectEdit({ onClose, orgId, project, onUpdated }) {
         description: data.description,
         project_type: data.project_type,
         status: data.status,
+        priority: data.priority,
+        start_date: data.start_date || null,
+        end_date: data.end_date || null,
         client_id: data.client_id || null,
         budget: data.budget,
       })
@@ -74,13 +88,38 @@ function ProjectEdit({ onClose, orgId, project, onUpdated }) {
             </select>
           </div>
           <div>
-            <label className="ww-label mb-1">Status</label>
-            <select className="ww-input w-full" {...register("status")}>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
+            <label className="ww-label mb-1">Priority</label>
+            <select className="ww-input w-full" {...register("priority")}>
+              {PROJECT_PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="ww-label mb-1">Status</label>
+            <select className="ww-input w-full" {...register("status")}>
+              {PROJECT_BOARD_COLUMNS.map((s) => (
+                <option key={s} value={s}>
+                  {PROJECT_STATUS_LABELS[s]}
+                </option>
+              ))}
+              <option value="cancelled">{PROJECT_STATUS_LABELS.cancelled}</option>
+            </select>
+          </div>
+          <div>
+            <label className="ww-label mb-1">Start date</label>
+            <input type="date" className="ww-input w-full" {...register("start_date")} />
+          </div>
+        </div>
+
+        <div>
+          <label className="ww-label mb-1">End date</label>
+          <input type="date" className="ww-input w-full" {...register("end_date")} />
         </div>
 
         {clients.length > 0 && (
@@ -120,4 +159,3 @@ function ProjectEdit({ onClose, orgId, project, onUpdated }) {
 }
 
 export default ProjectEdit;
-

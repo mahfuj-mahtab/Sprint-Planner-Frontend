@@ -16,7 +16,7 @@ import { SimpleGoalModal } from "@/components/org/strategy/SimpleGoalModal";
 import { SelectInput } from "@/components/org/Field";
 import { useOrgAccess } from "@/hooks/useOrgAccess";
 import { useStrategyPage } from "@/hooks/useStrategyPage";
-import { currentQuarter, currentYear, isLongTermGoal } from "@/lib/strategy";
+import { currentQuarter, currentYear, isLongTermGoal, sortGoalsByPriority } from "@/lib/strategy";
 import { cn } from "@/lib/utils";
 
 const PAGE_SHELL =
@@ -58,15 +58,21 @@ function OrgStrategy() {
     );
   }, [allGoals, selectedProjectId]);
 
-  const longTermGoals = useMemo(() => filteredGoals.filter((g) => isLongTermGoal(g)), [filteredGoals]);
+  const longTermGoals = useMemo(
+    () => sortGoalsByPriority(filteredGoals.filter((g) => isLongTermGoal(g))),
+    [filteredGoals]
+  );
 
   const yearGoals = useMemo(
-    () => filteredGoals.filter((g) => g.level === "annual" && g.year === year),
+    () => sortGoalsByPriority(filteredGoals.filter((g) => g.level === "annual" && g.year === year)),
     [filteredGoals, year]
   );
 
   const quarterGoals = useMemo(
-    () => filteredGoals.filter((g) => g.level === "quarterly" && g.year === year && g.quarter === quarter),
+    () =>
+      sortGoalsByPriority(
+        filteredGoals.filter((g) => g.level === "quarterly" && g.year === year && g.quarter === quarter)
+      ),
     [filteredGoals, year, quarter]
   );
 
@@ -101,6 +107,20 @@ function OrgStrategy() {
       year: goal.year,
       quarter: goal.quarter,
       status,
+      priority: goal.priority || "medium",
+      description: goal.description,
+      parent_id: goal.parent_id?._id || goal.parent_id || null,
+    });
+  };
+
+  const handleGoalPriority = async (goal, priority) => {
+    await saveGoal(goal._id, {
+      title: goal.title,
+      level: goal.level,
+      year: goal.year,
+      quarter: goal.quarter,
+      status: goal.status,
+      priority,
       description: goal.description,
       parent_id: goal.parent_id?._id || goal.parent_id || null,
     });
@@ -248,6 +268,7 @@ function OrgStrategy() {
                   onEdit={openEdit}
                   onDelete={deleteGoal}
                   onStatusChange={handleGoalStatus}
+                  onPriorityChange={handleGoalPriority}
                   showStatus
                   compact
                 />
@@ -314,6 +335,7 @@ function OrgStrategy() {
                   onEdit={openEdit}
                   onDelete={deleteGoal}
                   onStatusChange={handleGoalStatus}
+                  onPriorityChange={handleGoalPriority}
                   showStatus
                   compact
                 />
@@ -380,6 +402,7 @@ function OrgStrategy() {
                   onEdit={openEdit}
                   onDelete={deleteGoal}
                   onStatusChange={handleGoalStatus}
+                  onPriorityChange={handleGoalPriority}
                   showStatus
                   onStepUpdate={(goalId, krId, patch) => updateKeyResult(goalId, krId, patch)}
                 />

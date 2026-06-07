@@ -14,11 +14,13 @@ import SprintEdit from "../components/SprintEdit";
 import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
 import OrgTaskBoard from "../components/OrgTaskBoard";
+import { OrgProjectBoard } from "../components/OrgProjectBoard";
 import { ArrowLeft, BarChart3, BookOpen, Flag, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
 import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ListPagination } from "@/components/org/ListPagination";
 import { Field, SelectInput } from "@/components/org/Field";
+import { PROJECT_BOARD_COLUMNS, PROJECT_STATUS_LABELS, normalizeProjectStatus } from "@/lib/projectWorkflow";
 import { ReadOnlyBanner } from "@/components/org/ReadOnlyBanner";
 
 function ShowOrgDetails() {
@@ -76,7 +78,7 @@ function ShowOrgDetails() {
   );
 
   const loadProjects = (page = projectPage) => {
-    const params = { page, limit: 12, archived: projectFilters.archived || "false" };
+    const params = { page, limit: 100, archived: projectFilters.archived || "false" };
     if (projectFilters.search.trim()) params.search = projectFilters.search.trim();
     if (projectFilters.status) params.status = projectFilters.status;
     if (projectFilters.project_type) params.project_type = projectFilters.project_type;
@@ -702,7 +704,10 @@ function ShowOrgDetails() {
                 )}
               </div>
 
-              <h2 className="lg:text-2xl text-lg font-semibold mb-4">Projects</h2>
+              <h2 className="lg:text-2xl text-lg font-semibold mb-1">Projects</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Drag projects across columns to update status — Backlog → Planning → In progress → Review → Delivered → Billed
+              </p>
 
               <div className="mb-4 flex flex-wrap gap-3 items-end text-left">
                 <Field label="Search" className="min-w-[10rem] flex-1">
@@ -717,12 +722,15 @@ function ShowOrgDetails() {
                   <SelectInput
                     value={projectFilters.status}
                     onChange={(e) => setProjectFilters((f) => ({ ...f, status: e.target.value }))}
-                    className="min-w-[7rem]"
+                    className="min-w-[8rem]"
                   >
-                    <option value="">All</option>
-                    <option value="active">Active</option>
-                    <option value="paused">Paused</option>
-                    <option value="completed">Completed</option>
+                    <option value="">All on board</option>
+                    {PROJECT_BOARD_COLUMNS.map((s) => (
+                      <option key={s} value={s}>
+                        {PROJECT_STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                    <option value="cancelled">{PROJECT_STATUS_LABELS.cancelled}</option>
                   </SelectInput>
                 </Field>
                 <Field label="Type">
@@ -751,58 +759,44 @@ function ShowOrgDetails() {
               </div>
 
               {projects.length > 0 ? (
-                <div className="grid gap-3">
-                  {projects.map((p) => (
-                    <div key={p._id} className="bg-card border border-border rounded-xl p-4 flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold truncate">{p.name}</h3>
-                          {p.currentVersion ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md border border-primary/40 bg-primary/10 text-primary font-mono">
-                              {p.currentVersion.name} · {p.currentVersion.status}
-                            </span>
-                          ) : null}
-                          {p.isArchived ? (
-                            <span className="text-xs px-2 py-0.5 rounded-md border border-border text-muted-foreground">Archived</span>
-                          ) : null}
+                <>
+                  {projectFilters.status === "cancelled" ? (
+                    <div className="grid gap-3 mb-4">
+                      {projects.map((p) => (
+                        <div key={p._id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4">
+                          <div>
+                            <h3 className="font-semibold">{p.name}</h3>
+                            <p className="text-xs text-muted-foreground mt-1">Cancelled</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenProjectDetails(p._id)}
+                            className="text-sm px-3 py-1.5 rounded-md border border-primary text-primary"
+                          >
+                            Open
+                          </button>
                         </div>
-                        {p.description ? <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</p> : null}
-                      </div>
-
-                      <div className="shrink-0 flex items-center gap-2">
-                        <Link
-                          to={`/user/profile/org/${orgId}/project/${p._id}/dashboard`}
-                          className="border border-[#a78bfa]/40 bg-[#a78bfa]/10 hover:bg-[#a78bfa]/20 text-[#c4b5fd] text-sm font-semibold py-1.5 px-3 rounded-md transition-colors inline-flex items-center gap-1.5"
-                        >
-                          <BarChart3 className="w-4 h-4" />
-                          Dashboard
-                        </Link>
-                        <button
-                          onClick={() => handleOpenProjectDetails(p._id)}
-                          className="bg-primary hover:brightness-95 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
-                        >
-                          Details
-                        </button>
-                        <button
-                          onClick={() => { setEditingProject(p); setShowProjectEdit(true); }}
-                          className="border border-border hover:bg-muted text-foreground text-sm font-medium py-1.5 px-3 rounded-md transition-colors inline-flex items-center gap-2"
-                          title="Edit project"
-                        >
-                          <Pencil className="w-4 h-4" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProject(p._id)}
-                          className="border border-border hover:bg-muted text-foreground text-sm font-medium py-1.5 px-3 rounded-md transition-colors inline-flex items-center gap-2"
-                          title="Delete project"
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                          Delete
-                        </button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  ) : (
+                    <OrgProjectBoard
+                      orgId={orgId}
+                      projects={
+                        projectFilters.status
+                          ? projects.filter((p) => normalizeProjectStatus(p.status) === projectFilters.status)
+                          : projects.filter((p) => normalizeProjectStatus(p.status) !== "cancelled")
+                      }
+                      canWrite={orgDetails?.access?.canWrite ?? true}
+                      onRefresh={() => loadProjects(projectPage)}
+                      onEdit={(p) => {
+                        setEditingProject(p);
+                        setShowProjectEdit(true);
+                      }}
+                      onDelete={handleDeleteProject}
+                      onOpenDetails={handleOpenProjectDetails}
+                    />
+                  )}
+                </>
               ) : (
                 <div className="border border-dashed border-border rounded-lg p-6 bg-card">
                   <div className="text-sm text-muted-foreground">No projects match your filters.</div>

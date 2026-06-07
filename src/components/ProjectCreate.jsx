@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ToastContainer, toast } from "react-toastify";
 import api from "../ApiInception";
+import { PROJECT_BOARD_COLUMNS, PROJECT_STATUS_LABELS, PROJECT_PRIORITIES } from "@/lib/projectWorkflow";
 
 function ProjectCreate({ onClose, orgId, onCreated }) {
   const [clients, setClients] = useState([]);
   const { register, handleSubmit, formState: { errors } } = useForm({
-    defaultValues: { project_type: "product", status: "active" },
+    defaultValues: { project_type: "product", status: "pending", priority: "medium" },
   });
 
   useEffect(() => {
@@ -61,13 +62,38 @@ function ProjectCreate({ onClose, orgId, onCreated }) {
             </select>
           </div>
           <div>
-            <label className="ww-label mb-1">Status</label>
-            <select className="ww-input w-full" {...register("status")}>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
+            <label className="ww-label mb-1">Priority</label>
+            <select className="ww-input w-full" {...register("priority")}>
+              {PROJECT_PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="ww-label mb-1">Status</label>
+            <select className="ww-input w-full" {...register("status")}>
+              {PROJECT_BOARD_COLUMNS.map((s) => (
+                <option key={s} value={s}>
+                  {PROJECT_STATUS_LABELS[s]}
+                </option>
+              ))}
+              <option value="cancelled">{PROJECT_STATUS_LABELS.cancelled}</option>
+            </select>
+          </div>
+          <div>
+            <label className="ww-label mb-1">Start date</label>
+            <input type="date" className="ww-input w-full" {...register("start_date")} />
+          </div>
+        </div>
+
+        <div>
+          <label className="ww-label mb-1">End date</label>
+          <input type="date" className="ww-input w-full" {...register("end_date")} />
         </div>
 
         {clients.length > 0 && (

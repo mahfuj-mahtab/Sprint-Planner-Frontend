@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
-import { YEAR_STATUS_OPTIONS } from "@/lib/strategy";
+import { YEAR_STATUS_OPTIONS, GOAL_PRIORITY_OPTIONS } from "@/lib/strategy";
 import { CheckCircle2, Circle, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -92,6 +92,7 @@ export function SimpleGoalModal({
       year: isLong ? (fd.get("target_year") ? Number(fd.get("target_year")) : null) : Number(year),
       quarter: isYear || isLong ? null : Number(quarter),
       status,
+      priority: fd.get("priority") || "medium",
       parent_id: isLong ? null : parent_id,
       project_ids,
       key_results,
@@ -138,6 +139,16 @@ export function SimpleGoalModal({
             defaultValue={initial?.status === "completed" ? "completed" : "active"}
           >
             {YEAR_STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+
+        <Field label="Priority" hint="High = your main focus right now">
+          <SelectInput name="priority" defaultValue={initial?.priority || "medium"}>
+            {GOAL_PRIORITY_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

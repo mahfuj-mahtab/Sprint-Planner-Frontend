@@ -6,6 +6,10 @@ import {
   GOAL_STATUS_LABELS,
   GOAL_STATUS_CLASS,
   YEAR_STATUS_OPTIONS,
+  GOAL_PRIORITY_LABELS,
+  GOAL_PRIORITY_BADGE,
+  GOAL_PRIORITY_CARD,
+  GOAL_PRIORITY_OPTIONS,
 } from "@/lib/strategy";
 import { Field, SelectInput } from "@/components/org/Field";
 import { cn } from "@/lib/utils";
@@ -17,24 +21,50 @@ export function SimpleGoalCard({
   onDelete,
   onStepUpdate,
   onStatusChange,
+  onPriorityChange,
   showStatus,
   compact,
 }) {
   const pct = displayProgress(goal);
   const isDone = goal.status === "completed";
   const parent = parentLabel(goal);
+  const priority = goal.priority || "medium";
 
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card p-4",
-        isDone ? "border-[#00d4ff]/30 bg-[#00d4ff]/5" : "border-border",
-        !compact && "hover:border-primary/25 transition"
+        "rounded-xl border bg-card p-4 transition",
+        isDone ? "border-[#00d4ff]/30 bg-[#00d4ff]/5" : GOAL_PRIORITY_CARD[priority] || GOAL_PRIORITY_CARD.medium,
+        !compact && !isDone && priority !== "high" && "hover:border-primary/25"
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
+            {canWrite && onPriorityChange ? (
+              <Field label="Priority" className="mb-0 min-w-[9rem]">
+                <SelectInput
+                  value={priority}
+                  onChange={(e) => onPriorityChange(goal, e.target.value)}
+                  className="ww-input-sm text-xs py-1"
+                >
+                  {GOAL_PRIORITY_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+            ) : (
+              <span
+                className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full border font-medium",
+                  GOAL_PRIORITY_BADGE[priority] || GOAL_PRIORITY_BADGE.medium
+                )}
+              >
+                {GOAL_PRIORITY_LABELS[priority] || priority}
+              </span>
+            )}
             {showStatus ? (
               canWrite && onStatusChange ? (
                 <Field label="Status" className="mb-0 min-w-[8.5rem]">
