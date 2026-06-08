@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from "react-hook-form"
 import { toast } from 'react-toastify';
 import api from '../ApiInception';
+import { flattenFeatureGroups } from "@/lib/featureTree";
 import { Skeleton, Spinner } from './ui/Loading';
 function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }) {
     const [taskDetail, setTaskDetail] = useState()
@@ -258,9 +259,9 @@ function TaskEdit({ onClose, orgId, projectId, sprintId, onTaskCreated, taskId }
                             <label htmlFor="featureId" className="ww-label">Feature (optional)</label>
                             <select name="featureId" id="featureId" className="ww-input" {...register("featureId")}>
                                 <option value="">Unassigned</option>
-                                {featureModules.map((m) => (
-                                    <optgroup key={m._id} label={m.name}>
-                                        {(m.features || []).map((f) => (
+                                {flattenFeatureGroups(featureModules).map((g) => (
+                                    <optgroup key={g.key} label={g.label}>
+                                        {g.features.map((f) => (
                                             <option key={f._id} value={f._id}>{f.name}</option>
                                         ))}
                                     </optgroup>

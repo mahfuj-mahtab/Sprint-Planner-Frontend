@@ -211,46 +211,57 @@ export default function ClientPortalProject() {
 
         {tab === "features" && (
           <div className="space-y-4">
-            {modules?.map((mod) => (
-              <div key={mod._id} className="ww-card p-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#a78bfa]" />
-                  {mod.name}
-                </h3>
-                <ul className="mt-3 space-y-2">
-                  {features
-                    ?.filter((f) => f.module_id?.toString() === mod._id.toString())
-                    .map((f) => (
-                      <li key={f._id} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2
-                          className={cn(
-                            "w-4 h-4 shrink-0",
-                            f.status === "completed" ? "text-primary" : "text-muted-foreground/40"
-                          )}
-                        />
-                        <span className={f.status === "completed" ? "line-through text-muted-foreground" : ""}>
-                          {f.name}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground ml-auto">{f.status}</span>
-                      </li>
+            {modules
+              ?.filter((mod) => !mod.parent_module_id)
+              .map((mod) => {
+                const subModules = modules.filter(
+                  (m) => m.parent_module_id?.toString() === mod._id.toString()
+                );
+                const directFeatures = features?.filter(
+                  (f) => f.module_id?.toString() === mod._id.toString()
+                );
+
+                return (
+                  <div key={mod._id} className="ww-card p-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-[#a78bfa]" />
+                      {mod.name}
+                    </h3>
+                    {subModules.map((sub) => (
+                      <div key={sub._id} className="mt-4 pl-3 border-l-2 border-[#00d4ff]/30">
+                        <p className="text-xs font-mono uppercase text-[#00d4ff]/80 mb-2">{sub.name}</p>
+                        <ul className="space-y-2">
+                          {features
+                            ?.filter((f) => f.module_id?.toString() === sub._id.toString())
+                            .map((f) => (
+                              <li key={f._id} className="flex items-center gap-2 text-sm">
+                                <CheckCircle2
+                                  className={cn(
+                                    "w-4 h-4 shrink-0",
+                                    f.status === "completed" ? "text-primary" : "text-muted-foreground/40"
+                                  )}
+                                />
+                                <span className={f.status === "completed" ? "line-through text-muted-foreground" : ""}>
+                                  {f.name}
+                                </span>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
                     ))}
-                </ul>
-              </div>
-            ))}
-            {features?.filter((f) => !f.module_id).length > 0 ? (
-              <div className="ww-card p-4">
-                <h3 className="font-semibold text-sm mb-2">Other features</h3>
-                <ul className="space-y-2">
-                  {features
-                    .filter((f) => !f.module_id)
-                    .map((f) => (
-                      <li key={f._id} className="text-sm">
-                        {f.name} · {f.status}
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            ) : null}
+                    {directFeatures?.length > 0 ? (
+                      <ul className="mt-3 space-y-2">
+                        {directFeatures.map((f) => (
+                          <li key={f._id} className="flex items-center gap-2 text-sm">
+                            <CheckCircle2 className="w-4 h-4 shrink-0 text-muted-foreground/40" />
+                            {f.name}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                );
+              })}
           </div>
         )}
 

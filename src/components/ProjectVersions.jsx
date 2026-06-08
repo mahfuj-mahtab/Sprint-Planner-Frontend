@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { Plus, Trash2, RefreshCw, Lock, Unlock, CheckCircle2 } from "lucide-react";
 import { Skeleton, Spinner } from "./ui/Loading";
 import { cn } from "@/lib/utils";
+import { flattenFeatureGroups } from "@/lib/featureTree";
 
 const statusPill = (status) => {
   if (status === "completed") return "bg-emerald-500/15 text-emerald-300 border-emerald-500/20";
@@ -115,7 +116,12 @@ function ProjectVersions({ orgId, projectId }) {
   const assignedFeatureSet = useMemo(() => {
     const ids = new Set();
     const modules = versionDetails?.modules || [];
-    for (const m of modules) for (const f of m.features || []) ids.add(f._id);
+    for (const m of modules) {
+      for (const f of m.features || []) ids.add(f._id);
+      for (const sub of m.subModules || []) {
+        for (const f of sub.features || []) ids.add(f._id);
+      }
+    }
     return ids;
   }, [versionDetails]);
 
@@ -394,9 +400,9 @@ function ProjectVersions({ orgId, projectId }) {
                 className="ww-input flex-1 disabled:opacity-50"
               >
                 <option value="">Assign a feature…</option>
-                {featureModules.map((m) => (
-                  <optgroup key={m._id} label={m.name}>
-                    {(m.features || []).map((f) => (
+                {flattenFeatureGroups(featureModules).map((g) => (
+                  <optgroup key={g.key} label={g.label}>
+                    {g.features.map((f) => (
                       <option key={f._id} value={f._id} disabled={assignedFeatureSet.has(f._id)}>
                         {f.name}
                         {assignedFeatureSet.has(f._id) ? " (assigned)" : ""}
@@ -420,31 +426,44 @@ function ProjectVersions({ orgId, projectId }) {
                 No features in this version yet.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {(versionDetails.modules || []).map((m) => (
                   <div key={m._id} className="border border-border rounded-xl overflow-hidden bg-background">
-                    <div className="p-3 flex items-center gap-2">
+                    <div className="p-3 flex items-center gap-2 bg-primary/5">
                       <span className="font-semibold">{m.name}</span>
                       <span className={cn("text-xs px-2 py-0.5 rounded border", statusPill(m.status))}>{m.status}</span>
                     </div>
-                    <div className="px-3 pb-3 space-y-2">
-                      {(m.features || []).map((f) => (
-                        <div key={f._id} className="flex items-center justify-between gap-2 p-2 rounded-lg border border-border/60 bg-muted/10">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-sm truncate">{f.name}</span>
-                            <span className={cn("text-xs px-1.5 py-0.5 rounded border", statusPill(f.status))}>{f.status}</span>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={!featuresMutable}
-                            onClick={() => removeFeature(f._id)}
-                            className="p-1.5 rounded border border-border hover:bg-destructive/10 disabled:opacity-30"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </button>
+                    {(m.subModules || []).map((sub) => (
+                      <div key={sub._id} className="border-t border-border/60">
+                        <div className="px-3 py-2 text-xs font-mono uppercase text-muted-foreground bg-muted/20">{sub.name}</div>
+                        <div className="px-3 pb-3 space-y-2">
+                          {(sub.features || []).map((f) => (
+                            <div key={f._id} className="flex items-center justify-between gap-2 p-2 rounded-lg border border-border/60 bg-muted/10">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-sm truncate">{f.name}</span>
+                                <span className={cn("text-xs px-1.5 py-0.5 rounded border", statusPill(f.status))}>{f.status}</span>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={!featuresMutable}
+                                onClick={() => removeFeature(f._id)}
+                                className="p-1.5 rounded border border-border hover:bg-destructive/10 disabled:opacity-30"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+                    {(m.features || []).map((f) => (
+                      <div key={f._id} className="px-3 pb-3 flex items-center justify-between gap-2 p-2 border-t border-border/60">
+                        <span className="text-sm">{f.name}</span>
+                        <button type="button" disabled={!featuresMutable} onClick={() => removeFeature(f._id)} className="p-1.5 rounded border border-border">
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
