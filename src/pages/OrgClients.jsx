@@ -22,6 +22,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import api from "../ApiInception";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { useBlockClientOrgRoutes } from "@/hooks/useBlockClientOrgRoutes";
 import { CrmSubnav } from "@/components/org/CrmSubnav";
 import { EmptyState } from "@/components/org/EmptyState";
 import { Modal } from "@/components/org/Modal";
@@ -63,6 +64,7 @@ function StatusBadge({ status }) {
 }
 
 function OrgClients() {
+  useBlockClientOrgRoutes();
   const { orgId } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -187,13 +189,54 @@ function OrgClients() {
     setShowForm(true);
   };
 
+  const billingAccounts = useMemo(
+    () =>
+      clients.filter(
+        (c) =>
+          !c.parent_client_id &&
+          (!editing || c._id !== selectedId)
+      ),
+    [clients, editing, selectedId]
+  );
+
+  const [portalEmail, setPortalEmail] = useState("");
+
   const buildPayload = () => ({
     ...form,
     tags: form.tags,
     hourly_rate: form.hourly_rate === "" ? null : form.hourly_rate,
     expected_value: form.expected_value === "" ? null : form.expected_value,
     next_follow_up: form.next_follow_up || null,
+    parent_client_id: form.parent_client_id || null,
   });
+
+  const handlePortalInvite = async () => {
+    if (!portalEmail.trim() || !selectedId) return;
+    setSubmitting(true);
+    try {
+      await api.post(`/api/v1/org/${orgId}/clients/${selectedId}/portal-invite`, {
+        email: portalEmail.trim(),
+      });
+      toast.success("Portal access granted", { theme: "dark" });
+      setPortalEmail("");
+      await fetchDetail(selectedId);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Invite failed", { theme: "dark" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePortalRevoke = async (userId) => {
+    if (!selectedId || !window.confirm("Remove portal access?")) return;
+    try {
+      await api.delete(`/api/v1/org/${orgId}/clients/${selectedId}/portal-access/${userId}`);
+      toast.success("Access removed", { theme: "dark" });
+      await fetchDetail(selectedId);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
+    }
+  };
 
   const handleSaveClient = async (e) => {
     e.preventDefault();
@@ -450,6 +493,12 @@ function OrgClients() {
                                 <AlertCircle className="w-3 h-3" /> Follow-up
                               </span>
                             ) : null}
+                            {c.child_count > 0 ? (
+                              <span className="text-[#00d4ff]">{c.child_count} sub</span>
+                            ) : null}
+                            {c.parent_client_id ? (
+                              <span className="text-muted-foreground">sub-client</span>
+                            ) : null}
                           </div>
                         </div>
                       </div>
@@ -595,6 +644,85 @@ function OrgClients() {
                       </button>
                     </div>
                   </div>
+
+                  {detail.parent_client ? (
+                    <p className="text-xs text-muted-foreground rounded-lg border border-border px-3 py-2">
+                      Billing account: <strong className="text-foreground">{detail.parent_client.name}</strong>
+                      {" — "}
+                      portal rolls up to the billing account client.
+                    </p>
+                  ) : null}
+
+                  {detail.child_clients?.length > 0 ? (
+                    <div className="rounded-lg border border-[#00d4ff]/25 bg-[#00d4ff]/5 px-3 py-3">
+                      <p className="text-xs font-semibold text-[#00d4ff] mb-2">
+                        Sub-clients under this billing account ({detail.child_clients.length})
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {detail.child_clients.map((ch) => (
+                          <button
+                            key={ch._id}
+                            type="button"
+                            onClick={() => setSelectedId(ch._id)}
+                            className="text-xs px-2 py-1 rounded-md border border-border hover:bg-muted"
+                          >
+                            {ch.name}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        Portal users on this account see all projects & payments across these sub-clients.
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {!detail.client.parent_client_id ? (
+                    <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-3 space-y-3">
+                      <p className="text-xs font-semibold text-primary">Client portal access</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Invite the middleman / billing contact, or set this client&apos;s email to their login address.
+                        They see this account plus all linked sub-clients (read-only).
+                      </p>
+                      {detail.portal_members?.length > 0 ? (
+                        <ul className="space-y-1">
+                          {detail.portal_members.map((m) => (
+                            <li key={m.user_id} className="flex items-center justify-between text-sm gap-2">
+                              <span>{m.fullName || m.email}</span>
+                              {canWrite ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePortalRevoke(m.user_id)}
+                                  className="text-xs text-destructive hover:underline"
+                                >
+                                  Revoke
+                                </button>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No portal users yet.</p>
+                      )}
+                      {canWrite ? (
+                        <div className="flex gap-2">
+                          <input
+                            className="ww-input ww-input-sm flex-1"
+                            placeholder="client@email.com (must be registered)"
+                            value={portalEmail}
+                            onChange={(e) => setPortalEmail(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={handlePortalInvite}
+                            className="text-xs px-3 py-2 rounded-lg bg-primary text-primary-foreground shrink-0"
+                          >
+                            Invite
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div className="flex flex-wrap gap-2">
                     <span className="text-xs text-muted-foreground self-center">Status:</span>
@@ -833,6 +961,23 @@ function OrgClients() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
+          </Field>
+          <Field
+            label="Billing account (optional)"
+            hint="For middlemen: link platform-specific clients to the one who pays & gets portal access"
+          >
+            <SelectInput
+              value={form.parent_client_id}
+              onChange={(e) => setForm({ ...form, parent_client_id: e.target.value })}
+            >
+              <option value="">— This is the billing account —</option>
+              {billingAccounts.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                  {c.company ? ` (${c.company})` : ""}
+                </option>
+              ))}
+            </SelectInput>
           </Field>
           <div className="grid sm:grid-cols-3 gap-3">
             <Field label="Status">

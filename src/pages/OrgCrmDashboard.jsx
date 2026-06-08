@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import api from "../ApiInception";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { useBlockClientOrgRoutes } from "@/hooks/useBlockClientOrgRoutes";
 import { CrmSubnav } from "@/components/org/CrmSubnav";
 import { StatCard } from "@/components/org/StatCard";
 import { EmptyState } from "@/components/org/EmptyState";
@@ -81,6 +82,7 @@ function RevenueTrendChart({ data, formatValue }) {
 }
 
 function OrgCrmDashboard() {
+  useBlockClientOrgRoutes();
   const { orgId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);

@@ -49,6 +49,7 @@ export const emptyClientForm = (currency = "BDT") => ({
   referral_source: "",
   tags: "",
   next_follow_up: "",
+  parent_client_id: "",
 });
 
 export const clientToForm = (c, currency = "BDT") => ({
@@ -69,6 +70,7 @@ export const clientToForm = (c, currency = "BDT") => ({
   next_follow_up: c.next_follow_up
     ? new Date(c.next_follow_up).toISOString().slice(0, 10)
     : "",
+  parent_client_id: c.parent_client_id?._id || c.parent_client_id || "",
 });
 
 export const LIST_FILTERS = [

@@ -15,7 +15,7 @@ import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
 import OrgTaskBoard from "../components/OrgTaskBoard";
 import { OrgProjectBoard } from "../components/OrgProjectBoard";
-import { ArrowLeft, BarChart3, BookOpen, Flag, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
+import { ArrowLeft, BarChart3, BookOpen, ExternalLink, Flag, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
 import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ListPagination } from "@/components/org/ListPagination";
@@ -124,6 +124,10 @@ function ShowOrgDetails() {
       .then((response) => {
         setOrgDetails(response.data);
         setSelectedProjectId(response.data.selectedProjectId || projectId || null);
+        if (response.data?.access?.role === "client") {
+          setView("projects");
+          loadProjects(1);
+        }
       })
       .catch((error) => {
         console.error("There was an error!", error);
@@ -366,11 +370,18 @@ function ShowOrgDetails() {
   const orgMemberCount = orgDetails?.organization?.members?.length ?? 0;
   const canManageMembers = orgDetails?.access?.canManageMembers ?? false;
   const accessRole = String(orgDetails?.access?.role || "").toLowerCase();
+  const isClient = accessRole === "client";
   const isViewer =
-    accessRole === "viewer" ||
+    !isClient &&
+    (accessRole === "viewer" ||
     (!orgDetails?.access?.canWrite &&
       !orgDetails?.access?.canManageMembers &&
-      !orgDetails?.access?.canSeeExactAmounts);
+      !orgDetails?.access?.canSeeExactAmounts));
+  const isAdminLocked = isViewer || isClient;
+  const visibleOrgTabs = isClient
+    ? [{ id: "projects", label: "Projects" }]
+    : orgLevelTabs;
+  const canWriteOrg = !isClient && (orgDetails?.access?.canWrite ?? true);
   const canWriteDelivery = orgDetails?.deliveryAccess?.canWrite ?? true;
   const deliveryReadOnlyReason = orgDetails?.deliveryAccess?.reason;
   const needsTeamInvite = canManageMembers && orgMemberCount === 0;
@@ -413,6 +424,7 @@ function ShowOrgDetails() {
             </div>
 
             <div className="flex flex-wrap gap-2 items-center">
+              {!isClient ? (
               <button
                 type="button"
                 onClick={handleOpenOrgMembers}
@@ -421,6 +433,7 @@ function ShowOrgDetails() {
                 <Users className="w-4 h-4" />
                 Members
               </button>
+              ) : null}
               <div className="hidden lg:block text-sm text-muted-foreground mr-2">
                 {selectedProject ? (
                   <span className="inline-flex items-center gap-2 flex-wrap">
@@ -497,7 +510,7 @@ function ShowOrgDetails() {
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
-                {orgLevelTabs.map((tab) => (
+                {visibleOrgTabs.map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
@@ -518,14 +531,14 @@ function ShowOrgDetails() {
                 ))}
               </div>
 
-              {view === "projects" ? (
+              {view === "projects" && canWriteOrg ? (
                 <button
                   onClick={() => setShowProjectCreate(true)}
                   className="bg-primary hover:brightness-95 text-primary-foreground text-sm font-semibold py-1.5 px-3 rounded-md transition-colors"
                 >
                   + Project
                 </button>
-              ) : canManageMembers ? (
+              ) : canManageMembers && !isClient ? (
                 <button
                   type="button"
                   onClick={() => document.getElementById("org-members-add-btn")?.click()}
@@ -561,7 +574,25 @@ function ShowOrgDetails() {
 
           {view === "projects" ? (
             <div>
-              {needsTeamInvite ? (
+              {isClient ? (
+                <div className="mb-6 rounded-xl border border-[#00d4ff]/30 bg-[#00d4ff]/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-[#00d4ff]">Client access</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Track your projects here. Open the client portal for payments and account summary.
+                    </p>
+                  </div>
+                  <Link
+                    to={`/portal/org/${orgId}`}
+                    className="shrink-0 inline-flex items-center gap-2 rounded-md border border-[#00d4ff]/40 bg-[#00d4ff]/15 px-4 py-2 text-sm font-medium text-[#00d4ff] hover:bg-[#00d4ff]/20 no-underline"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Client portal
+                  </Link>
+                </div>
+              ) : null}
+
+              {!isClient && needsTeamInvite ? (
                 <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="text-left">
                     <p className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -583,6 +614,7 @@ function ShowOrgDetails() {
                 </div>
               ) : null}
 
+              {!isClient ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 text-left">
                 <button
                   type="button"
@@ -599,7 +631,7 @@ function ShowOrgDetails() {
                     </p>
                   </div>
                 </button>
-                {isViewer ? (
+                {isAdminLocked ? (
                   <>
                     <div className="rounded-xl border border-border bg-muted/20 p-4 flex items-start gap-3 opacity-75 cursor-not-allowed pointer-events-none select-none">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/30">
@@ -703,10 +735,13 @@ function ShowOrgDetails() {
                   </>
                 )}
               </div>
+              ) : null}
 
               <h2 className="lg:text-2xl text-lg font-semibold mb-1">Projects</h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Drag projects across columns to update status — Backlog → Planning → In progress → Review → Delivered → Billed
+                {isClient
+                  ? "Your projects by status — open a project to see sprints and delivery progress."
+                  : "Drag projects across columns to update status — Backlog → Planning → In progress → Review → Delivered → Billed"}
               </p>
 
               <div className="mb-4 flex flex-wrap gap-3 items-end text-left">
@@ -786,7 +821,7 @@ function ShowOrgDetails() {
                           ? projects.filter((p) => normalizeProjectStatus(p.status) === projectFilters.status)
                           : projects.filter((p) => normalizeProjectStatus(p.status) !== "cancelled")
                       }
-                      canWrite={orgDetails?.access?.canWrite ?? true}
+                      canWrite={canWriteOrg}
                       onRefresh={() => loadProjects(projectPage)}
                       onEdit={(p) => {
                         setEditingProject(p);
@@ -809,7 +844,7 @@ function ShowOrgDetails() {
             </div>
           ) : null}
 
-          {view === "tasks" ? (
+          {view === "tasks" && !isClient ? (
             <OrgTaskBoard orgId={orgId} canWrite={orgDetails?.access?.canWrite ?? true} />
           ) : null}
 

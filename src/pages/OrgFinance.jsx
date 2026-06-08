@@ -43,6 +43,7 @@ import { CurrencySelect } from "@/components/org/CurrencySelect";
 import { cn } from "@/lib/utils";
 import { normalizeGoal } from "@/lib/goals";
 import { InvestorsPanel } from "@/components/investor/InvestorsPanel";
+import { useBlockClientOrgRoutes } from "@/hooks/useBlockClientOrgRoutes";
 
 const PAYMENT_METHODS = [
   { value: "bkash", label: "bKash" },
@@ -91,6 +92,7 @@ function FinanceSkeleton() {
 }
 
 function OrgFinance() {
+  useBlockClientOrgRoutes();
   const { orgId } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

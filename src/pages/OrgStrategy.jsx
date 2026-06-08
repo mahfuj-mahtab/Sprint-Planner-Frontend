@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Calendar, Compass, Flag, GitBranch, Plus, Target } from "lucide-react";
 import { ToastContainer } from "react-toastify";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { useBlockClientOrgRoutes } from "@/hooks/useBlockClientOrgRoutes";
 import { ReadOnlyBanner } from "@/components/org/ReadOnlyBanner";
 import { Skeleton } from "@/components/ui/Loading";
 import { StrategyHelpNote } from "@/components/org/strategy/StrategyHelpNote";
@@ -23,6 +24,7 @@ const PAGE_SHELL =
   "ww-page-full max-w-none w-full min-h-[calc(100dvh-8.5rem)] pb-16 space-y-8 bg-gradient-to-b from-[#a78bfa]/[0.04] via-background to-background";
 
 function OrgStrategy() {
+  useBlockClientOrgRoutes();
   const { orgId } = useParams();
   const navigate = useNavigate();
   const { access: hookAccess, loading: accessLoading } = useOrgAccess(orgId);

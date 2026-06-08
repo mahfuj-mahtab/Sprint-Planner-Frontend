@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useSelector } from 'react-redux'
 import { fetchUser } from '../utils/utils'
+import api from '../ApiInception'
 import { Skeleton, Spinner } from '../components/ui/Loading'
 import DashboardLayout from "@/components/layout/DashboardLayout";
+
 function Profile() {
   const [profileDetaile, setProfileDetaile] = useState()
+  const [portalCount, setPortalCount] = useState(0)
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
+  const authUser = useSelector((state) => state.auth.user)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -16,13 +20,26 @@ function Profile() {
     }
     let cancelled = false
     ;(async () => {
-      const user = await fetchUser()
-      if (!cancelled) setProfileDetaile(user)
+      try {
+        const user = await fetchUser()
+        if (cancelled) return
+        setProfileDetaile(user)
+
+        const pr = await api.get("/api/v1/portal/orgs")
+        if (!cancelled) setPortalCount((pr.data.portals || []).length)
+      } catch {
+        if (!cancelled) {
+          setPortalCount(0)
+          const user = await fetchUser()
+          if (!cancelled) setProfileDetaile(user)
+        }
+      }
     })()
     return () => {
       cancelled = true
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, authUser])
+
   if (!profileDetaile) {
     return (
       <DashboardLayout>
@@ -55,9 +72,14 @@ function Profile() {
             <div className="text-sm text-muted-foreground">Signed in as</div>
             <div className="mt-1 text-xl font-semibold ww-heading">{profileDetaile.user?.fullName || "User"}</div>
             <div className="mt-1 text-sm text-muted-foreground">{profileDetaile.user?.email}</div>
-            <div className="mt-6 text-sm text-muted-foreground">
-              Pick an organization from the sidebar to view projects and sprints.
+            <div className="mt-6 text-sm text-muted-foreground space-y-2">
+              <p>Pick an organization from the sidebar to view projects and sprints.</p>
             </div>
+            {portalCount > 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">
+                Open an organization where you are a client, then use <strong className="text-foreground">Client portal</strong> for payments and account summary.
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

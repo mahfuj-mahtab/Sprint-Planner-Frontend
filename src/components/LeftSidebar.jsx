@@ -7,9 +7,11 @@ import { ToastContainer, toast } from 'react-toastify';
 import OrgEdit from './OrgEdit'
 import { Skeleton } from './ui/Loading'
 import { cn } from '@/lib/utils'
+import { getOrgMemberRole, getOrgNavPath } from '@/lib/orgAccess'
 
 function LeftSidebar() {
     const location = useLocation()
+    const navigate = useNavigate()
     const [showCreateOrg, setShowCreateOrg] = useState(false)
     const [profileDetaile, setProfileDetaile] = useState()
     const [orgsExpanded, setOrgsExpanded] = useState(true)
@@ -215,23 +217,29 @@ function LeftSidebar() {
                 {orgsExpanded && (
                     <ul className="space-y-1 ml-2">
                         {profileDetaile.organizations.map((org) => {
-                            const isOwner = org.owner_id === profileDetaile.user._id
-                                || org.owner_id?._id === profileDetaile.user._id;
+                            const userId = profileDetaile.user._id;
+                            const memberRole = getOrgMemberRole(org, userId);
+                            const isOwner = memberRole === "owner";
+                            const isClient = memberRole === "client";
                             const isActive = activeOrgId === org._id;
+                            const orgPath = getOrgNavPath(org, userId);
+                            const roleLabel = isOwner ? "Owner" : isClient ? "Client" : "Member";
 
                             return (
                                 <li key={org._id} className="relative flex items-center">
                                     <Link
-                                        to={`/user/profile/org/${org._id}?view=projects`}
+                                        to={orgPath}
                                         aria-current={isActive ? 'page' : undefined}
                                         className={cn(
                                             "w-[93%] mr-3 flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-colors",
                                             isActive
                                                 ? "bg-primary/15 text-primary border-primary/40 border-l-2 border-l-primary font-medium"
-                                                : "border-transparent border-l-2 border-l-transparent text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                                                : isClient
+                                                  ? "border-transparent border-l-2 border-l-transparent text-muted-foreground hover:text-[#00d4ff] hover:bg-[#00d4ff]/10"
+                                                  : "border-transparent border-l-2 border-l-transparent text-muted-foreground hover:text-foreground hover:bg-muted/80"
                                         )}
                                     >
-                                        <Building2 className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} />
+                                        <Building2 className={cn("w-4 h-4 shrink-0", isActive && "text-primary", isClient && "text-[#00d4ff]/70")} />
                                         <span className="truncate flex-1">{org.name}</span>
                                         <span
                                             className={cn(
@@ -240,10 +248,12 @@ function LeftSidebar() {
                                                     ? isActive
                                                         ? "bg-primary/25 text-primary"
                                                         : "bg-primary/20 text-primary"
-                                                    : "bg-muted text-muted-foreground"
+                                                    : isClient
+                                                      ? "bg-[#00d4ff]/15 text-[#00d4ff]"
+                                                      : "bg-muted text-muted-foreground"
                                             )}
                                         >
-                                            {isOwner ? "Owner" : "Member"}
+                                            {roleLabel}
                                         </span>
                                     </Link>
 

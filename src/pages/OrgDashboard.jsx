@@ -25,8 +25,10 @@ import {
   ProjectProfitChart,
 } from "@/components/charts/DashboardCharts";
 import { cn } from "@/lib/utils";
+import { useBlockClientOrgRoutes } from "@/hooks/useBlockClientOrgRoutes";
 
 function OrgDashboard() {
+  useBlockClientOrgRoutes();
   const { orgId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);

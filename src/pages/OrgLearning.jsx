@@ -15,6 +15,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import api from "../ApiInception";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { useBlockClientOrgRoutes } from "@/hooks/useBlockClientOrgRoutes";
 import { StatCard } from "@/components/org/StatCard";
 import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
@@ -145,6 +146,7 @@ function AssignmentRow({ assignment, canUpdate, canManage, onProgressCommit, onD
 }
 
 function OrgLearning() {
+  useBlockClientOrgRoutes();
   const { orgId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);

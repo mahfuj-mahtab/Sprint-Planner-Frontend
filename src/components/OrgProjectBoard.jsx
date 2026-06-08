@@ -99,6 +99,7 @@ function ProjectKanbanCard({
           ) : null}
 
           <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-border/50">
+            {canWrite ? (
             <Link
               to={`/user/profile/org/${orgId}/project/${project._id}/dashboard`}
               className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-md border border-[#a78bfa]/40 bg-[#a78bfa]/10 text-[#c4b5fd] hover:bg-[#a78bfa]/20 no-underline"
@@ -107,6 +108,7 @@ function ProjectKanbanCard({
               <BarChart3 className="w-3 h-3" />
               Dashboard
             </Link>
+            ) : null}
             <button
               type="button"
               onClick={() => onOpenDetails?.(project._id)}

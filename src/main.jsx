@@ -24,6 +24,9 @@ import InvestmentRecordPage from './pages/InvestmentRecordPage.jsx';
 import InvestorDashboardPage from './pages/InvestorDashboardPage.jsx';
 import OrgLearning from './pages/OrgLearning.jsx';
 import OrgStrategy from './pages/OrgStrategy.jsx';
+import ClientPortalHome from './pages/ClientPortalHome.jsx';
+import ClientPortalOrg from './pages/ClientPortalOrg.jsx';
+import ClientPortalProject from './pages/ClientPortalProject.jsx';
 
 // Use the WeekWins dark theme across the app by default.
 document.documentElement.classList.add('dark')
@@ -105,6 +108,18 @@ const router = createBrowserRouter([
   {
     path: "/user/assigned-tasks",
     element: <AssignedTasks />
+  },
+  {
+    path: "/portal",
+    element: <ClientPortalHome />
+  },
+  {
+    path: "/portal/org/:orgId",
+    element: <ClientPortalOrg />
+  },
+  {
+    path: "/portal/org/:orgId/project/:projectId",
+    element: <ClientPortalProject />
   }
 ]);
 

@@ -113,7 +113,7 @@ function Profileheader({ onMenuClick }) {
                 <DropdownMenuContent className="bg-popover text-popover-foreground border border-border">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/user/profile")}>Profile</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setProfileEditShow(true)}>Edit Profile</DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
