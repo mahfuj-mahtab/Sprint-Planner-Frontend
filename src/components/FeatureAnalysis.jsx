@@ -4,6 +4,7 @@ import { Download, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import { countAllFeatures, FEATURE_IMPORT_EXAMPLE } from "@/lib/featureTree";
+import { downloadCsvTemplate, parseFeatureImportFile } from "@/lib/featureImportParse";
 import { Modal } from "@/components/org/Modal";
 
 const STATUS = {
@@ -351,10 +352,9 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
     if (!file || !canWrite) return;
     setImporting(true);
     try {
-      const text = await file.text();
-      const parsed = JSON.parse(text);
+      const modules = await parseFeatureImportFile(file);
       const r = await api.post(`/api/v1/org/${orgId}/projects/${projectId}/features/import`, {
-        modules: parsed.modules ?? parsed,
+        modules,
         mode: importMode,
       });
       toast.success(r.data?.message || "Imported", { theme: "dark" });
@@ -413,7 +413,7 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
               className="border border-[#00d4ff]/40 bg-[#00d4ff]/10 text-[#00d4ff] text-sm py-1.5 px-3 rounded-lg inline-flex items-center gap-2"
             >
               <Upload className="w-4 h-4" />
-              Import JSON
+              Import file
             </button>
           ) : null}
           <button
@@ -561,9 +561,19 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
       <Modal open={importOpen} onClose={() => !importing && setImportOpen(false)} title="Import feature tree">
         <div className="space-y-4 text-sm">
           <p className="text-muted-foreground">
-            Upload a JSON file with modules, sub-modules, and features. Use merge to add missing items, or replace to
-            wipe and rebuild the tree.
+            Upload a spreadsheet or JSON file. Easiest path: edit the CSV template in Google Sheets or Excel, then
+            upload the file here.
           </p>
+          <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground">Spreadsheet columns</p>
+            <p>
+              <span className="font-mono text-primary">module</span> ·{" "}
+              <span className="font-mono text-primary">sub_module</span> (optional) ·{" "}
+              <span className="font-mono text-primary">feature</span> ·{" "}
+              <span className="font-mono text-primary">description</span> (optional)
+            </p>
+            <p>From Google Sheets: File → Download → CSV. Excel: Save As → CSV or upload .xlsx directly.</p>
+          </div>
           <div className="flex flex-wrap gap-3">
             <label className="inline-flex items-center gap-2 cursor-pointer">
               <input type="radio" checked={importMode === "merge"} onChange={() => setImportMode("merge")} />
@@ -574,18 +584,28 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
               Replace all
             </label>
           </div>
-          <button
-            type="button"
-            onClick={downloadTemplate}
-            className="text-sm inline-flex items-center gap-2 text-primary hover:underline"
-          >
-            <Download className="w-4 h-4" />
-            Download example template
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={downloadCsvTemplate}
+              className="text-sm inline-flex items-center gap-2 text-primary hover:underline"
+            >
+              <Download className="w-4 h-4" />
+              CSV template (recommended)
+            </button>
+            <button
+              type="button"
+              onClick={downloadTemplate}
+              className="text-sm inline-flex items-center gap-2 text-muted-foreground hover:text-primary hover:underline"
+            >
+              <Download className="w-4 h-4" />
+              JSON template
+            </button>
+          </div>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".json,application/json"
+            accept=".csv,.tsv,.txt,.xlsx,.xls,.json,application/json,text/csv,text/tab-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             disabled={importing}
             onChange={(e) => handleImportFile(e.target.files?.[0])}
             className="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground"
