@@ -207,7 +207,22 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
   const [importOpen, setImportOpen] = useState(false);
   const [importMode, setImportMode] = useState("merge");
   const [importing, setImporting] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importPreview, setImportPreview] = useState(null);
   const fileInputRef = useRef(null);
+
+  const resetImportState = () => {
+    setImportFile(null);
+    setImportPreview(null);
+    setImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const closeImportModal = () => {
+    if (importing) return;
+    setImportOpen(false);
+    resetImportState();
+  };
 
   const fetchSummary = () => {
     if (!orgId || !projectId) return;
@@ -348,23 +363,44 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
     URL.revokeObjectURL(url);
   };
 
-  const handleImportFile = async (file) => {
-    if (!file || !canWrite) return;
+  const handleFileSelect = async (file) => {
+    if (!file) {
+      setImportFile(null);
+      setImportPreview(null);
+      return;
+    }
+    setImportFile(file);
+    setImportPreview(null);
+    try {
+      const { meta } = await parseFeatureImportFile(file);
+      setImportPreview(meta);
+    } catch (e) {
+      setImportPreview({ error: e.message || "Could not read file" });
+    }
+  };
+
+  const handleStartImport = async () => {
+    if (!importFile || !canWrite || importing) return;
     setImporting(true);
     try {
-      const modules = await parseFeatureImportFile(file);
+      const { modules, meta } = await parseFeatureImportFile(importFile);
       const r = await api.post(`/api/v1/org/${orgId}/projects/${projectId}/features/import`, {
         modules,
+        importMeta: meta,
         mode: importMode,
       });
-      toast.success(r.data?.message || "Imported", { theme: "dark" });
+      const detail = r.data?.message;
+      toast.success(detail ? `Import completed — ${detail}` : "Import completed", {
+        theme: "dark",
+        autoClose: 6000,
+      });
       setImportOpen(false);
+      resetImportState();
       fetchSummary();
     } catch (e) {
       toast.error(e?.response?.data?.message || e.message || "Import failed", { theme: "dark" });
     } finally {
       setImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -558,11 +594,10 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
         </div>
       )}
 
-      <Modal open={importOpen} onClose={() => !importing && setImportOpen(false)} title="Import feature tree">
+      <Modal open={importOpen} onClose={closeImportModal} title="Import feature tree">
         <div className="space-y-4 text-sm">
           <p className="text-muted-foreground">
-            Upload a spreadsheet or JSON file. Easiest path: edit the CSV template in Google Sheets or Excel, then
-            upload the file here.
+            Choose a file, review the row count, then click <strong className="text-foreground">Start import</strong>.
           </p>
           <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Spreadsheet columns</p>
@@ -573,6 +608,10 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
               <span className="font-mono text-primary">description</span> (optional)
             </p>
             <p>From Google Sheets: File → Download → CSV. Excel: Save As → CSV or upload .xlsx directly.</p>
+            <p className="text-amber-400/90">
+              Tip: If module/sub-module are only on the first row of a group, leave later cells blank — we fill them
+              automatically. Use comma or semicolon CSV (Excel EU).
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <label className="inline-flex items-center gap-2 cursor-pointer">
@@ -607,10 +646,59 @@ function FeatureAnalysis({ orgId, projectId, canWrite = true }) {
             type="file"
             accept=".csv,.tsv,.txt,.xlsx,.xls,.json,application/json,text/csv,text/tab-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             disabled={importing}
-            onChange={(e) => handleImportFile(e.target.files?.[0])}
-            className="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground"
+            onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
+            className="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-muted file:text-foreground"
           />
-          {importing ? <p className="text-muted-foreground">Importing…</p> : null}
+          {importFile ? (
+            <p className="text-xs text-muted-foreground">
+              Selected: <span className="text-foreground font-medium">{importFile.name}</span>
+              {importPreview?.error ? (
+                <span className="text-destructive"> — {importPreview.error}</span>
+              ) : importPreview?.importedRows != null ? (
+                <span>
+                  {" "}
+                  · <span className="text-primary">{importPreview.importedRows}</span> feature
+                  {importPreview.importedRows === 1 ? "" : "s"} ready
+                  {importPreview.skippedRows > 0
+                    ? ` (${importPreview.skippedRows} row${importPreview.skippedRows === 1 ? "" : "s"} skipped)`
+                    : ""}
+                </span>
+              ) : (
+                <span> — reading file…</span>
+              )}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={closeImportModal}
+              disabled={importing}
+              className="text-sm px-4 py-2 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleStartImport}
+              disabled={
+                !importFile ||
+                importing ||
+                importPreview?.error ||
+                importPreview?.importedRows == null ||
+                importPreview?.importedRows === 0
+              }
+              className="ww-btn-primary text-sm px-4 py-2 disabled:opacity-50 inline-flex items-center gap-2"
+            >
+              {importing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Importing…
+                </>
+              ) : (
+                "Start import"
+              )}
+            </button>
+          </div>
         </div>
       </Modal>
     </div>
