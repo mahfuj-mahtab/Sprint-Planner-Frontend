@@ -24,6 +24,7 @@ import InvestmentRecordPage from './pages/InvestmentRecordPage.jsx';
 import InvestorDashboardPage from './pages/InvestorDashboardPage.jsx';
 import OrgLearning from './pages/OrgLearning.jsx';
 import OrgStrategy from './pages/OrgStrategy.jsx';
+import OrgCms from './pages/OrgCms.jsx';
 import ClientPortalHome from './pages/ClientPortalHome.jsx';
 import ClientPortalOrg from './pages/ClientPortalOrg.jsx';
 import ClientPortalProject from './pages/ClientPortalProject.jsx';
@@ -75,6 +76,10 @@ const router = createBrowserRouter([
   {
     path: "/user/profile/org/:orgId/strategy",
     element: <OrgStrategy />
+  },
+  {
+    path: "/user/profile/org/:orgId/cms",
+    element: <OrgCms />
   },
   {
     path: "/user/profile/org/:orgId/investors",

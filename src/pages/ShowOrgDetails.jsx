@@ -15,7 +15,7 @@ import TeamCard from "../components/TeamCard";
 import TeamCreate from "../components/TeamCreate";
 import OrgTaskBoard from "../components/OrgTaskBoard";
 import { OrgProjectBoard } from "../components/OrgProjectBoard";
-import { ArrowLeft, BarChart3, BookOpen, ExternalLink, Flag, Lock, Pencil, Trash2, UserPlus, Users, Wallet } from "lucide-react";
+import { ArrowLeft, BarChart3, BookOpen, ExternalLink, Flag, Lock, Pencil, Trash2, UserPlus, Users, Video, Wallet } from "lucide-react";
 import { Link } from "react-router";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ListPagination } from "@/components/org/ListPagination";
@@ -722,7 +722,7 @@ function ShowOrgDetails() {
                     </Link>
                     <Link
                       to={`/user/profile/org/${orgId}/strategy`}
-                      className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#f59e0b]/40 transition sm:col-span-2 lg:col-span-1"
+                      className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#f59e0b]/40 transition"
                     >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#f59e0b]/30 bg-[#f59e0b]/10">
                         <Flag className="w-4 h-4 text-[#f59e0b]" />
@@ -730,6 +730,18 @@ function ShowOrgDetails() {
                       <div>
                         <h3 className="text-[15px] font-semibold group-hover:text-[#f59e0b]">Goals</h3>
                         <p className="text-sm text-muted-foreground mt-0.5">Year & quarter goals — simple plan</p>
+                      </div>
+                    </Link>
+                    <Link
+                      to={`/user/profile/org/${orgId}/cms`}
+                      className="group rounded-xl border border-border bg-card p-4 flex items-start gap-3 no-underline text-inherit hover:border-[#ec4899]/40 transition"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#ec4899]/30 bg-[#ec4899]/10">
+                        <Video className="w-4 h-4 text-[#ec4899]" />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-semibold group-hover:text-[#ec4899]">Content</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Platforms, pipeline, analytics</p>
                       </div>
                     </Link>
                   </>
