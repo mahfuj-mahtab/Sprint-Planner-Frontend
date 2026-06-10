@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Calendar, Eye, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "@/ApiInception";
 import { cn } from "@/lib/utils";
 import {
+  CONTENT_PRIORITIES,
   CONTENT_PRIORITY_CLASS,
   CONTENT_PRIORITY_LABELS,
   formatCmsDate,
@@ -12,8 +13,21 @@ import {
   statusBadgeStyle,
 } from "@/lib/cms";
 
-function ContentCard({ item, canWrite, onEdit, onDelete, onAnalytics, onDragStart }) {
+function ContentCard({ item, canWrite, onEdit, onDelete, onAnalytics, onDragStart, orgId, onRefresh }) {
   const latest = item.latest_analytics;
+  const handlePriorityClick = async () => {
+    if (!canWrite) return;
+    const keys = CONTENT_PRIORITIES;
+    const currentIndex = Math.max(0, keys.indexOf(item.priority));
+    const next = keys[(currentIndex + 1) % keys.length];
+    try {
+      await api.patch(`/api/v1/org/${orgId}/cms/content/${item._id}`, { priority: next });
+      toast.success(`Priority set to ${CONTENT_PRIORITY_LABELS[next]}`, { theme: "dark" });
+      onRefresh?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Update failed", { theme: "dark" });
+    }
+  };
   return (
     <article
       draggable={canWrite}
@@ -65,14 +79,17 @@ function ContentCard({ item, canWrite, onEdit, onDelete, onAnalytics, onDragStar
           ) : null}
 
           <div className="flex flex-wrap gap-1.5 mt-2">
-            <span
+            <button
+              type="button"
+              onClick={handlePriorityClick}
+              title="Click to cycle priority"
               className={cn(
-                "text-[10px] font-medium px-1.5 py-0.5 rounded border",
+                "text-[10px] font-medium px-1.5 py-0.5 rounded border focus:outline-none focus:ring-2 focus:ring-primary/40",
                 CONTENT_PRIORITY_CLASS[item.priority] || CONTENT_PRIORITY_CLASS.medium
               )}
             >
               {CONTENT_PRIORITY_LABELS[item.priority] || item.priority}
-            </span>
+            </button>
             {item.scheduled_at ? (
               <span className="inline-flex items-center gap-1 text-[10px] text-[#22d3ee] px-1.5 py-0.5 rounded border border-[#22d3ee]/30 bg-[#22d3ee]/10">
                 <Calendar className="w-3 h-3" />
@@ -107,11 +124,63 @@ export function ContentBoard({
 }) {
   const [dragItem, setDragItem] = useState(null);
   const [overColumn, setOverColumn] = useState(null);
+  const [localStatuses, setLocalStatuses] = useState(statuses || []);
+
+  useEffect(() => {
+    setLocalStatuses(statuses || []);
+  }, [statuses]);
 
   const sortedStatuses = useMemo(
-    () => [...(statuses || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
-    [statuses]
+    () => [...(localStatuses || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    [localStatuses]
   );
+
+  const handleStatusDragStart = (e, platformId, index, statusId) => {
+    try {
+      e.dataTransfer.setData("application/json", JSON.stringify({ platformId, index, statusId }));
+      e.dataTransfer.effectAllowed = "move";
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  const handleStatusDrop = async (e, targetIndex) => {
+    e.preventDefault();
+    let payload = null;
+    try {
+      const raw = e.dataTransfer.getData("application/json") || e.dataTransfer.getData("text/plain") || "{}";
+      payload = JSON.parse(raw);
+    } catch (err) {
+      return;
+    }
+    if (!payload || payload.platformId !== platform._id) return;
+    const fromIndex = typeof payload.index === "number" ? payload.index : -1;
+    if (fromIndex === -1 || fromIndex === targetIndex) return;
+
+    const sorted = [...(localStatuses || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    const moving = sorted.splice(fromIndex, 1)[0];
+    const insertIndex = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    sorted.splice(insertIndex, 0, moving);
+
+    // optimistic update
+    setLocalStatuses(sorted.map((s, i) => ({ ...s, sort_order: i })));
+
+    try {
+      const patches = [];
+      sorted.forEach((s, i) => {
+        const orig = (statuses || []).find((x) => x._id === s._id);
+        if (!orig || (orig.sort_order ?? 0) !== i) {
+          patches.push(api.patch(`/api/v1/org/${orgId}/cms/statuses/${s._id}`, { sort_order: i }));
+        }
+      });
+      await Promise.all(patches);
+      toast.success("Statuses reordered", { theme: "dark" });
+      onRefresh?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Reorder failed", { theme: "dark" });
+      onRefresh?.();
+    }
+  };
 
   const contentByStatus = useMemo(() => {
     const map = Object.fromEntries(sortedStatuses.map((s) => [s._id, []]));
@@ -155,8 +224,8 @@ export function ContentBoard({
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4 min-h-[420px]">
-      {sortedStatuses.map((status) => {
+    <div className="flex gap-3 overflow-x-auto pb-4 min-h-[420px]" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleStatusDrop(e, sortedStatuses.length)}>
+      {sortedStatuses.map((status, idx) => {
         const items = contentByStatus[status._id] || [];
         const badge = statusBadgeStyle(status.color);
         return (
@@ -175,6 +244,10 @@ export function ContentBoard({
           >
             <div className="px-3 py-2.5 border-b border-border/60 flex items-center justify-between gap-2">
               <span
+                draggable={canWrite}
+                onDragStart={(e) => handleStatusDragStart(e, platform._id, idx, status._id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleStatusDrop(e, idx)}
                 className="text-xs font-semibold px-2 py-0.5 rounded-md border"
                 style={badge}
               >
@@ -193,13 +266,15 @@ export function ContentBoard({
                     key={item._id}
                     item={item}
                     canWrite={canWrite}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onAnalytics={onAnalytics}
-                    onDragStart={(e, c) => {
-                      setDragItem(c);
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onAnalytics={onAnalytics}
+                        onDragStart={(e, c) => {
+                          setDragItem(c);
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                        orgId={orgId}
+                        onRefresh={onRefresh}
                   />
                 ))
               )}

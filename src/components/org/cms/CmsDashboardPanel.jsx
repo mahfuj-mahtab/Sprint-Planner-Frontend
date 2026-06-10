@@ -1,5 +1,17 @@
 import { StatCard } from "@/components/org/StatCard";
 import { formatCmsDateTime, formatNumber, statusBadgeStyle } from "@/lib/cms";
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 export function CmsDashboardPanel({ dashboard, loading }) {
   if (loading) {
@@ -10,6 +22,15 @@ export function CmsDashboardPanel({ dashboard, loading }) {
   }
 
   const { summary, by_platform, upcoming_scheduled, priority_breakdown } = dashboard;
+
+  const priorityData = Object.entries(priority_breakdown || {}).map(([k, v]) => ({ name: k, value: v }));
+  const platformViews = (by_platform || []).map((p) => ({ name: p.name, views: Number(p.analytics?.views || 0) }));
+  const priorityColors = {
+    low: "#94a3b8",
+    medium: "#38bdf8",
+    high: "#f59e0b",
+    urgent: "#ef4444",
+  };
 
   return (
     <div className="space-y-6">
@@ -67,16 +88,41 @@ export function CmsDashboardPanel({ dashboard, loading }) {
             </div>
           )}
         </section>
-
         <section className="rounded-xl border border-border bg-card p-4">
           <h3 className="text-sm font-semibold mb-3">Priority mix</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(priority_breakdown || {}).map(([key, count]) => (
-              <div key={key} className="rounded-lg border border-border/60 px-3 py-2">
-                <p className="text-[10px] uppercase text-muted-foreground">{key}</p>
-                <p className="text-lg font-semibold font-mono">{count}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="h-48">
+              {priorityData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={priorityData} dataKey="value" nameKey="name" innerRadius={40} outerRadius={70} paddingAngle={4}>
+                      {priorityData.map((entry, idx) => (
+                        <Cell key={`cell-${idx}`} fill={priorityColors[entry.name] || "#8884d8"} />
+                      ))}
+                    </Pie>
+                    <Legend verticalAlign="bottom" height={24} />
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-muted-foreground">No priority data</p>
+              )}
+            </div>
+
+            <div className="h-48">
+              {platformViews.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={platformViews} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : v)} />
+                    <Tooltip formatter={(v) => formatNumber(v)} />
+                    <Bar dataKey="views" fill="#38bdf8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-muted-foreground">No views data</p>
+              )}
+            </div>
           </div>
 
           <h3 className="text-sm font-semibold mt-6 mb-3">Upcoming scheduled</h3>
@@ -100,6 +146,14 @@ export function CmsDashboardPanel({ dashboard, loading }) {
               ))}
             </ul>
           )}
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="mb-1">How charts work:</p>
+            <ul className="list-disc pl-4">
+              <li>Priority mix is computed from content pieces grouped by priority at fetch time.</li>
+              <li>Platform views show aggregated latest analytics per platform (from collected snapshots).</li>
+              <li>Numbers are rounded/abbreviated; click into a platform on the list to inspect details in the board.</li>
+            </ul>
+          </div>
         </section>
       </div>
     </div>

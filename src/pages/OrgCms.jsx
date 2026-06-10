@@ -82,6 +82,8 @@ export default function OrgCms() {
   const [platformForm, setPlatformForm] = useState(emptyPlatformForm);
   const [statusModal, setStatusModal] = useState(null);
   const [statusForm, setStatusForm] = useState(emptyStatusForm);
+  const [statusBulkList, setStatusBulkList] = useState([]);
+  const [bulkSaving, setBulkSaving] = useState(false);
   const [contentModal, setContentModal] = useState(null);
   const [contentForm, setContentForm] = useState(emptyContentForm);
   const [analyticsModal, setAnalyticsModal] = useState(null);
@@ -199,6 +201,53 @@ export default function OrgCms() {
     setStatusModal({ mode: "create", platform });
   };
 
+  const openStatusBulkEdit = (platform) => {
+    const sorted = [...(platform.statuses || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    setStatusBulkList(
+      sorted.map((s) => ({
+        _id: s._id,
+        name: s.name,
+        color: s.color || "#94a3b8",
+        is_scheduled_stage: Boolean(s.is_scheduled_stage),
+        is_published_stage: Boolean(s.is_published_stage),
+        selected: false,
+      }))
+    );
+    setStatusModal({ mode: "bulk", platform });
+  };
+
+  const saveBulkStatuses = async () => {
+    if (!statusModal?.platform) return;
+    setBulkSaving(true);
+    try {
+      const original = statusModal.platform.statuses || [];
+      const patches = [];
+      for (const s of statusBulkList) {
+        const orig = original.find((o) => o._id === s._id) || {};
+        const changed =
+          s.name !== orig.name || s.color !== orig.color || s.is_scheduled_stage !== Boolean(orig.is_scheduled_stage) || s.is_published_stage !== Boolean(orig.is_published_stage);
+        if (s.selected && changed) {
+          patches.push(api.patch(`/api/v1/org/${orgId}/cms/statuses/${s._id}`, {
+            name: s.name,
+            color: s.color,
+            is_scheduled_stage: s.is_scheduled_stage,
+            is_published_stage: s.is_published_stage,
+          }));
+        } else if (s.selected && !changed) {
+          // still include to mark selection intention? skip
+        }
+      }
+      await Promise.all(patches);
+      toast.success("Bulk update applied", { theme: "dark" });
+      setStatusModal(null);
+      await refreshAll();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Bulk update failed", { theme: "dark" });
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   const openStatusEdit = (platform, status) => {
     setStatusForm({
       name: status.name,
@@ -243,6 +292,62 @@ export default function OrgCms() {
       await refreshAll();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Delete failed", { theme: "dark" });
+    }
+  };
+
+  const handleStatusDragStart = (e, platformId, index, statusId) => {
+    try {
+      e.dataTransfer.setData(
+        "application/json",
+        JSON.stringify({ platformId, index, statusId })
+      );
+      e.dataTransfer.effectAllowed = "move";
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  const handleStatusDrop = async (e, platform, targetIndex) => {
+    e.preventDefault();
+    let payload = null;
+    try {
+      const raw = e.dataTransfer.getData("application/json") || e.dataTransfer.getData("text/plain") || "{}";
+      payload = JSON.parse(raw);
+    } catch (err) {
+      return;
+    }
+    if (!payload || payload.platformId !== platform._id) return;
+    const fromIndex = typeof payload.index === "number" ? payload.index : -1;
+    if (fromIndex === -1 || fromIndex === targetIndex) return;
+
+    const sorted = [...(platform.statuses || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    const moving = sorted.splice(fromIndex, 1)[0];
+    const insertIndex = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    sorted.splice(insertIndex, 0, moving);
+
+    // Optimistically update UI
+    setPlatforms((prev) =>
+      prev.map((p) => {
+        if (p._id !== platform._id) return p;
+        return { ...p, statuses: sorted.map((s, i) => ({ ...s, sort_order: i })) };
+      })
+    );
+
+    try {
+      // Only patch statuses whose sort_order changed
+      const patches = [];
+      sorted.forEach((s, i) => {
+        const old = (platform.statuses || []).find((x) => x._id === s._id);
+        if (!old || (old.sort_order ?? 0) !== i) {
+          patches.push(api.patch(`/api/v1/org/${orgId}/cms/statuses/${s._id}`, { sort_order: i }));
+        }
+      });
+      await Promise.all(patches);
+      toast.success("Statuses reordered", { theme: "dark" });
+      await refreshAll();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Reorder failed", { theme: "dark" });
+      await refreshAll();
     }
   };
 
@@ -513,6 +618,13 @@ export default function OrgCms() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => openStatusBulkEdit(platform)}
+                          className="text-xs px-2 py-1 rounded border border-border"
+                        >
+                          Bulk edit
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => openPlatformEdit(platform)}
                           className="text-xs px-2 py-1 rounded border border-border"
                         >
@@ -534,14 +646,25 @@ export default function OrgCms() {
                       <Settings2 className="w-3.5 h-3.5" />
                       Workflow statuses (drag board columns)
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {[...(platform.statuses || [])]
-                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                        .map((status) => {
+                    <div
+                      className="flex flex-wrap gap-2"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        const sorted = [...(platform.statuses || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+                        handleStatusDrop(e, platform, sorted.length);
+                      }}
+                    >
+                      {(() => {
+                        const sorted = [...(platform.statuses || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+                        return sorted.map((status, idx) => {
                           const badge = statusBadgeStyle(status.color);
                           return (
                             <div
                               key={status._id}
+                              draggable={canWrite}
+                              onDragStart={(e) => handleStatusDragStart(e, platform._id, idx, status._id)}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => handleStatusDrop(e, platform, idx)}
                               className="inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs"
                               style={badge}
                             >
@@ -573,7 +696,8 @@ export default function OrgCms() {
                               ) : null}
                             </div>
                           );
-                        })}
+                        });
+                      })()}
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-3">
                       {(platform.content || []).length} content piece
@@ -630,54 +754,136 @@ export default function OrgCms() {
       <Modal
         open={Boolean(statusModal)}
         onClose={() => setStatusModal(null)}
-        title={statusModal?.mode === "edit" ? "Edit status" : "New status"}
+        title={statusModal?.mode === "bulk" ? "Bulk edit statuses" : statusModal?.mode === "edit" ? "Edit status" : "New status"}
       >
-        <div className="space-y-4">
-          <Field label="Name">
-            <input
-              className="ww-input ww-input-md w-full"
-              value={statusForm.name}
-              onChange={(e) => setStatusForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="Draft, Script, Recording…"
-            />
-          </Field>
-          <Field label="Color">
-            <input
-              type="color"
-              className="ww-input h-10 w-full"
-              value={statusForm.color}
-              onChange={(e) => setStatusForm((f) => ({ ...f, color: e.target.value }))}
-            />
-          </Field>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={statusForm.is_scheduled_stage}
-              onChange={(e) =>
-                setStatusForm((f) => ({ ...f, is_scheduled_stage: e.target.checked }))
-              }
-            />
-            Marks scheduled stage (dashboard)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={statusForm.is_published_stage}
-              onChange={(e) =>
-                setStatusForm((f) => ({ ...f, is_published_stage: e.target.checked }))
-              }
-            />
-            Marks published / live stage
-          </label>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={saveStatus}
-            className="w-full rounded-lg bg-primary text-primary-foreground py-2 text-sm font-medium"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Save status"}
-          </button>
-        </div>
+        {statusModal?.mode === "bulk" ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Edit multiple statuses</h4>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStatusBulkList((s) => s.map((x) => ({ ...x, selected: true })))}
+                  className="text-xs px-2 py-1 rounded border"
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusBulkList((s) => s.map((x) => ({ ...x, selected: false })))}
+                  className="text-xs px-2 py-1 rounded border"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+            <div className="max-h-72 overflow-y-auto space-y-2">
+              {statusBulkList.map((s, i) => (
+                <div key={s._id} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={s.selected}
+                    onChange={(e) =>
+                      setStatusBulkList((list) => list.map((x) => (x._id === s._id ? { ...x, selected: e.target.checked } : x)))
+                    }
+                  />
+                  <input
+                    className="ww-input ww-input-sm w-40"
+                    value={s.name}
+                    onChange={(e) =>
+                      setStatusBulkList((list) => list.map((x) => (x._id === s._id ? { ...x, name: e.target.value } : x)))
+                    }
+                  />
+                  <input
+                    type="color"
+                    value={s.color}
+                    onChange={(e) =>
+                      setStatusBulkList((list) => list.map((x) => (x._id === s._id ? { ...x, color: e.target.value } : x)))
+                    }
+                    className="w-10 h-8 p-0 border rounded"
+                  />
+                  <label className="text-xs flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={s.is_scheduled_stage}
+                      onChange={(e) =>
+                        setStatusBulkList((list) => list.map((x) => (x._id === s._id ? { ...x, is_scheduled_stage: e.target.checked } : x)))
+                      }
+                    />
+                    Scheduled
+                  </label>
+                  <label className="text-xs flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={s.is_published_stage}
+                      onChange={(e) =>
+                        setStatusBulkList((list) => list.map((x) => (x._id === s._id ? { ...x, is_published_stage: e.target.checked } : x)))
+                      }
+                    />
+                    Published
+                  </label>
+                </div>
+              ))}
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                disabled={bulkSaving}
+                onClick={saveBulkStatuses}
+                className="w-full rounded-lg bg-primary text-primary-foreground py-2 text-sm font-medium"
+              >
+                {bulkSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Apply to selected"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Field label="Name">
+              <input
+                className="ww-input ww-input-md w-full"
+                value={statusForm.name}
+                onChange={(e) => setStatusForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Draft, Script, Recording…"
+              />
+            </Field>
+            <Field label="Color">
+              <input
+                type="color"
+                className="ww-input h-10 w-full"
+                value={statusForm.color}
+                onChange={(e) => setStatusForm((f) => ({ ...f, color: e.target.value }))}
+              />
+            </Field>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={statusForm.is_scheduled_stage}
+                onChange={(e) =>
+                  setStatusForm((f) => ({ ...f, is_scheduled_stage: e.target.checked }))
+                }
+              />
+              Marks scheduled stage (dashboard)
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={statusForm.is_published_stage}
+                onChange={(e) =>
+                  setStatusForm((f) => ({ ...f, is_published_stage: e.target.checked }))
+                }
+              />
+              Marks published / live stage
+            </label>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={saveStatus}
+              className="w-full rounded-lg bg-primary text-primary-foreground py-2 text-sm font-medium"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Save status"}
+            </button>
+          </div>
+        )}
       </Modal>
 
       <Modal
