@@ -7,7 +7,7 @@ import {
   CONTENT_PRIORITIES,
   CONTENT_PRIORITY_CLASS,
   CONTENT_PRIORITY_LABELS,
-  formatCmsDate,
+  CONTENT_FORMAT_LABEL,
   formatCmsDateTime,
   formatNumber,
   statusBadgeStyle,
@@ -74,11 +74,21 @@ function ContentCard({ item, canWrite, onEdit, onDelete, onAnalytics, onDragStar
             ) : null}
           </div>
 
-          {item.description ? (
+          {item.hook ? (
+            <p className="text-[11px] text-primary/80 mt-1 line-clamp-1 italic">"{item.hook}"</p>
+          ) : item.description ? (
             <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">{item.description}</p>
           ) : null}
 
           <div className="flex flex-wrap gap-1.5 mt-2">
+            <span className="text-[10px] px-1.5 py-0.5 rounded border border-border bg-muted/30 text-muted-foreground">
+              {CONTENT_FORMAT_LABEL[item.content_format] || item.content_format || "Post"}
+            </span>
+            {item.series_name ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-500/30 text-amber-200/90">
+                {item.series_name}
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={handlePriorityClick}

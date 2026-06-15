@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../ApiInception";
 import { toast } from "react-toastify";
-import { Plus, Trash2, RefreshCw, Lock, Unlock, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, RefreshCw, Lock, Unlock, CheckCircle2, Pencil } from "lucide-react";
 import { Skeleton, Spinner } from "./ui/Loading";
 import { cn } from "@/lib/utils";
 import { flattenFeatureGroups } from "@/lib/featureTree";
@@ -27,6 +27,11 @@ function ProjectVersions({ orgId, projectId }) {
   const [versionDetails, setVersionDetails] = useState(null);
 
   const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newStart, setNewStart] = useState("");
@@ -135,6 +140,31 @@ function ProjectVersions({ orgId, projectId }) {
         fetchDetails(selectedVersionId);
       })
       .catch((e) => toast.error(e?.response?.data?.message || "Failed", { theme: "dark" }));
+  };
+
+  const openEdit = (v) => {
+    setEditName(v.name || "");
+    setEditDesc(v.description || "");
+    setEditStart(v.start_date ? v.start_date.slice(0, 10) : "");
+    setEditEnd(v.end_date ? v.end_date.slice(0, 10) : "");
+    setShowEdit(true);
+  };
+
+  const saveEdit = () => {
+    const name = editName.trim();
+    if (!name || !editStart || !editEnd) {
+      toast.error("Name, start date, and end date are required", { theme: "dark" });
+      return;
+    }
+    patchVersion(
+      {
+        name,
+        description: editDesc,
+        start_date: editStart,
+        end_date: editEnd,
+      },
+      "Version updated"
+    ).then(() => setShowEdit(false));
   };
 
   const createVersion = () => {
@@ -337,6 +367,59 @@ function ProjectVersions({ orgId, projectId }) {
         )}
       </div>
 
+      {showEdit && selectedVersion ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-4 space-y-3 shadow-xl">
+            <h3 className="text-lg font-semibold ww-heading">Edit version</h3>
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="ww-input w-full"
+              placeholder="Version name (e.g. v2.0)"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="ww-label text-[10px]">Start date</label>
+                <input
+                  type="date"
+                  value={editStart}
+                  onChange={(e) => setEditStart(e.target.value)}
+                  className="ww-input w-full"
+                />
+              </div>
+              <div>
+                <label className="ww-label text-[10px]">End date</label>
+                <input
+                  type="date"
+                  value={editEnd}
+                  onChange={(e) => setEditEnd(e.target.value)}
+                  className="ww-input w-full"
+                />
+              </div>
+            </div>
+            <textarea
+              value={editDesc}
+              onChange={(e) => setEditDesc(e.target.value)}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              rows={3}
+              placeholder="Description (optional)"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEdit(false)}
+                className="text-sm px-3 py-1.5 rounded-md border border-border"
+              >
+                Cancel
+              </button>
+              <button type="button" onClick={saveEdit} className="ww-btn-primary text-sm">
+                Save changes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="col-span-12 lg:col-span-8 bg-card border border-border rounded-xl p-4">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
           <div>
@@ -359,6 +442,16 @@ function ProjectVersions({ orgId, projectId }) {
 
         {selectedVersion ? (
           <div className="flex flex-wrap gap-2 mb-4">
+            {!selectedVersion.is_locked && selectedVersion.status !== "completed" ? (
+              <button
+                type="button"
+                onClick={() => openEdit(selectedVersion)}
+                className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted inline-flex items-center gap-1.5"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit version
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => patchVersion({ is_locked: !selectedVersion.is_locked })}

@@ -211,4 +211,35 @@
     font-family: "Syne", ui-sans-serif, system-ui;
     @apply font-extrabold text-foreground;
   }
+
+  .tiptap-doc {
+    @apply text-[15px] leading-7 text-foreground/95;
+  }
+  .tiptap-doc h2 {
+    font-family: "Syne", ui-sans-serif, system-ui;
+    @apply text-xl font-extrabold text-foreground mt-6 mb-2;
+  }
+  .tiptap-doc h3 {
+    font-family: "Syne", ui-sans-serif, system-ui;
+    @apply text-lg font-extrabold text-foreground mt-4 mb-2;
+  }
+  .tiptap-doc p {
+    @apply mb-3;
+  }
+  .tiptap-doc ul {
+    @apply list-disc pl-5 mb-3 space-y-1;
+  }
+  .tiptap-doc ol {
+    @apply list-decimal pl-5 mb-3 space-y-1;
+  }
+  .tiptap-doc blockquote {
+    @apply border-l-2 border-border pl-4 text-muted-foreground mb-3;
+  }
+  .tiptap-doc a {
+    @apply text-primary underline underline-offset-4;
+  }
+  .tiptap-doc p.is-editor-empty:first-child::before {
+    @apply text-muted-foreground float-left h-0 pointer-events-none;
+    content: attr(data-placeholder);
+  }
 }
