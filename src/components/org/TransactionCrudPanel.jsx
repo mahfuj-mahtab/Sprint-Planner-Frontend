@@ -1,12 +1,18 @@
-import { useMemo, useState } from "react";
-import { Pencil, Plus, Trash2, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "@/ApiInception";
 import { Modal } from "@/components/org/Modal";
 import { Field, SelectInput } from "@/components/org/Field";
 import { EmptyState } from "@/components/org/EmptyState";
 import { LinkedEntityField } from "@/components/org/LinkedEntityField";
-import { categoryLabel, categoriesForType } from "@/lib/financeCategories";
+import { ListPagination } from "@/components/org/ListPagination";
+import {
+  FinanceTransactionFilters,
+  emptyTransactionFilters,
+} from "@/components/org/finance/FinanceTransactionFilters";
+import { FinanceTransactionTable } from "@/components/org/finance/FinanceTransactionTable";
+import { categoriesForType } from "@/lib/financeCategories";
 import {
   effectiveScope,
   partitionOptionLabel,
@@ -30,7 +36,6 @@ const today = () => new Date().toISOString().slice(0, 10);
 export function TransactionCrudPanel({
   type,
   orgId,
-  items,
   accounts,
   projects,
   clients,
@@ -58,6 +63,12 @@ export function TransactionCrudPanel({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
+  const [items, setItems] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState(emptyTransactionFilters());
+  const [appliedFilters, setAppliedFilters] = useState(emptyTransactionFilters());
   const [form, setForm] = useState({
     amount: "",
     category: defaultCategory,
@@ -119,6 +130,46 @@ export function TransactionCrudPanel({
     [investors]
   );
 
+  const loadList = useCallback(async () => {
+    setListLoading(true);
+    try {
+      const params = { page, limit: 20, ...appliedFilters };
+      Object.keys(params).forEach((k) => {
+        if (params[k] === "" || params[k] == null) delete params[k];
+      });
+      const res = await api.get(`/api/v1/org/${orgId}/finance/${type}`, { params });
+      setItems(res.data.items || []);
+      setPagination(res.data.pagination || null);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to load list", { theme: "dark" });
+      setItems([]);
+      setPagination(null);
+    } finally {
+      setListLoading(false);
+    }
+  }, [orgId, type, page, appliedFilters]);
+
+  useEffect(() => {
+    loadList();
+  }, [loadList]);
+
+  const refreshAll = useCallback(async () => {
+    await loadList();
+    onRefresh?.();
+  }, [loadList, onRefresh]);
+
+  const applyFilters = () => {
+    setPage(1);
+    setAppliedFilters({ ...filters });
+  };
+
+  const clearFilters = () => {
+    const empty = emptyTransactionFilters();
+    setFilters(empty);
+    setAppliedFilters(empty);
+    setPage(1);
+  };
+
   const openCreate = () => {
     setEditingId(null);
     setForm(resetForm());
@@ -156,7 +207,7 @@ export function TransactionCrudPanel({
     try {
       await api.delete(`/api/v1/org/${orgId}/finance/${type}/${id}`);
       toast.success("Deleted", { theme: "dark" });
-      onRefresh();
+      refreshAll();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
     } finally {
@@ -247,7 +298,7 @@ export function TransactionCrudPanel({
       }
       toast.success(editingId ? "Updated" : "Saved", { theme: "dark" });
       setModalOpen(false);
-      onRefresh();
+      refreshAll();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed", { theme: "dark" });
     } finally {
@@ -256,7 +307,7 @@ export function TransactionCrudPanel({
   };
 
   return (
-    <div className="max-w-4xl text-left">
+    <div className="text-left w-full max-w-none">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
           <h2 className="text-base font-semibold text-foreground capitalize">{type}</h2>
@@ -305,89 +356,59 @@ export function TransactionCrudPanel({
         <p className="text-sm text-muted-foreground border border-dashed border-border rounded-xl px-4 py-4">
           Create an account first under the Accounts tab.
         </p>
-      ) : items.length === 0 ? (
-        <EmptyState
-          className="py-10"
-          title={`No ${type} yet`}
-          description={`Add your first ${type} entry.`}
-          action={
-            <button type="button" onClick={openCreate} className="text-sm font-semibold px-3 py-2 rounded-lg bg-primary text-primary-foreground">
-              Add {type}
-            </button>
-          }
-        />
       ) : (
-        <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="bg-muted/40 border-b border-border">
-                <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal">Date</th>
-                <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal">Category</th>
-                <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal">Project</th>
-                {!isIncome && investors.length > 0 ? (
-                  <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal">Investor</th>
-                ) : null}
-                <th className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground font-normal text-right">Amount</th>
-                <th className="px-4 py-2.5 w-20" />
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item._id} className="border-b border-border/60 last:border-0 hover:bg-muted/15">
-                  <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
-                    {formatDate(isIncome ? item.payment_date : item.expense_date)}
-                  </td>
-                  <td className="px-4 py-2.5">{categoryLabel(item.category, categories)}</td>
-                  <td
-                    className={cn(
-                      "px-4 py-2.5 truncate max-w-[140px]",
-                      item.project_id?.name ? "text-foreground" : "text-amber-500/90"
-                    )}
+        <>
+          <FinanceTransactionFilters
+            type={type}
+            filters={filters}
+            onChange={setFilters}
+            onApply={applyFilters}
+            onClear={clearFilters}
+            projects={projects}
+            incomeSources={incomeSources}
+            categories={categories}
+            accounts={accounts}
+            loading={listLoading}
+          />
+          {listLoading && items.length === 0 ? (
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin" />
+            </div>
+          ) : items.length === 0 && !Object.values(appliedFilters).some(Boolean) ? (
+            <EmptyState
+              className="py-10"
+              title={`No ${type} yet`}
+              description={`Add your first ${type} entry.`}
+              action={
+                canWrite ? (
+                  <button
+                    type="button"
+                    onClick={openCreate}
+                    className="text-sm font-semibold px-3 py-2 rounded-lg bg-primary text-primary-foreground"
                   >
-                    {item.project_id?.name || (isIncome ? "No project" : "—")}
-                  </td>
-                  {!isIncome && investors.length > 0 ? (
-                    <td className="px-4 py-2.5 text-muted-foreground truncate max-w-[120px]">
-                      {item.investor_id?.name || "—"}
-                    </td>
-                  ) : null}
-                  <td
-                    className={cn(
-                      "px-4 py-2.5 text-right font-mono tabular-nums font-medium",
-                      isIncome ? "text-primary" : "text-destructive"
-                    )}
-                  >
-                    {isIncome ? "+" : "−"}
-                    {fmt(item.amount)}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {canWrite ? (
-                      <div className="flex justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(item)}
-                          className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(item._id)}
-                          disabled={submitting}
-                          className="p-2 rounded-md hover:bg-muted text-destructive"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    Add {type}
+                  </button>
+                ) : null
+              }
+            />
+          ) : (
+            <>
+              <FinanceTransactionTable
+                type={type}
+                items={items}
+                categories={categories}
+                currency={currency}
+                canSeeExactAmounts={canSeeExactAmounts}
+                canWrite={canWrite}
+                investors={investors}
+                onEdit={openEdit}
+                onDelete={handleDelete}
+                deleting={submitting}
+              />
+              <ListPagination pagination={pagination} onPageChange={setPage} />
+            </>
+          )}
+        </>
       )}
 
       <Modal

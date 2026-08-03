@@ -651,7 +651,6 @@ export function IncomeSourcesPanel({
   projects,
   onProjectCreated,
   onRefresh,
-  incomes = [],
   currency = "BDT",
   canSeeExactAmounts = true,
   canWrite = true,
@@ -661,6 +660,7 @@ export function IncomeSourcesPanel({
   const [items, setItems] = useState([]);
   const [expectedTotals, setExpectedTotals] = useState(null);
   const [forecastMatrix, setForecastMatrix] = useState(null);
+  const [monthlyActuals, setMonthlyActuals] = useState({ years: [], bySourceMonth: {} });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -669,10 +669,12 @@ export function IncomeSourcesPanel({
 
   const load = useCallback(() => {
     setLoading(true);
-    return api
-      .get(`/api/v1/org/${orgId}/finance/income-sources`)
-      .then((r) => {
-        const incoming = r.data.sources || [];
+    return Promise.all([
+      api.get(`/api/v1/org/${orgId}/finance/income-sources`),
+      api.get(`/api/v1/org/${orgId}/finance/income-sources/monthly-actuals`),
+    ])
+      .then(([sourcesRes, actualsRes]) => {
+        const incoming = sourcesRes.data.sources || [];
         incoming.sort((a, b) => {
           const rankDiff =
             incomeSourcePriorityRank(normalizeIncomeSourcePriority(a.priority)) -
@@ -681,8 +683,12 @@ export function IncomeSourcesPanel({
           return String(a.name || "").localeCompare(String(b.name || ""));
         });
         setItems(incoming);
-        setExpectedTotals(r.data.expectedTotals || null);
-        setForecastMatrix(r.data.forecastMatrix || null);
+        setExpectedTotals(sourcesRes.data.expectedTotals || null);
+        setForecastMatrix(sourcesRes.data.forecastMatrix || null);
+        setMonthlyActuals({
+          years: actualsRes.data.years || [],
+          bySourceMonth: actualsRes.data.bySourceMonth || {},
+        });
       })
       .catch(() => toast.error("Failed to load income sources", { theme: "dark" }))
       .finally(() => setLoading(false));
@@ -800,21 +806,8 @@ export function IncomeSourcesPanel({
   );
 
   const actualMatrix = useMemo(() => {
-    const months = {};
-    const yearsSet = new Set();
-    for (const tx of incomes || []) {
-      const srcId = String(tx.income_source_id?._id || tx.income_source_id || "");
-      if (!srcId) continue;
-      const date = tx.payment_date ? new Date(tx.payment_date) : null;
-      if (!date || Number.isNaN(date.getTime())) continue;
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const key = `${year}-${String(month).padStart(2, "0")}`;
-      yearsSet.add(year);
-      if (!months[srcId]) months[srcId] = {};
-      months[srcId][key] = (months[srcId][key] || 0) + Number(tx.amount || 0);
-    }
-    const years = Array.from(yearsSet).sort((a, b) => a - b);
+    const months = monthlyActuals.bySourceMonth || {};
+    const years = monthlyActuals.years || [];
     const rows = items.map((source) => {
       const srcId = String(source._id);
       const perMonth = months[srcId] || {};
@@ -834,7 +827,7 @@ export function IncomeSourcesPanel({
       };
     });
     return { years, rows };
-  }, [incomes, items, currency]);
+  }, [monthlyActuals, items, currency]);
 
   const [actualYear, setActualYear] = useState(() => {
     const now = new Date().getFullYear();

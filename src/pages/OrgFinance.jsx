@@ -43,6 +43,7 @@ import { CurrencySelect } from "@/components/org/CurrencySelect";
 import { cn } from "@/lib/utils";
 import { normalizeGoal } from "@/lib/goals";
 import { InvestorsPanel } from "@/components/investor/InvestorsPanel";
+import { FinanceReportsPanel } from "@/components/org/finance/FinanceReportsPanel";
 import { useBlockClientOrgRoutes } from "@/hooks/useBlockClientOrgRoutes";
 
 const PAYMENT_METHODS = [
@@ -68,6 +69,7 @@ const TABS = [
   { id: "accounts", label: "Accounts", icon: Landmark },
   { id: "income", label: "Income", icon: TrendingUp },
   { id: "expense", label: "Expense", icon: TrendingDown },
+  { id: "reports", label: "Reports", icon: BarChart3 },
   { id: "debt", label: "Debt", icon: HandCoins },
   { id: "subscriptions", label: "Subscriptions", icon: Repeat },
   { id: "goals", label: "Goals", icon: Target },
@@ -144,7 +146,7 @@ function OrgFinance() {
     setLoading(true);
     return Promise.all([
       api.get(`/api/v1/org/${orgId}/finance/overview`),
-      api.get(`/api/v1/org/${orgId}/finance/transactions`),
+      api.get(`/api/v1/org/${orgId}/finance/transactions`, { params: { limit: 30 } }),
       api.get(`/api/v1/org/${orgId}/finance/project-profit`),
       api.get(`/api/v1/org/${orgId}/projects`, { params: { limit: 200, archived: "all" } }),
       api.get(`/api/v1/org/${orgId}/clients`),
@@ -775,7 +777,6 @@ function OrgFinance() {
               <IncomeSourcesPanel
                 orgId={orgId}
                 projects={projects}
-                incomes={transactions.incomes}
                 currency={currency}
                 canSeeExactAmounts={canSee}
                 canWrite={canWrite}
@@ -835,7 +836,6 @@ function OrgFinance() {
               <TransactionCrudPanel
                 type="income"
                 orgId={orgId}
-                items={transactions.incomes}
                 accounts={accounts}
                 projects={projects}
                 clients={clients}
@@ -859,7 +859,6 @@ function OrgFinance() {
               <TransactionCrudPanel
                 type="expense"
                 orgId={orgId}
-                items={transactions.expenses}
                 accounts={accounts}
                 projects={projects}
                 clients={clients}
@@ -877,6 +876,14 @@ function OrgFinance() {
                 onClientCreated={handleClientCreated}
                 onProjectCreated={handleProjectCreated}
                 onIncomeSourceCreated={handleIncomeSourceCreated}
+              />
+            )}
+
+            {tab === "reports" && (
+              <FinanceReportsPanel
+                orgId={orgId}
+                currency={currency}
+                canSeeExactAmounts={canSee}
               />
             )}
 
